@@ -21,11 +21,6 @@ OBJS = $(SRCS:src/%.cpp=$(OBJDIR)/%.o)
 all: $(OBJDIR) $(TARGET)-obj
 	./$(TARGET)
 
-# Rule to compile .cpp file directly into the executable
-$(TARGET): $(SRCS) include/main.h
-	@echo "--> Compiling $(SRCS) into $(TARGET)"
-	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET)
-
 # Rule to link object files into the executable
 $(TARGET)-obj: $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
