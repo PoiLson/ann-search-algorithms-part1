@@ -5,7 +5,7 @@ int dataset_size = 0;
 int dimension = 0;
 struct LSH* lsh = NULL;
 int table_index = 0;
-// todo : 
+// todo : change dataset for large dimensional data
 // todo : make a struct for global variables
 // todo : make a struct for hash table data containing points and their ids (to narrow down search results)
 // todo : implement quering :
