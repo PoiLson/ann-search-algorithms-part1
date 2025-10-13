@@ -5,5 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
+
+// For LSH
+#include <math.h>
+#include <float.h>
 
 #endif
