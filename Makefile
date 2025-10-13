@@ -9,7 +9,8 @@ CC = gcc
 # CFLAGS = -Wall -Wextra -std=c11 -g -Iinclude
 
 # Compiler flags without warnings
-CFLAGS = -std=c11 -g -Iinclude
+CFLAGS = -std=c11 -g -Iinclude 
+LDFLAGS = -lm
 
 # Executable name
 TARGET = search
@@ -19,20 +20,15 @@ SRCDIR = src
 OBJDIR = objectFiles
 INCDIR = include
 
-# Source files (add more 
-SRCS = $(SRCDIR)/main.c \
-       $(SRCDIR)/parseInput.c #\
-#        $(SRCDIR)/dataset.c \
-#        $(SRCDIR)/search_base.c \
-#        $(SRCDIR)/lsh.c \
-#        $(SRCDIR)/hypercube.c \
-#        $(SRCDIR)/ivfflat.c \
-#        $(SRCDIR)/ivfpq.c \
-#        $(SRCDIR)/metrics.c \
-#        $(SRCDIR)/utils.c
+# Source files
+SRCS = $(wildcard $(SRCDIR)/*.c)
 
 # Object files
 OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+
+# Pattern rule to compile any .c file in src/ to .o file in objectFiles/
+$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # =====================================================================
 # User Input Parameters
@@ -44,15 +40,15 @@ OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 # =====================================================================
 
-ALGO = ivfpq
+ALGO = lsh
 
 # Common parameters
 # -------------------
 
-INPUT_FILE  = data/input.dat
+INPUT_FILE  = random_2d_points.txt
 QUERY_FILE  = data/query.dat
 
-OUTPUT_FILE = results/output.txt
+OUTPUT_FILE = output.txt
 N           = 1
 R           = 2000
 
@@ -130,7 +126,7 @@ all: $(OBJDIR) $(TARGET)
 # ==============================================================
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 # ==============================================================
 # Compile each .c into .o

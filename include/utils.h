@@ -5,7 +5,7 @@
 
 float uniform_distribution(float a, float b);
 float gaussian_distribution(void);
-void generate_random_vector(float *v, int d, int gaussian);
+void generate_random_vector(float *v, int d);
 float dot_product(const float *a, const float *b, int d);
 double euclidean_distance(const float *a, const float *b, int d);
 int hamming_distance(const int *a, const int *b, int d);

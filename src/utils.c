@@ -35,7 +35,7 @@ float gaussian_distribution(void)
 void generate_random_vector(float* v, int d)
 {
     for(int i = 0; i < d; i++)
-        v[i] = gaussian_random();
+        v[i] = gaussian_distribution();
 }
 
 // TODO make it void pointer in the future using the real datasets

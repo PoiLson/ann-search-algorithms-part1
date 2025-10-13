@@ -1,5 +1,6 @@
 #ifndef MAIN_H
 #define MAIN_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,5 +11,11 @@
 // For LSH
 #include <math.h>
 #include <float.h>
+
+#include "lsh.h"
+#include "hashtable.h"
+#include "parseInput.h"
+#include "utils.h"
+
 
 #endif

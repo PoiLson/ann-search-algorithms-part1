@@ -3,6 +3,9 @@
 
 #include "main.h"
 
+// Forward declaration
+struct LSH;
+
 // Data structure for the hash function h(p)
 typedef struct 
 {
@@ -10,24 +13,35 @@ typedef struct
     float t;
 }LSH_hash_function;
 
-typedef struct 
-{
-    int* r;
-    int m;
-}LSH_ID;
-
-typedef struct LSH_hash_function LSH_hash_function;
+typedef int (*hash_func)(const float* p, const struct LSH* lsh, int table_index);
+typedef double (*metric_func)(const float* a, const float* b, int d);
 
 // Data Structure for the full LSH
-typedef struct
+typedef struct LSH
 {
-    int d; 
-    int L; 
-    int k; 
-    double w; 
-    
-    int (*h_hash_ptr)(const LSH_hash_function* h, const float* p, int d, double w);
+    int d; // dimension of the input points
+    int L; // number of hash tables
+    int k; // number of hash functions per table
+    double w; // window size
+    int table_size; // size of each hash table
+    int num_of_buckets; // number of buckets in each hash table
+    metric_func distance; // distance function
+    LSH_hash_function *hash_params; // array of hash parameters
+    // hash_func *hash_functions; // array of hash functions
+    int **linear_combinations; // array of r[i][j], i in[L], j in[k] for g(p)
+    hash_func *amplified_hash_functions; // array of amplified hash functions
+
+
 
 } LSH;
+
+
+
+// hash_func h_function(const LSH_hash_function* h, int d, double w);
+// int ID_function(const LSH* lsh, const float* p, int hash_index);
+// int amplified_hash(const LSH* lsh, const float* p, int table_index);
+
+int hash_func_impl(const float* p ,const LSH* lsh, int table_index);
+hash_func amplified_hash_function(const LSH* lsh, int table_index);
 
 #endif
