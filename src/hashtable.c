@@ -78,11 +78,9 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
         return -1;
     }
     new_node->data = data;
-    new_node->key = key;
-    
-    printf("key -> %p", &(*key));
-    printf("new key -> %p", &(*new_node->key));
-    puts("@@@@@@@@@@@@@@@@@@@");
+
+    new_node->key = (void*)malloc(sizeof(void*));
+    memcpy(new_node->key, key, sizeof(void*));
 
     new_node->ID = ID;
     new_node->next = NULL;
@@ -297,7 +295,7 @@ void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimensi
     }
 
     // Print the contents of each hash table
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < L; i++)
     {
         printf("Hash table %d:\n", i);
 
@@ -332,7 +330,8 @@ void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimensi
 
                         }
 
-                        printf(") | ID = %d, key = %d -> \n", currentBucket->ID, *(int*)(currentBucket->key));
+                        printf(") -> ");
+                        // printf(") | ID = %d, key = %d -> \n", currentBucket->ID, *(int*)(currentBucket->key));
                     }
                     
                     // Check if next pointer is accessible before dereferencing

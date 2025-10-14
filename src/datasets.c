@@ -33,7 +33,6 @@ Dataset* read_data(const char* dataset_path)
         EXIT_FAILURE;
     }
     
-    dataset->size = 20;
     for (int i = 0; i < dataset->size; i++)
     {
         dataset->data[i] = (void*)malloc(dataset->dimension * sizeof(float));

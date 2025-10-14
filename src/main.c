@@ -17,12 +17,9 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
 
     printf("Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
-    
 
-
-    // //print some points
-    printPartialDataset(20, dataset);
-
+    //print some points
+    // printPartialDataset(20, dataset);
 
     switch (params.algorithm)
     {

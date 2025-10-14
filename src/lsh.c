@@ -55,8 +55,8 @@ void lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     printf("Running LSH with dataset: %s\n", params->dataset_path);
     lsh = (LSH*)malloc(sizeof(LSH));
     lsh->d = dataset->dimension;
-    lsh->L = 1;
-    lsh->k = 1; 
+    lsh->L = params->L;
+    lsh->k = params->k; 
     lsh->w = params->w;
     lsh->table_size = 25; // TODO make it a parameter n/4
     lsh->num_of_buckets = 91; // TODO make it a parameter prime 
@@ -190,9 +190,4 @@ void lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     
     // print the contents of each hash table
     print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
-
-
-
-
-
 }
