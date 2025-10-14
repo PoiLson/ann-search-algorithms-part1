@@ -6,15 +6,19 @@ int table_index = 0;
 // create a closure-like function that captures the LSH parameters
 // Calculates ID of a vector of the dataset
 // And also the hash value (g(p)) for that vector
-int hash_func_impl(const float* p,const LSH* lsh, int table_index, int* ID)
+int hash_func_impl(const void* p, const LSH* lsh, int table_index, int* ID)
 {
     int id = 0;
     for (int i = 0; i < lsh->k; i++)
     {
-        int func = dot_product(lsh->hash_params[i].v, p, lsh->d);
-        func = (int)floor((func + lsh->hash_params[i].t) / lsh->w);
+        double func = dot_product_double((double*)lsh->hash_params[i].v, p, lsh->d);
+        // printf("-----------------------\n");
+        // printf("func: %lf\n", func);
+        int func2 = (int)floor((func + lsh->hash_params[i].t) / lsh->w);
+        // printf("func2: %d\n", func2);
+        // printf("-----------------------\n");
         // combine using linear combination 
-        id += func * lsh->linear_combinations[table_index][i] % lsh->num_of_buckets;
+        id += func2 * lsh->linear_combinations[table_index][i] % lsh->num_of_buckets;
     }
 
     *ID = id % lsh->num_of_buckets;
@@ -37,47 +41,58 @@ hash_func amplified_hash_function(const LSH* lsh, int table_index)
 
 int compare_vectors(void* a, void* b)
 {
-    float* point_a = (float*)a;
-    float* point_b = (float*)b; 
-    double dist = euclidean_distance(point_a, point_b);
+    double dist = euclidean_distance(a, b);
     return (dist == 0.0) ? 0 : (dist < 0.0) ? -1 : 1;
 }
-int hash_function(HashTable ht, void* key, int* ID)
-{
-    return lsh->amplified_hash_functions[table_index]((float*)key, lsh, table_index, ID);
-}
 
+int hash_function(HashTable ht, void* data, int* ID)
+{
+    return lsh->amplified_hash_functions[table_index](data, lsh, table_index, ID);
+}
 
 void lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 {
     printf("Running LSH with dataset: %s\n", params->dataset_path);
     lsh = (LSH*)malloc(sizeof(LSH));
     lsh->d = dataset->dimension;
-    lsh->L = params->L;
-    lsh->k = params->k; 
+    lsh->L = 1;
+    lsh->k = 1; 
     lsh->w = params->w;
     lsh->table_size = 25; // TODO make it a parameter n/4
     lsh->num_of_buckets = 91; // TODO make it a parameter prime 
     lsh->distance = euclidean_distance;
 
+    // Debug Reasons
+    // printf("entered lsh\n\n");
+    // printPartialDataset(20, dataset);
+
     //allocate memory for hash parameters 
     lsh->hash_params = (LSH_hash_function*)malloc(lsh->k * sizeof(LSH_hash_function));
+
     // generate vectors and t for each hash function
     // and store them in lsh->hash_params
     for (int i = 0; i < lsh->k; i++)
     {
         lsh->hash_params[i].v = (float*)malloc(lsh->d * sizeof(float));
         generate_random_vector(lsh->hash_params[i].v, lsh->d);
-        
+
+        // (Debug) Print the Generated Vectors
+        // for(int k = 0; k < lsh->d; k++)
+        // {
+        //     printf("v = %lf\n", (double)(lsh->hash_params[i].v)[k]);
+        // }
+
         // Calculate minimum dot product for this vector across all dataset points
         float min_dot_product = 1e30f; // Large positive number
+        
         for (int j = 0; j < dataset->size; j++)
         {
-            float dot = dot_product(lsh->hash_params[i].v, dataset->data[j], lsh->d);
+            float* lou = (float*)dataset->data[j];
+
+            float dot = (float)dot_product_double(lsh->hash_params[i].v, lou, lsh->d);
 
             if (dot < min_dot_product)
                 min_dot_product = dot;
-
         }
         
         // Set t to ensure all hash values are positive
@@ -91,6 +106,8 @@ void lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         printf("Hash function %d: min_dot_product = %f, t = %f\n", 
                i, min_dot_product, lsh->hash_params[i].t);
     }
+
+
 
     //print all hash parameters
     for (int i = 0; i < lsh->k; i++)
@@ -145,12 +162,6 @@ void lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     {
         lsh->amplified_hash_functions[i] = amplified_hash_function(lsh, i);
     }
-    
-    //print results of each amplified hash function for point 0
-    // for (int i = 0; i < lsh->L; i++){
-    //     int hash_value = lsh->amplified_hash_functions[i](dataset[0], lsh, i);
-    //     printf("Amplified hash function %d for point 0: %d\n", i, hash_value);
-    // }
 
     // create a hash table for each hash table in LSH
     lsh->hash_tables = (HashTable*)malloc(lsh->L * sizeof(HashTable));
@@ -173,10 +184,15 @@ void lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         {
             // printf("Inserted point %d into hash table %d", i, j);
             table_index = j; // set the global table_index for hash_function
-            hash_table_insert(lsh->hash_tables[j], dataset->data[i], dataset->data[i]);
+            hash_table_insert(lsh->hash_tables[j], &i, dataset->data[i]);
         }
     }
     
     // print the contents of each hash table
-    // print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
+    print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
+
+
+
+
+
 }

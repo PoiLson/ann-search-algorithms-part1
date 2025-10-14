@@ -27,8 +27,8 @@ typedef struct hash_table
 
 struct node
 {
-    void *key;
-    void *data;
+    void* key;
+    void* data;
     int ID;
     
     struct node *next;

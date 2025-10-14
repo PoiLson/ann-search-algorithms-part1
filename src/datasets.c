@@ -11,7 +11,7 @@ Dataset* read_data(const char* dataset_path)
         EXIT_FAILURE;
     }
 
-    Dataset* dataset = malloc(sizeof(Dataset));
+    Dataset* dataset = (Dataset*)malloc(sizeof(Dataset));
     
     // Read dataset size and dimension
     if (fscanf(file, "%d %d", &(dataset->size), &(dataset->dimension)) != 2)
@@ -24,7 +24,7 @@ Dataset* read_data(const char* dataset_path)
 
     dimension = dataset->dimension;
     
-    dataset->data = (float**)malloc(dataset->size * sizeof(float*));
+    dataset->data = (void**)malloc(dataset->size * sizeof(float*));
     if (dataset->data == NULL)
     {
         fprintf(stderr, "Error allocating memory for dataset\n");
@@ -33,10 +33,12 @@ Dataset* read_data(const char* dataset_path)
         EXIT_FAILURE;
     }
     
+    dataset->size = 20;
     for (int i = 0; i < dataset->size; i++)
     {
-        dataset->data[i] = (float*)malloc(dataset->dimension * sizeof(float));
-        if (dataset->data[i] == NULL)
+        dataset->data[i] = (void*)malloc(dataset->dimension * sizeof(float));
+        float* data = (float*)dataset->data[i];
+        if (data == NULL)
         {
             fprintf(stderr, "Error allocating memory for point %d\n", i);
             fclose(file);
@@ -46,7 +48,7 @@ Dataset* read_data(const char* dataset_path)
         
         for (int j = 0; j < dataset->dimension; j++)
         {
-            if (fscanf(file, "%f", &(dataset->data[i][j])) != 1)
+            if (fscanf(file, "%f", &(data[j])) != 1)
             {
                 fprintf(stderr, "Error reading point %d, coordinate %d\n", i, j);
                 fclose(file);
@@ -60,14 +62,16 @@ Dataset* read_data(const char* dataset_path)
     return dataset;
 }
 
-void printPartialDataset(int size, Dataset* dataset)
+void printPartialDataset(int size, const Dataset* dataset)
 {
     for (int i = 0; i < size; i++)
     {
+        float* row = (float*) dataset->data[i];
+
         printf("Point %d: ", i);
         for (int j = 0; j < dataset->dimension; j++)
         {
-            printf("%f ", dataset->data[i][j]);
+            printf("%f ", row[j]);
         }
         printf("\n");
     }

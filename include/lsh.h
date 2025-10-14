@@ -13,8 +13,8 @@ typedef struct
     float t;
 }LSH_hash_function;
 
-typedef int (*hash_func)(const float* p, const struct LSH* lsh, int table_index, int* ID);
-typedef double (*metric_func)(const float* a, const float* b);
+typedef int (*hash_func)(const void* p, const struct LSH* lsh, int table_index, int* ID);
+typedef double (*metric_func)(const void* a, const void* b);
 
 // Data Structure for the full LSH
 typedef struct LSH
@@ -32,11 +32,11 @@ typedef struct LSH
     HashTable *hash_tables; // array of hash tables
 } LSH;
 
-int hash_func_impl(const float* p ,const LSH* lsh, int table_index, int* ID);
+int hash_func_impl(const void* p ,const LSH* lsh, int table_index, int* ID);
 hash_func amplified_hash_function(const LSH* lsh, int table_index);
 
 int compare_vectors(void* a, void* b);
-int hash_function(HashTable ht, void* key, int* ID);
+int hash_function(HashTable ht, void* data, int* ID);
 void lsh_init(const struct SearchParams* params, const struct Dataset* dataset);
 
 #endif

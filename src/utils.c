@@ -3,15 +3,18 @@
 extern int dimension;
 
 // Generates a random number uniformly distributed between a and b 
-float uniform_distribution(float a, float b)
+float uniform_distribution(void* a, void* b)
 {
-    return a + (b - a) * ((float)rand() / RAND_MAX);
+    float a_p = *(float*) a;
+    float b_p = *(float*) b;
+
+    return a_p + (b_p - a_p) * ((float)rand() / RAND_MAX);
 }
 
-float gaussian_distribution(void)
+double gaussian_distribution(void)
 {
     static int haveSpare = 0;
-    static float spare;
+    static double spare;
 
     if (haveSpare)
     {
@@ -20,15 +23,15 @@ float gaussian_distribution(void)
     }
 
     haveSpare = 1;
-    float u, v, s;
+    double u, v, s;
 
     do {
-        u = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-        v = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+        u = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+        v = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
         s = u * u + v * v;
-    } while (s >= 1.0f || s == 0.0f);
+    } while (s >= 1.0 || s == 0.0);
 
-    s = sqrtf(-2.0f * logf(s) / s);
+    s = sqrtf(-2.0 * logf(s) / s);
     spare = v * s;
 
     return u * s;
@@ -40,10 +43,9 @@ void generate_random_vector(float* v, int d)
         v[i] = gaussian_distribution();
 }
 
-// TODO make it void pointer in the future using the real datasets
-float dot_product(const float* a, const float* b, int d)
+int dot_product_int(const int* a, const int* b, int d)
 {
-    float sum = 0.0f;
+    int sum = 0;
 
     for(int i = 0; i < d; i++)
         sum += a[i] * b[i];
@@ -51,13 +53,37 @@ float dot_product(const float* a, const float* b, int d)
     return sum;
 }
 
-double euclidean_distance(const float* a, const float* b)
+double dot_product_double(const void* a, const void* b, int d)
 {
     double sum = 0.0;
 
+    float* a_p = (float*)a;
+    float* b_p = (float*)b;
+
+    // Debug Reasons
+    // they point in the same address
+    // printf("%p vs %p\n\n", &(*a_p), &(*a));
+    // but casting does not gkriniazei, why?
+
+    for(int i = 0; i < d; i++)
+    {
+        sum += a_p[i] * b_p[i];
+        // printf("%lf, %lf |", (double)a_p[i], (double)b_p[i]);
+    }
+    // puts("!!!!!!!!!!!!");
+
+    return sum;
+}
+
+double euclidean_distance(const void* a, const void* b)
+{
+    double sum = 0.0;
+    double* a_p = (double*)a;
+    double* b_p = (double*)b;
+
     for(int i = 0; i < dimension; i++)
     {
-        double diff = (double)a[i] - (double)b[i];
+        double diff = a_p[i] - b_p[i];
         sum += diff * diff;
     }
 

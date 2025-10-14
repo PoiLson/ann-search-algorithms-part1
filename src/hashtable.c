@@ -61,7 +61,7 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     int ID = -1;
 
     // get the hash value
-    int hash_value = hash_table->hash_function(hash_table, key, &ID);
+    int hash_value = hash_table->hash_function(hash_table, data, &ID);
 
     // if ID is not correct, hash_value will also be not correct
     // so no need for further checks
@@ -79,6 +79,11 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     }
     new_node->data = data;
     new_node->key = key;
+    
+    printf("key -> %p", &(*key));
+    printf("new key -> %p", &(*new_node->key));
+    puts("@@@@@@@@@@@@@@@@@@@");
+
     new_node->ID = ID;
     new_node->next = NULL;
 
@@ -292,7 +297,7 @@ void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimensi
     }
 
     // Print the contents of each hash table
-    for (int i = 0; i < L; i++)
+    for (int i = 0; i < 1; i++)
     {
         printf("Hash table %d:\n", i);
 
@@ -327,7 +332,7 @@ void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimensi
 
                         }
 
-                        printf(") | ID = %d -> ", currentBucket->ID);
+                        printf(") | ID = %d, key = %d -> \n", currentBucket->ID, *(int*)(currentBucket->key));
                     }
                     
                     // Check if next pointer is accessible before dereferencing

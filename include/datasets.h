@@ -3,13 +3,13 @@
 
 typedef struct Dataset
 {
-    float** data;
+    void** data;
     int size;
     int dimension;
 } Dataset;
 
 
 Dataset* read_data(const char* dataset_path);
-void printPartialDataset(int size, Dataset* dataset);
+void printPartialDataset(int size, const Dataset* dataset);
 
 #endif
