@@ -12,10 +12,14 @@
 #include <math.h>
 #include <float.h>
 
-#include "lsh.h"
-#include "hashtable.h"
 #include "parseInput.h"
 #include "utils.h"
+
+#include "hashtable.h"
+#include "lsh.h"
+
+
+
 
 
 #endif

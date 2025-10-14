@@ -1,7 +1,4 @@
-#pragma once
-
-#include "main.h"
-#include "lsh.h"
+struct LSH; 
 
 struct hash_table;
 
@@ -50,3 +47,5 @@ int hash_table_capacity(HashTable hash_table);
 
 // returns the head of the linked list at the given index
 Node hash_table_get_bucket(HashTable hash_table, int index);
+
+void print_hashtables(const struct LSH* lsh, int dimension);

@@ -19,7 +19,7 @@ typedef enum
     DATA_SIFT
 } DatasetType;
 
-typedef struct
+typedef struct SearchParams
 {
     // Common parameters
     char dataset_path[256];

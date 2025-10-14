@@ -1,10 +1,10 @@
 #ifndef LSH_H
 #define LSH_H
 
-#include "main.h"
 
 // Forward declaration
 struct LSH;
+struct SearchParams;
 
 // Data structure for the hash function h(p)
 typedef struct 
@@ -30,6 +30,7 @@ typedef struct LSH
     // hash_func *hash_functions; // array of hash functions
     int **linear_combinations; // array of r[i][j], i in[L], j in[k] for g(p)
     hash_func *amplified_hash_functions; // array of amplified hash functions
+    HashTable *hash_tables; // array of hash tables
 
 
 
@@ -43,5 +44,13 @@ typedef struct LSH
 
 int hash_func_impl(const float* p ,const LSH* lsh, int table_index);
 hash_func amplified_hash_function(const LSH* lsh, int table_index);
+
+
+
+
+int compare_points(void* a, void* b);
+int hash_function(HashTable ht, void* key);
+void lsh_init(const struct SearchParams* params, int dimension, int dataset_size, float** dataset);
+
 
 #endif

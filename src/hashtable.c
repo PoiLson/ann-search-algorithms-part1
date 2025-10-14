@@ -1,6 +1,6 @@
 // hybrid hash table implementation
 // using linked list for collision resolution instead of rehashing
-#include "hashtable.h"
+#include "../include/main.h"
 extern struct LSH* lsh; // Declare the global LSH variable
 
 // sieve of eratosthenes O(n log (log n))
@@ -84,7 +84,6 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     {
         hash_table->table[hash_value] = new_node;
         hash_table->size++;
-        printf("  at hash value %d\n", hash_value);
         return 0;
     }
 
@@ -93,7 +92,6 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     new_node->next = current;
     hash_table->table[hash_value] = new_node;
     hash_table->size++;
-    printf("  at hash value %d\n", hash_value);
     return 0;
 }
 
@@ -201,4 +199,53 @@ Node hash_table_get_bucket(HashTable hash_table, int index)
         return NULL;
     }
     return hash_table->table[index];
+}
+
+void print_hashtables(const struct LSH* lsh, int dimension)
+{
+    if (lsh == NULL || lsh->hash_tables == NULL) {
+        printf("LSH or hash tables are not initialized.\n");
+        return;
+    }
+    // print the contents of each hash table
+    for (int i = 0; i < lsh->L; i++){
+        printf("Hash table %d:\n", i);
+        for (int j = 0; j < lsh->table_size; j++){
+            Node bucket = hash_table_get_bucket(lsh->hash_tables[i], j);
+            if (bucket != NULL){
+                printf(" Bucket %d: ", j);
+                Node current = bucket;
+                while (current != NULL ){
+                    // Add comprehensive null checks for safety
+                    if (current->data == NULL) {
+                        printf("(NULL_DATA) -> ");
+                    } else {
+                        // Verify that the data pointer is accessible
+                        float* point = (float*)current->data;
+                        // Check if we can safely read the point
+                        printf("(");
+                        for (int d = 0; d < dimension; d++){
+                            printf("%f", point[d]);
+                            if (d < dimension - 1){
+                                printf(", ");
+                            }
+                        }
+                        printf(") -> ");
+                    }
+                    
+                    // Check if next pointer is accessible before dereferencing
+                    if (current->next != NULL) {
+                        current = current->next;
+                    } else {
+                        current = NULL;
+                    }
+                }
+                printf("NULL\n");
+            }
+            else{
+                printf(" Bucket %d: NULL\n", j);
+            }
+        }
+        printf("----------------------------------------------------------------\n");
+    }
 }
