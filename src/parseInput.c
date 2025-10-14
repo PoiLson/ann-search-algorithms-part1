@@ -1,4 +1,4 @@
-#include <../include/parseInput.h>
+#include "../include/main.h"
 
 int parse_arguments(int argc, char **argv, SearchParams *params)
 {

@@ -1,6 +1,7 @@
 // hybrid hash table implementation
 // using linked list for collision resolution instead of rehashing
 #include "../include/main.h"
+
 extern struct LSH* lsh; // Declare the global LSH variable
 
 // sieve of eratosthenes O(n log (log n))
@@ -35,16 +36,6 @@ int nearest_prime(int n)
     return 2;
 }
 
-struct hash_table
-{
-    int size;
-    int capacity;
-    funtion destroy;
-    Compare_fun compare;
-    Hash_fun hash_function;
-    Node *table;
-};
-
 HashTable hash_table_create(int capacity, funtion destroy, Compare_fun compare, Hash_fun hash_function)
 {
     // initialize the hash table structure
@@ -66,8 +57,19 @@ HashTable hash_table_create(int capacity, funtion destroy, Compare_fun compare, 
 
 int hash_table_insert(HashTable hash_table, void *key, void *data)
 {
+    //get the ID value
+    int ID = -1;
+
     // get the hash value
-    int hash_value = hash_table->hash_function(hash_table, key);
+    int hash_value = hash_table->hash_function(hash_table, key, &ID);
+
+    // if ID is not correct, hash_value will also be not correct
+    // so no need for further checks
+    if(ID == -1)
+    {
+        perror("ID not configurated!\n");
+        EXIT_FAILURE;
+    }
 
     // create a new node
     Node new_node = (Node)malloc(sizeof(struct node));
@@ -77,6 +79,7 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     }
     new_node->data = data;
     new_node->key = key;
+    new_node->ID = ID;
     new_node->next = NULL;
 
     // if the table is empty, insert the node
@@ -97,8 +100,9 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
 
 void *hash_table_search(HashTable hash_table, void *key)
 {
+    int ID = -1;
     // get the hash value
-    int hash_value = hash_table->hash_function(hash_table, key);
+    int hash_value = hash_table->hash_function(hash_table, key, &ID);
 
     // if the table is empty, return NULL
     if (hash_table->table[hash_value] == NULL)
@@ -152,8 +156,9 @@ int hash_table_size(HashTable hash_table)
 
 int hash_table_remove(HashTable hash_table, void *key)
 {
+    int ID = -1;
     // get the hash value
-    int hash_value = hash_table->hash_function(hash_table, key);
+    int hash_value = hash_table->hash_function(hash_table, key, &ID);
 
     // if the table is empty, return
     if (hash_table->table[hash_value] == NULL)
@@ -201,51 +206,146 @@ Node hash_table_get_bucket(HashTable hash_table, int index)
     return hash_table->table[index];
 }
 
-void print_hashtables(const struct LSH* lsh, int dimension)
+void print_hashtables2(const struct LSH* lsh, int dimension)
 {
-    if (lsh == NULL || lsh->hash_tables == NULL) {
-        printf("LSH or hash tables are not initialized.\n");
+    if (lsh == NULL)
+    {
+        printf("LSH is not initialized.\n");
         return;
     }
-    // print the contents of each hash table
-    for (int i = 0; i < lsh->L; i++){
+    else if(lsh->hash_tables == NULL)
+    {
+        printf("Hashtables are not initialized.\n");
+        return;
+    }
+
+    // Print the contents of each hash table
+    for (int i = 0; i < lsh->L; i++)
+    {
         printf("Hash table %d:\n", i);
-        for (int j = 0; j < lsh->table_size; j++){
+
+        for (int j = 0; j < lsh->table_size; j++)
+        {
             Node bucket = hash_table_get_bucket(lsh->hash_tables[i], j);
-            if (bucket != NULL){
+
+            if (bucket != NULL)
+            {
                 printf(" Bucket %d: ", j);
-                Node current = bucket;
-                while (current != NULL ){
-                    // Add comprehensive null checks for safety
-                    if (current->data == NULL) {
+
+                Node currentBucket = bucket;
+                
+                while (currentBucket != NULL )
+                {
+
+                    if (currentBucket->data == NULL)
                         printf("(NULL_DATA) -> ");
-                    } else {
-                        // Verify that the data pointer is accessible
-                        float* point = (float*)current->data;
+                    else
+                    {
+                        float* point = (float*)currentBucket->data;
+
                         // Check if we can safely read the point
                         printf("(");
-                        for (int d = 0; d < dimension; d++){
+
+                        for (int d = 0; d < dimension; d++)
+                        {
                             printf("%f", point[d]);
-                            if (d < dimension - 1){
+
+                            if (d < dimension - 1)
                                 printf(", ");
-                            }
+
                         }
+
                         printf(") -> ");
                     }
                     
                     // Check if next pointer is accessible before dereferencing
-                    if (current->next != NULL) {
-                        current = current->next;
-                    } else {
-                        current = NULL;
-                    }
+                    if (currentBucket->next != NULL)
+                        currentBucket = currentBucket->next;
+                    else
+                        currentBucket = NULL;
+    
                 }
+
                 printf("NULL\n");
             }
-            else{
+            else
                 printf(" Bucket %d: NULL\n", j);
-            }
+
         }
+
         printf("----------------------------------------------------------------\n");
     }
+
+}
+
+void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimension)
+{
+    if (lsh == NULL)
+    {
+        printf("LSH is not initialized.\n");
+        return;
+    }
+    else if(hash_tables == NULL)
+    {
+        printf("Hashtables are not initialized.\n");
+        return;
+    }
+
+    // Print the contents of each hash table
+    for (int i = 0; i < L; i++)
+    {
+        printf("Hash table %d:\n", i);
+
+        for (int j = 0; j < table_size; j++)
+        {
+            Node bucket = hash_table_get_bucket(hash_tables[i], j);
+
+            if (bucket != NULL)
+            {
+                printf(" Bucket %d: ", j);
+
+                Node currentBucket = bucket;
+                
+                while (currentBucket != NULL )
+                {
+
+                    if (currentBucket->data == NULL)
+                        printf("(NULL_DATA) -> ");
+                    else
+                    {
+                        float* point = (float*)currentBucket->data;
+
+                        // Check if we can safely read the point
+                        printf("(");
+
+                        for (int d = 0; d < dimension; d++)
+                        {
+                            printf("%f", point[d]);
+
+                            if (d < dimension - 1)
+                                printf(", ");
+
+                        }
+
+                        printf(") | ID = %d -> ", currentBucket->ID);
+                    }
+                    
+                    // Check if next pointer is accessible before dereferencing
+                    if (currentBucket->next != NULL)
+                        currentBucket = currentBucket->next;
+                    else
+                        currentBucket = NULL;
+    
+                }
+
+                printf("NULL\n");
+            }
+            else
+                printf(" Bucket %d: NULL\n", j);
+                
+        }
+
+        printf("----------------------------------------------------------------\n");
+    }
+
 }

@@ -1,8 +1,6 @@
 #ifndef PARSEINPUT_H
 #define PARSEINPUT_H
 
-#include "main.h"
-
 typedef enum
 {
     ALG_NONE,

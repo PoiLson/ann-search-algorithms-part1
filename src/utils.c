@@ -1,4 +1,6 @@
-#include "../include/utils.h"
+#include "../include/main.h"
+
+extern int dimension;
 
 // Generates a random number uniformly distributed between a and b 
 float uniform_distribution(float a, float b)
@@ -49,11 +51,11 @@ float dot_product(const float* a, const float* b, int d)
     return sum;
 }
 
-double euclidean_distance(const float* a, const float* b, int d)
+double euclidean_distance(const float* a, const float* b)
 {
     double sum = 0.0;
 
-    for(int i = 0; i < d; i++)
+    for(int i = 0; i < dimension; i++)
     {
         double diff = (double)a[i] - (double)b[i];
         sum += diff * diff;
