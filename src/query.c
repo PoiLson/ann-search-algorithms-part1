@@ -1,7 +1,7 @@
 #include "../include/main.h"
 
 // Generic query function
-void perform_query(const struct SearchParams* params, const struct Dataset* dataset, const struct Dataset* query_set, void (*index_lookup)(const void*, const struct SearchParams*, int*, double*, int*, int**, int*, void*), void* index_data)
+void perform_query(const struct SearchParams* params, const struct Dataset* dataset, const struct Dataset* query_set, index_lookup lookup_func, void* index_data)
 {
     FILE* output_file = fopen(params->output_path, "w");
     if (!output_file)
@@ -17,46 +17,60 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
     for (int q_idx = 0; q_idx < query_set->size; q_idx++)
     {
         void* q = query_set->data[q_idx];
-        clock_t start_approx = clock();
 
-        int* approx_neighbors = (int*)calloc(params->N, sizeof(int));
-        double* approx_dists = (double*)calloc(params->N, sizeof(double));
+        int* approx_neighbors = (int*)malloc(params->N * sizeof(int));
+        double* approx_dists = (double*)malloc(params->N * sizeof(double));
         int approx_count = 0;
         int* range_neighbors = NULL;
         int range_count = 0;
 
+        for(int i = 0; i < params->N; i++)
+        {
+            approx_neighbors[i] = -1;
+            approx_dists[i] = INFINITY;
+        }
+
+
+        clock_t start_approx = clock();
         // Algorithm-specific index lookup
-        index_lookup(q, params, approx_neighbors, approx_dists, &approx_count, &range_neighbors, &range_count, index_data);
+        lookup_func(q, params, approx_neighbors, approx_dists, &approx_count, &range_neighbors, &range_count, index_data);
 
         clock_t end_approx = clock();
         double approx_time = (double)(end_approx - start_approx) / CLOCKS_PER_SEC;
         total_approx_time += approx_time;
 
         // True kNN (brute force)
-        clock_t start_true = clock();
-        int* true_neighbors = (int*)calloc(params->N, sizeof(int));
-        double* true_dists = (double*)calloc(params->N, sizeof(double));
+        int* true_neighbors = (int*)malloc(params->N * sizeof(int));
+        double* true_dists = (double*)malloc(params->N * sizeof(double));
         int true_count = 0;
 
+        for(int i = 0; i < params->N; i++)
+        {
+            true_neighbors[i] = -1;
+            true_dists[i] = INFINITY;
+        }
+
+        clock_t start_true = clock();
         for (int i = 0; i < dataset->size; i++)
         {
             void* p = dataset->data[i];
-            printf("perform query euclidean\t\t");
-            double dist = euclidean_distance(q, p);
+
+            float dist = euclidean_distance(q, p);
 
             if (true_count < params->N || dist < true_dists[true_count - 1])
             {
                 if (true_count < params->N)
                     true_count++;
 
-                for (int j = true_count - 1; j > 0 && dist < true_dists[j - 1]; j--)
+                int j = 0;
+                for (j = true_count - 1; j > 0 && dist < true_dists[j - 1]; j--)
                 {
                     true_neighbors[j] = true_neighbors[j - 1];
                     true_dists[j] = true_dists[j - 1];
                 }
 
-                true_neighbors[0] = i;
-                true_dists[0] = dist;
+                true_neighbors[j] = i;
+                true_dists[j] = dist;
             }
         }
 
@@ -65,7 +79,15 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         total_true_time += true_time;
 
         // Metrics
-        double af = (true_dists[0] > 0) ? approx_dists[0] / true_dists[0] : 1.0;
+        printf("TRUE NEIGHBORS\n");
+        for(int idx = 0; idx < params->N && idx < approx_count; idx++)
+        {
+            printf("%d - %lf, ", true_neighbors[idx], true_dists[idx]);
+        }
+        puts("");
+
+
+        double af = (true_dists[0] > 0.0) ? approx_dists[0] / true_dists[0] : 1.0;
         int recall_count = 0;
 
         for (int i = 0; i < params->N; i++)
@@ -104,6 +126,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
             }
         }
 
+        fprintf(output_file, "-------METRICS---------\n");
         fprintf(output_file, "Average AF: %f\n", af);
         fprintf(output_file, "Recall@N: %f\n", recall);
         fprintf(output_file, "QPS: %f\n", 1.0 / approx_time);

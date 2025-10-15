@@ -19,6 +19,7 @@ typedef struct hash_table
 {
     int size;
     int capacity;
+    int key_size;
     funtion destroy;
     Compare_fun compare;
     Hash_fun hash_function;
@@ -39,7 +40,7 @@ int nearest_prime_old(int n);
 int nearest_prime(int n);
 
 // Creates a hash table with a given capacity
-HashTable hash_table_create(int capacity, funtion destroy, Compare_fun compare, Hash_fun hash_function);
+HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function);
 
 // Inserts a key and data in the hash table
 int hash_table_insert(HashTable hash_table, void *key, void *data);

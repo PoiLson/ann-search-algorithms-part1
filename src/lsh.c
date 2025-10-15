@@ -11,14 +11,18 @@ int hash_func_impl(const void* p, const LSH* lsh, int table_index, int* ID)
     int id = 0;
     for (int i = 0; i < lsh->k; i++)
     {
-        double func = dot_product_double((double*)lsh->hash_params[i].v, p, lsh->d);
+        float func = dot_product_float(lsh->hash_params[i].v, p, lsh->d);
         // printf("-----------------------\n");
         // printf("func: %lf\n", func);
         int func2 = (int)floor((func + lsh->hash_params[i].t) / lsh->w);
         // printf("func2: %d\n", func2);
         // printf("-----------------------\n");
-        // combine using linear combination 
-        id += func2 * lsh->linear_combinations[table_index][i] % lsh->num_of_buckets;
+
+        // Combine using linear combination 
+        int x = (func2 % lsh->num_of_buckets) + lsh->num_of_buckets;
+        int y = (lsh->linear_combinations[table_index][i] % lsh->num_of_buckets) + lsh->num_of_buckets;
+
+        id += ((x % lsh->num_of_buckets) * (y % lsh->num_of_buckets)) % lsh->num_of_buckets;
     }
 
     *ID = id % lsh->num_of_buckets;
@@ -42,7 +46,7 @@ hash_func amplified_hash_function(const LSH* lsh, int table_index)
 int compare_vectors(void* a, void* b)
 {
     printf("should be correct!\t\t");
-    double dist = euclidean_distance(a, b);
+    float dist = euclidean_distance(a, b);
     return (dist == 0.0) ? 0 : (dist < 0.0) ? -1 : 1;
 }
 
@@ -61,7 +65,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     lsh->w = params->w;
     // lsh->table_size = nearest_prime(dataset->size / 4); // Dynamic sizing
     // lsh->num_of_buckets = nearest_prime(lsh->table_size * 2); // Ensure prime
-    lsh->table_size = 25; // TODO make it a parameter n/4
+    lsh->table_size = 25; // TODO make it a parameter n/4, not prime necessarily
     lsh->num_of_buckets = 91; // TODO make it a parameter prime
     lsh->distance = euclidean_distance;
 
@@ -96,29 +100,9 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         //     printf("v = %lf\n", (double)(lsh->hash_params[i].v)[k]);
         // }
 
-        // Calculate minimum dot product for this vector across all dataset points
-        float min_dot_product = 1e30f; // Large positive number
-        
-        for (int j = 0; j < dataset->size; j++)
-        {
-            float* lou = (float*)dataset->data[j];
-
-            float dot = (float)dot_product_double(lsh->hash_params[i].v, lou, lsh->d);
-
-            if (dot < min_dot_product)
-                min_dot_product = dot;
-        }
-        
-        // Set t to ensure all hash values are positive
-        // t = -min_dot_product + small_buffer to ensure positivity
-        float buffer = 1.0f; // Small positive buffer
-        if (min_dot_product > 0 )
-            lsh->hash_params[i].t = 0; // Ensure t is non-negative
-        else
-            lsh->hash_params[i].t = -min_dot_product + buffer;
-        
-        printf("Hash function %d: min_dot_product = %f, t = %f\n", 
-               i, min_dot_product, lsh->hash_params[i].t);
+        // Calculate t
+        int tmp = 0;
+        lsh->hash_params[i].t = uniform_distribution(&tmp, &(lsh->w));
     }
 
 
@@ -154,7 +138,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 
         for (int j = 0; j < lsh->k; j++)
         {
-            lsh->linear_combinations[i][j] = rand()% 10 + 1 ; // random int between 1 and 10
+            lsh->linear_combinations[i][j] = rand(); // random int between 1 and 10
         }
     }
 
@@ -191,8 +175,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     lsh->hash_tables = (HashTable*)malloc(lsh->L * sizeof(HashTable));
     for (int i = 0; i < lsh->L; i++)
     {
-        printf("REACHED HERE!\n");
-        lsh->hash_tables[i] = hash_table_create(lsh->table_size, NULL, compare_vectors, hash_function);
+        lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, compare_vectors, hash_function);
         if(!lsh->hash_tables[i])
         {
             //free memory
@@ -220,7 +203,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     }
     
     // print the contents of each hash table
-    // print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
+    print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
 
     return lsh;
 }

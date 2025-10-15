@@ -14,7 +14,7 @@ typedef struct
 }LSH_hash_function;
 
 typedef int (*hash_func)(const void* p, const struct LSH* lsh, int table_index, int* ID);
-typedef double (*metric_func)(const void* a, const void* b);
+typedef float (*metric_func)(const void* a, const void* b);
 
 // Data Structure for the full LSH
 typedef struct LSH
@@ -22,7 +22,7 @@ typedef struct LSH
     int d; // dimension of the input points
     int L; // number of hash tables
     int k; // number of hash functions per table
-    double w; // window size
+    float w; // window size
     int table_size; // size of each hash table
     int num_of_buckets; // number of buckets in each hash table, maybe (m) in the future TODO
     metric_func distance; // distance function

@@ -2,13 +2,13 @@
 #define UTILS_H
 
 float uniform_distribution(void* a, void* b);
-double gaussian_distribution(void);
+float gaussian_distribution(void);
 
 void generate_random_vector(float* v, int d);
 int dot_product_int(const int* a, const int* b, int d);
-double dot_product_double(const void* a, const void* b, int d);
+float dot_product_float(const float* a, const float* b, int d);
 
-double euclidean_distance(const void* a, const void* b);
+float euclidean_distance(const void* a, const void* b);
 int hamming_distance(const int *a, const int *b, int d);
 
 #endif

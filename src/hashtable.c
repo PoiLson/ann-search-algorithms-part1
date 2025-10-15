@@ -74,7 +74,7 @@ int nearest_prime(int n)
     return 2;
 }
 
-HashTable hash_table_create(int capacity, funtion destroy, Compare_fun compare, Hash_fun hash_function)
+HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function)
 {
     // initialize the hash table structure
     HashTable hash_table = (HashTable)malloc(sizeof(struct hash_table));
@@ -84,6 +84,7 @@ HashTable hash_table_create(int capacity, funtion destroy, Compare_fun compare, 
     }
     hash_table->size = 0;
     hash_table->capacity = capacity;
+    hash_table->key_size = key_size;
     hash_table->destroy = destroy;
     hash_table->compare = compare;
     hash_table->hash_function = hash_function;
@@ -117,8 +118,9 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     }
     new_node->data = data;
 
-    new_node->key = (void*)malloc(sizeof(void*));
-    memcpy(new_node->key, key, sizeof(void*));
+    // PROBLEM, TODO
+    new_node->key = (void*)malloc(hash_table->key_size);
+    memcpy(new_node->key, key, hash_table->key_size);
 
     new_node->ID = ID;
     new_node->next = NULL;

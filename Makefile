@@ -49,17 +49,17 @@ INPUT_FILE  = random_2d_points.txt
 QUERY_FILE  = query.dat
 
 OUTPUT_FILE = output.txt
-N           = 1
-R           = 2000
+N           = 3
+R           = 3
 
 TYPE        = mnist
 RANGE       = false
 
 # LSH defaults
 # -------------------
-K = 4
-L = 5
-W = 4.0
+K = 8
+L = 8
+W = 2.0
 
 # Hypercube defaults
 # -------------------

@@ -6,15 +6,17 @@ extern int dimension;
 float uniform_distribution(void* a, void* b)
 {
     float a_p = *(float*) a;
+    printf("!!!!!!!!!!!!!!!! %f, ", a_p);
     float b_p = *(float*) b;
+    printf("%f\n", b_p);
 
     return a_p + (b_p - a_p) * ((float)rand() / RAND_MAX);
 }
 
-double gaussian_distribution(void)
+float gaussian_distribution(void)
 {
     static int haveSpare = 0;
-    static double spare;
+    static float spare;
 
     if (haveSpare)
     {
@@ -23,11 +25,11 @@ double gaussian_distribution(void)
     }
 
     haveSpare = 1;
-    double u, v, s;
+    float u, v, s;
 
     do {
-        u = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-        v = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+        u = 2.0 * ((float)rand() / RAND_MAX) - 1.0;
+        v = 2.0 * ((float)rand() / RAND_MAX) - 1.0;
         s = u * u + v * v;
     } while (s >= 1.0 || s == 0.0);
 
@@ -53,12 +55,9 @@ int dot_product_int(const int* a, const int* b, int d)
     return sum;
 }
 
-double dot_product_double(const void* a, const void* b, int d)
+float dot_product_float(const float* a, const float* b, int d)
 {
-    double sum = 0.0;
-
-    float* a_p = (float*)a;
-    float* b_p = (float*)b;
+    float sum = 0.0;
 
     // Debug Reasons
     // they point in the same address
@@ -67,7 +66,7 @@ double dot_product_double(const void* a, const void* b, int d)
 
     for(int i = 0; i < d; i++)
     {
-        sum += a_p[i] * b_p[i];
+        sum += a[i] * b[i];
         // printf("%lf, %lf |", (double)a_p[i], (double)b_p[i]);
     }
     // puts("!!!!!!!!!!!!");
@@ -75,19 +74,18 @@ double dot_product_double(const void* a, const void* b, int d)
     return sum;
 }
 
-double euclidean_distance(const void* a, const void* b)
+float euclidean_distance(const void* a, const void* b)
 {
-    double sum = 0.0;
-    double* a_p = (double*)a;
-    double* b_p = (double*)b;
+    float sum = 0.0;
+    float* a_p = (float*)a;
+    float* b_p = (float*)b;
 
     for(int i = 0; i < dimension; i++)
     {
-        double diff = a_p[i] - b_p[i];
-        printf("dim=%d, a[%d]=%f, b[%d]=%f, diff=%f ->", dimension, i, a_p[i], i, b_p[i], diff);
+        float diff = a_p[i] - b_p[i];
+        // printf("dim=%d, a[%d]=%f, b[%d]=%f, diff=%f ->", dimension, i, a_p[i], i, b_p[i], diff);
         sum += diff * diff;
     }
-    puts("");
 
     return sqrt(sum);
 }
