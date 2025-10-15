@@ -8,24 +8,26 @@ int table_index = 0;
 // And also the hash value (g(p)) for that vector
 int hash_func_impl(const void* p, const LSH* lsh, int table_index, int* ID)
 {
-    int id = 0;
+    long long id = 0;
     for (int i = 0; i < lsh->k; i++)
     {
         float func = dot_product_float(lsh->hash_params[i].v, p, lsh->d);
         // printf("-----------------------\n");
         // printf("func: %lf\n", func);
-        int func2 = (int)floor((func + lsh->hash_params[i].t) / lsh->w);
+        int h_i = (int)floor((func + lsh->hash_params[i].t) / lsh->w);
         // printf("func2: %d\n", func2);
         // printf("-----------------------\n");
 
-        // Combine using linear combination 
-        int x = (func2 % lsh->num_of_buckets) + lsh->num_of_buckets;
-        int y = (lsh->linear_combinations[table_index][i] % lsh->num_of_buckets) + lsh->num_of_buckets;
-
-        id += ((x % lsh->num_of_buckets) * (y % lsh->num_of_buckets)) % lsh->num_of_buckets;
+        // Combine using proper linear combination: ID = sum(r_i * h_i) mod M
+        long long r_i = lsh->linear_combinations[table_index][i];
+        id = (id + r_i * h_i) % lsh->num_of_buckets;
+        
+        // Handle negative values from modulo
+        if (id < 0)
+            id += lsh->num_of_buckets;
     }
 
-    *ID = id % lsh->num_of_buckets;
+    *ID = (int)id;
 
     return (*ID) % lsh->table_size;
 }

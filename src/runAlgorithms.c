@@ -16,14 +16,32 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
             int data_idx = *(int*)bucket->key;
             void* p = bucket->data;
 
-            if(q_id != bucket->ID)
+            // if( bucket->ID != q_id )
+            // {
+            //     bucket = bucket->next;
+            //     continue;
+            // }
+
+            // Check all points in the bucket - they're candidates
+            float dist = euclidean_distance(q, p);
+            printf("knn distance: %f, hashtable: %d\n", dist, tbl_idx);
+
+            // Check if this point is already in the result set (avoid duplicates)
+            int already_found = 0;
+            for (int i = 0; i < *approx_count; i++)
+            {
+                if (approx_neighbors[i] == data_idx)
+                {
+                    already_found = 1;
+                    break;
+                }
+            }
+
+            if (already_found)
             {
                 bucket = bucket->next;
                 continue;
             }
-
-            float dist = euclidean_distance(q, p);
-            printf("knn distance: %f, hashtable: %d\n", dist, tbl_idx);
 
             if (*approx_count < params->N || dist < approx_dists[*approx_count - 1])
             {

@@ -57,9 +57,11 @@ RANGE       = false
 
 # LSH defaults
 # -------------------
-K = 8
-L = 8
-W = 2.0
+# For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
+# For high-dim data: Use K=8-12, L=10-15, W=2-4
+K = 3
+L = 20
+W = 6.0
 
 # Hypercube defaults
 # -------------------
