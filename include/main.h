@@ -19,6 +19,7 @@
 #include "lsh.h"
 
 #include "datasets.h"
+#include "query.h"
 #include "runAlgorithms.h"
 
 

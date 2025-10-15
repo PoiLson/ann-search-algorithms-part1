@@ -46,7 +46,7 @@ ALGO = lsh
 # -------------------
 
 INPUT_FILE  = random_2d_points.txt
-QUERY_FILE  = data/query.dat
+QUERY_FILE  = query.dat
 
 OUTPUT_FILE = output.txt
 N           = 1

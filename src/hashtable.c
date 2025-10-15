@@ -5,7 +5,7 @@
 extern struct LSH* lsh; // Declare the global LSH variable
 
 // sieve of eratosthenes O(n log (log n))
-int nearest_prime(int n)
+int nearest_prime_old(int n)
 {
     // initialize all numbers as prime
     int prime[n + 1];
@@ -33,6 +33,44 @@ int nearest_prime(int n)
             return i;
         }
     }
+    return 2;
+}
+
+// sieve of eratosthenes O(n log (log n))
+int nearest_prime(int n)
+{
+    if(n < 2)
+        return 2;
+
+    int* prime = (int*)malloc((n + 1) * sizeof(int));
+    if (!prime)
+        return 2; // Fallback
+
+    for (int i = 0; i <= n; i++)
+        prime[i] = 1;
+
+    for (int i = 2; i * i <= n; i++)
+    {
+        if (prime[i] == 1)
+        {
+            for (int j = i * i; j <= n; j += i)
+            {
+                prime[j] = 0;
+            }
+        }
+    }
+
+    // return the nearest prime number
+    for (int i = n; i >= 2; i--)
+    {
+        if (prime[i] == 1)
+        {
+            free(prime);
+            return i;
+        }
+    }
+
+    free(prime);
     return 2;
 }
 

@@ -1,0 +1,160 @@
+LSH
+Query: 0
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 500000.000000
+tApproximateAverage: 0.000002
+tTrueAverage: 0.000160
+
+LSH
+Query: 1
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000154
+
+LSH
+Query: 2
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000150
+
+LSH
+Query: 3
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000155
+
+LSH
+Query: 4
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 500000.000000
+tApproximateAverage: 0.000002
+tTrueAverage: 0.000151
+
+LSH
+Query: 5
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000149
+
+LSH
+Query: 6
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 500000.000000
+tApproximateAverage: 0.000002
+tTrueAverage: 0.000129
+
+LSH
+Query: 7
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000142
+
+LSH
+Query: 8
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000116
+
+LSH
+Query: 9
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000148
+
+LSH
+Query: 10
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000141
+
+LSH
+Query: 11
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 500000.000000
+tApproximateAverage: 0.000002
+tTrueAverage: 0.000110
+
+LSH
+Query: 12
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000133
+
+LSH
+Query: 13
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000134
+
+LSH
+Query: 14
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000117
+
+LSH
+Query: 15
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000132
+
+LSH
+Query: 16
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000197
+
+LSH
+Query: 17
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 250000.000000
+tApproximateAverage: 0.000004
+tTrueAverage: 0.000132
+
+LSH
+Query: 18
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
+tTrueAverage: 0.000149
+
+LSH
+Query: 19
+Average AF: 0.000000
+Recall@N: 0.000000
+QPS: 333333.333333
+tApproximateAverage: 0.000003
+tTrueAverage: 0.000164
+

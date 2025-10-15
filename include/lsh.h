@@ -37,6 +37,7 @@ hash_func amplified_hash_function(const LSH* lsh, int table_index);
 
 int compare_vectors(void* a, void* b);
 int hash_function(HashTable ht, void* data, int* ID);
-void lsh_init(const struct SearchParams* params, const struct Dataset* dataset);
+LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset);
+void lsh_destroy(struct LSH* lsh);
 
 #endif

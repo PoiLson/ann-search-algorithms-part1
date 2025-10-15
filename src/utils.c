@@ -84,8 +84,10 @@ double euclidean_distance(const void* a, const void* b)
     for(int i = 0; i < dimension; i++)
     {
         double diff = a_p[i] - b_p[i];
+        printf("dim=%d, a[%d]=%f, b[%d]=%f, diff=%f ->", dimension, i, a_p[i], i, b_p[i], diff);
         sum += diff * diff;
     }
+    puts("");
 
     return sqrt(sum);
 }

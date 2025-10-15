@@ -6,7 +6,8 @@ Dataset* read_data(const char* dataset_path)
 {
     //opens a file with first line the number of points and the dimension
     FILE* file = fopen(dataset_path, "r");
-    if (file == NULL){
+    if (file == NULL)
+    {
         fprintf(stderr, "Error opening file: %s\n", dataset_path);
         EXIT_FAILURE;
     }

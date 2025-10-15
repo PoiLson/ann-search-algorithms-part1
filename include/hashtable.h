@@ -35,7 +35,8 @@ struct node
 };
 
 // Finds the prime number before a given number
-int find_prime(int number);
+int nearest_prime_old(int n);
+int nearest_prime(int n);
 
 // Creates a hash table with a given capacity
 HashTable hash_table_create(int capacity, funtion destroy, Compare_fun compare, Hash_fun hash_function);
