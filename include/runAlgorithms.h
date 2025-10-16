@@ -4,8 +4,8 @@
 struct SearchParams;
 
 void run_lsh(SearchParams* params, Dataset* dataset);
-void run_hypercube(SearchParams* params);
-void run_ivfflat(SearchParams* params);
-void run_ivfpq(SearchParams* params);
+void run_hypercube(SearchParams* params, Dataset* dataset);
+void run_ivfflat(SearchParams* params, Dataset* dataset);
+void run_ivfpq(SearchParams* params, Dataset* dataset);
 
 #endif

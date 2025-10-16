@@ -63,9 +63,6 @@ int hash_table_capacity(HashTable hash_table);
 // Returns the head of the linked list at the given index
 Node hash_table_get_bucket(HashTable hash_table, int index);
 
-// Print the hashtable given (delete it later if no need TODO)
-void print_hashtables2(const struct LSH* lsh, int dimension);
-
 // Print the hashtable given
 void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimension);
 

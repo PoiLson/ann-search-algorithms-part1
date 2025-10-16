@@ -104,3 +104,8 @@ int hamming_distance(const int* a, const int* b, int d)
     return count;
 }
 
+int compare_vectors(void* a, void* b)
+{
+    float dist = euclidean_distance(a, b);
+    return (dist == 0.0) ? 0 : (dist < 0.0) ? -1 : 1;
+}

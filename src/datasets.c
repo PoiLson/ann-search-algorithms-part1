@@ -9,18 +9,23 @@ Dataset* read_data(const char* dataset_path)
     if (file == NULL)
     {
         fprintf(stderr, "Error opening file: %s\n", dataset_path);
-        EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     Dataset* dataset = (Dataset*)malloc(sizeof(Dataset));
-    
+    if (!dataset)
+    {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+
     // Read dataset size and dimension
     if (fscanf(file, "%d %d", &(dataset->size), &(dataset->dimension)) != 2)
     {
         fprintf(stderr, "Error reading dataset size and dimension\n");
         fclose(file);
 
-        EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     dimension = dataset->dimension;
@@ -31,7 +36,7 @@ Dataset* read_data(const char* dataset_path)
         fprintf(stderr, "Error allocating memory for dataset\n");
         fclose(file);
 
-        EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     
     for (int i = 0; i < dataset->size; i++)
@@ -43,7 +48,7 @@ Dataset* read_data(const char* dataset_path)
             fprintf(stderr, "Error allocating memory for point %d\n", i);
             fclose(file);
 
-            EXIT_FAILURE;
+            exit(EXIT_FAILURE);
         }
         
         for (int j = 0; j < dataset->dimension; j++)
@@ -53,7 +58,7 @@ Dataset* read_data(const char* dataset_path)
                 fprintf(stderr, "Error reading point %d, coordinate %d\n", i, j);
                 fclose(file);
 
-                EXIT_FAILURE;
+                exit(EXIT_FAILURE);
             }
         }
     }

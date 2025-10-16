@@ -1,36 +1,18 @@
-LSH
+Hypercube
 Query: 0
-Nearest neighbor-1: 50
-distanceApproximate: 0.091672
-distanceTrue: 0.091672
-Nearest neighbor-2: 31
-distanceApproximate: 11.350569
-distanceTrue: 2.509687
-Nearest neighbor-3: 25
-distanceApproximate: 12.507577
-distanceTrue: 4.382469
 -------METRICS---------
-Average AF: 1.000000
-Recall@N: 0.333333
-QPS: 1694.915254
-tApproximateAverage: 0.000590
+Average AF: inf
+Recall@N: 0.000000
+QPS: 1000000.000000
+tApproximateAverage: 0.000001
 tTrueAverage: 0.000004
 
-LSH
+Hypercube
 Query: 1
-Nearest neighbor-1: 37
-distanceApproximate: 0.091026
-distanceTrue: 0.091026
-Nearest neighbor-2: 26
-distanceApproximate: 2.837945
-distanceTrue: 2.837945
-Nearest neighbor-3: 5
-distanceApproximate: 6.331662
-distanceTrue: 3.150036
 -------METRICS---------
-Average AF: 1.000000
-Recall@N: 0.666667
-QPS: 17543.859649
-tApproximateAverage: 0.000057
-tTrueAverage: 0.000003
+Average AF: inf
+Recall@N: 0.000000
+QPS: inf
+tApproximateAverage: 0.000000
+tTrueAverage: 0.000002
 

@@ -249,76 +249,65 @@ Node hash_table_get_bucket(HashTable hash_table, int index)
     return hash_table->table[index];
 }
 
-void print_hashtables2(const struct LSH* lsh, int dimension)
+void print_hashtable(HashTable hash_table, int table_size, int dimension)
 {
-    if (lsh == NULL)
+    if (hash_table == NULL)
     {
-        printf("LSH is not initialized.\n");
-        return;
-    }
-    else if(lsh->hash_tables == NULL)
-    {
-        printf("Hashtables are not initialized.\n");
+        printf("Hash table is not initialized.\n");
         return;
     }
 
-    // Print the contents of each hash table
-    for (int i = 0; i < lsh->L; i++)
+    // Print the contents of the hash table
+    for (int j = 0; j < table_size; j++)
     {
-        printf("Hash table %d:\n", i);
+        Node bucket = hash_table_get_bucket(hash_table, j);
 
-        for (int j = 0; j < lsh->table_size; j++)
+        if (bucket != NULL)
         {
-            Node bucket = hash_table_get_bucket(lsh->hash_tables[i], j);
+            printf(" Bucket %d: ", j);
 
-            if (bucket != NULL)
+            Node currentBucket = bucket;
+            
+            while (currentBucket != NULL )
             {
-                printf(" Bucket %d: ", j);
 
-                Node currentBucket = bucket;
-                
-                while (currentBucket != NULL )
+                if (currentBucket->data == NULL)
+                    printf("(NULL_DATA) -> ");
+                else
                 {
+                    float* point = (float*)currentBucket->data;
 
-                    if (currentBucket->data == NULL)
-                        printf("(NULL_DATA) -> ");
-                    else
+                    // Check if we can safely read the point
+                    printf("(");
+
+                    for (int d = 0; d < dimension; d++)
                     {
-                        float* point = (float*)currentBucket->data;
+                        printf("%f", point[d]);
 
-                        // Check if we can safely read the point
-                        printf("(");
+                        if (d < dimension - 1)
+                            printf(", ");
 
-                        for (int d = 0; d < dimension; d++)
-                        {
-                            printf("%f", point[d]);
-
-                            if (d < dimension - 1)
-                                printf(", ");
-
-                        }
-
-                        printf(") -> ");
                     }
-                    
-                    // Check if next pointer is accessible before dereferencing
-                    if (currentBucket->next != NULL)
-                        currentBucket = currentBucket->next;
-                    else
-                        currentBucket = NULL;
-    
+
+                    printf(") -> ");
                 }
+                
+                // Check if next pointer is accessible before dereferencing
+                if (currentBucket->next != NULL)
+                    currentBucket = currentBucket->next;
+                else
+                    currentBucket = NULL;
 
-                printf("NULL\n");
             }
-            else
-                printf(" Bucket %d: NULL\n", j);
 
+            printf("NULL\n");
         }
+        else
+            printf(" Bucket %d: NULL\n", j);
 
-        printf("----------------------------------------------------------------\n");
     }
 
+    printf("----------------------------------------------------------------\n");
 }
 
 void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimension)
@@ -338,56 +327,7 @@ void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimensi
     for (int i = 0; i < L; i++)
     {
         printf("Hash table %d:\n", i);
-
-        for (int j = 0; j < table_size; j++)
-        {
-            Node bucket = hash_table_get_bucket(hash_tables[i], j);
-
-            if (bucket != NULL)
-            {
-                printf(" Bucket %d: ", j);
-
-                Node currentBucket = bucket;
-                
-                while (currentBucket != NULL )
-                {
-
-                    if (currentBucket->data == NULL)
-                        printf("(NULL_DATA) -> ");
-                    else
-                    {
-                        float* point = (float*)currentBucket->data;
-
-                        // Check if we can safely read the point
-                        printf("(");
-
-                        for (int d = 0; d < dimension; d++)
-                        {
-                            printf("%f", point[d]);
-
-                            if (d < dimension - 1)
-                                printf(", ");
-
-                        }
-
-                        printf(") -> ");
-                        // printf(") | ID = %d, key = %d -> \n", currentBucket->ID, *(int*)(currentBucket->key));
-                    }
-                    
-                    // Check if next pointer is accessible before dereferencing
-                    if (currentBucket->next != NULL)
-                        currentBucket = currentBucket->next;
-                    else
-                        currentBucket = NULL;
-    
-                }
-
-                printf("NULL\n");
-            }
-            else
-                printf(" Bucket %d: NULL\n", j);
-                
-        }
+        print_hashtable(hash_tables[i], table_size, dimension);
 
         printf("----------------------------------------------------------------\n");
     }

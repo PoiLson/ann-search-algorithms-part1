@@ -7,14 +7,14 @@ int main(int argc, char **argv)
     srand(time(NULL));
 
     if (parse_arguments(argc, argv, &params) != 0)
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
 
     printf("Algorithm selected: ");
 
     Dataset* dataset = read_data(params.dataset_path);
 
     if (dataset == NULL)
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
 
     printf("Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
 
@@ -30,17 +30,17 @@ int main(int argc, char **argv)
 
         case ALG_HYPERCUBE:
             printf("Hypercube\n");
-            run_hypercube(&params);
+            run_hypercube(&params, dataset);
             break;
 
         case ALG_IVFFLAT:
             printf("IVFFlat\n");
-            run_ivfflat(&params);
+            run_ivfflat(&params, dataset);
             break;
 
         case ALG_IVFPQ:
             printf("IVFPQ\n");
-            run_ivfpq(&params);
+            run_ivfpq(&params, dataset);
             break;
 
         default:

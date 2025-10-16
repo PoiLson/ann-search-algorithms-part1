@@ -40,7 +40,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = lsh
+ALGO = hypercube
 
 # Common parameters
 # -------------------
@@ -65,7 +65,7 @@ W = 6.0
 
 # Hypercube defaults
 # -------------------
-KPROJ  = 14
+KPROJ  = 3
 W      = 2
 M      = 10
 PROBES = 2

@@ -15,6 +15,8 @@
 #include "parseInput.h"
 #include "utils.h"
 
+#include "hashmap.h"
+
 #include "hashtable.h"
 #include "lsh.h"
 
@@ -22,5 +24,7 @@
 #include "query.h"
 #include "runAlgorithms.h"
 
+
+#include "hypercube.h"
 
 #endif

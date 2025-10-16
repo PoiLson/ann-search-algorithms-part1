@@ -32,12 +32,14 @@ typedef struct LSH
     HashTable *hash_tables; // array of hash tables
 } LSH;
 
-int hash_func_impl(const void* p ,const LSH* lsh, int table_index, int* ID);
-hash_func amplified_hash_function(const LSH* lsh, int table_index);
+// Helper functions for hashing
+int hash_func_impl_lsh(const void* p ,const LSH* lsh, int table_index, int* ID);
+hash_func amplified_hash_function_lsh(const LSH* lsh, int table_index);
+int hash_function_lsh(HashTable ht, void* data, int* ID);
 
-int compare_vectors(void* a, void* b);
-int hash_function(HashTable ht, void* data, int* ID);
 LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset);
+void lsh_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count,
+                     int** range_neighbors, int* range_count, void* index_data);
 void lsh_destroy(struct LSH* lsh);
 
 #endif
