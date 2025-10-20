@@ -1,9 +1,5 @@
 #include "../include/main.h"
 
-struct LSH* lsh = NULL;
-int table_index = 0;
-
-// create a closure-like function that captures the LSH parameters
 // Calculates ID of a vector of the dataset
 // And also the hash value (g(p)) for that vector
 int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, int* ID)
@@ -12,13 +8,9 @@ int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, int* ID)
     for (int i = 0; i < lsh->k; i++)
     {
         float func = dot_product_float(lsh->hash_params[i].v, p, lsh->d);
-        // printf("-----------------------\n");
-        // printf("func: %lf\n", func);
         int h_i = (int)floor((func + lsh->hash_params[i].t) / lsh->w);
-        // printf("func2: %d\n", func2);
-        // printf("-----------------------\n");
 
-        // Combine using proper linear combination: ID = sum(r_i * h_i) mod M
+        // Combine using linear combination: ID = sum(r_i * h_i) mod M
         long long r_i = lsh->linear_combinations[table_index][i];
         id = (id + r_i * h_i) % lsh->num_of_buckets;
         
@@ -28,53 +20,43 @@ int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, int* ID)
     }
 
     *ID = (int)id;
-
     return (*ID) % lsh->table_size;
 }
 
 
-// g(p) = ID(p) mod table_size
-// where ID(p) = sum(h_i(p) * r_i) mod M
-// r_i are random integers saved in the LSH struct
-// M is the number of buckets also saved in the LSH struct
-// h_i are the hash functions saved in the LSH struct
-// g() needs to be a function stored in the LSH struct so it needs to return hash_func
-hash_func amplified_hash_function_lsh(const LSH* lsh, int table_index)
-{
-    
-    return hash_func_impl_lsh;
-}
-
 int hash_function_lsh(HashTable ht, void* data, int* ID)
 {
-    return lsh->amplified_hash_functions[table_index](data, lsh, table_index, ID);
+    // Get LSH structure from hash table context
+    // also get the table index to know which amplified hash function to use
+    LSH* lsh_ctx = (LSH*)hash_table_get_context(ht);
+    int t_idx = hash_table_get_index(ht);
+    if (!lsh_ctx)
+    { 
+        *ID = -1;
+        return 0;
+    }
+    return lsh_ctx->amplified_hash_functions[t_idx](data, lsh_ctx, t_idx, ID);
 }
 
 
 LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 {
-    printf("Running LSH with dataset: %s\n", params->dataset_path);
-    lsh = (LSH*)malloc(sizeof(LSH));
+    // Allocate memory for LSH structure and set parameters
+    LSH* lsh = (LSH*)malloc(sizeof(LSH));
     lsh->d = dataset->dimension;
     lsh->L = params->L;
     lsh->k = params->k; 
     lsh->w = params->w;
-    // lsh->table_size = nearest_prime(dataset->size / 4); // Dynamic sizing
-    // lsh->num_of_buckets = nearest_prime(lsh->table_size * 2); // Ensure prime
-    lsh->table_size = 25; // TODO make it a parameter n/4, not prime necessarily
-    lsh->num_of_buckets = 91; // TODO make it a parameter prime
+    lsh->table_size = dataset->size / 4; 
+    lsh->num_of_buckets = 1 << 32 - 5; // max prime for 32-bit int
     lsh->distance = euclidean_distance;
-
-    // Debug Reasons
-    // printf("entered lsh\n\n");
-    // printPartialDataset(20, dataset);
 
     //allocate memory for hash parameters 
     lsh->hash_params = (LSH_hash_function*)malloc(lsh->k * sizeof(LSH_hash_function));
     if(!lsh->hash_params)
     {
-        free(lsh);
-        return NULL; // or exit failure?
+        lsh_destroy(lsh);
+        exit(EXIT_FAILURE);
     }
 
     // generate vectors and t for each hash function
@@ -86,40 +68,14 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 
         if(!lsh->hash_params[i].v)
         {
-            //free memory
-            return NULL; // or exit failure?
+            lsh_destroy(lsh);
+            exit(EXIT_FAILURE);
         }
-
-        // (Debug) Print the Generated Vectors
-        // for(int k = 0; k < lsh->d; k++)
-        // {
-        //     printf("v = %lf\n", (double)(lsh->hash_params[i].v)[k]);
-        // }
 
         // Calculate t
         int tmp = 0;
         lsh->hash_params[i].t = uniform_distribution(&tmp, &(lsh->w));
     }
-
-
-
-    //print all hash parameters
-    // for (int i = 0; i < lsh->k; i++)
-    // {
-    //     printf("Hash function %d: v = (", i);
-
-    //     for (int j = 0; j < lsh->d; j++)
-    //     {
-    //         printf("%f", lsh->hash_params[i].v[j]);
-
-    //         if (j < lsh->d - 1)
-    //             printf(", ");
-
-    //     }
-
-    //     printf("), t = %f\n", lsh->hash_params[i].t);
-    // } 
-
 
     //initialize linear combinations r[i][j]
     lsh->linear_combinations = (int**)malloc(lsh->L * sizeof(int*));
@@ -128,55 +84,39 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         lsh->linear_combinations[i] = (int*)malloc(lsh->k * sizeof(int));
         if(!lsh->linear_combinations[i])
         {
-            //free memory
-            return NULL;  // or exit failure?
+            lsh_destroy(lsh);
+            exit(EXIT_FAILURE);
         }
 
         for (int j = 0; j < lsh->k; j++)
         {
-            lsh->linear_combinations[i][j] = rand(); // random int between 1 and 10
+            lsh->linear_combinations[i][j] = rand(); // random int for r[i][j]
         }
     }
-
-    //print all linear combinations
-    // for (int i = 0; i < lsh->L; i++)
-    // {
-    //     printf("Linear combination %d: (", i);
-
-    //     for (int j = 0; j < lsh->k; j++)
-    //     {
-    //         printf("%d", lsh->linear_combinations[i][j]);
-
-    //         if (j < lsh->k - 1)
-    //             printf(", ");
-    //     }
-    //     printf(")\n");
-    // }
 
     //allocate memory for amplified hash functions
     lsh->amplified_hash_functions = (hash_func*)malloc(lsh->L * sizeof(hash_func));
     if(!lsh->amplified_hash_functions)
     {
-        //free memory
-        return NULL;  // or exit failure?
+        lsh_destroy(lsh);
+        exit(EXIT_FAILURE);
     }
 
     // generate amplified hash functions for each table
     for (int i = 0; i < lsh->L; i++)
     {
-        lsh->amplified_hash_functions[i] = amplified_hash_function_lsh(lsh, i);
+        lsh->amplified_hash_functions[i] = hash_func_impl_lsh;
     }
 
     // create a hash table for each hash table in LSH
     lsh->hash_tables = (HashTable*)malloc(lsh->L * sizeof(HashTable));
     for (int i = 0; i < lsh->L; i++)
     {
-        lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, compare_vectors, hash_function_lsh);
+    lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, compare_vectors, hash_function_lsh, lsh, i);
         if(!lsh->hash_tables[i])
         {
-            //free memory
-            
-            return NULL; // or exit failure?
+            lsh_destroy(lsh);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -192,14 +132,12 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         
         for (int j = 0; j < lsh->L; j++)
         {
-            // printf("Inserted point %d into hash table %d", i, j);
-            table_index = j; // set the global table_index for hash_function
             hash_table_insert(lsh->hash_tables[j], &i, dataset->data[i]);
         }
     }
-    
-    // print the contents of each hash table
-    print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
+
+    // print the contents of each hash table -- debug only
+    //print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
 
     return lsh;
 }
@@ -207,8 +145,10 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 void lsh_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count,
                      int** range_neighbors, int* range_count, void* index_data)            
 {
+    // Cast index_data to LSH structure
     struct LSH* lsh = (struct LSH*)index_data;
 
+    // For each hash table, compute the bucket index for the query point
     for (int tbl_idx = 0; tbl_idx < lsh->L; tbl_idx++)
     {
         int q_id;
@@ -220,15 +160,8 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
             int data_idx = *(int*)bucket->key;
             void* p = bucket->data;
 
-            // if( bucket->ID != q_id )
-            // {
-            //     bucket = bucket->next;
-            //     continue;
-            // }
-
             // Check all points in the bucket - they're candidates
             float dist = euclidean_distance(q, p);
-            printf("knn distance: %f, hashtable: %d\n", dist, tbl_idx);
 
             // Check if this point is already in the result set (avoid duplicates)
             int already_found = 0;
@@ -266,41 +199,101 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
 
             if (params->range_search && dist <= params->R)
             {
-                *range_neighbors = (int*)realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
-
-                if (*range_neighbors)
-                    (*range_neighbors)[(*range_count)++] = data_idx;
-                else
+                // Check if this point is already in range_neighbors (avoid duplicates)
+                int already_in_range = 0;
+                for (int r = 0; r < *range_count; r++)
                 {
-                    fprintf(stderr, "Memory reallocation failed\n");
-                    break;
-                    // TODO, might need a memory cleanup if it fails
+                    if ((*range_neighbors)[r] == data_idx)
+                    {
+                        already_in_range = 1;
+                        break;
+                    }
+                }
+                
+                if (!already_in_range)
+                {
+                    *range_neighbors = (int*)realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
+
+                    if (*range_neighbors)
+                        (*range_neighbors)[(*range_count)++] = data_idx;
+                    else
+                    {
+                        fprintf(stderr, "Memory reallocation failed\n");
+                        //memory cleanup
+                        free(*range_neighbors);
+                        *range_neighbors = NULL;
+                        *range_count = 0;
+                        break;
+                    }
                 }
             }
-
             bucket = bucket->next;
         }
+    }
+
+    //cleanup if no range neighbors found
+    if (*range_count == 0)
+    {
+        free(*range_neighbors);
+        *range_neighbors = NULL;
     }
 }
 
 void lsh_destroy(struct LSH* lsh)
 {
-    if (lsh)
+    if (!lsh)
+        return;
+
+    // Free hash params and their vectors
+    if (lsh->hash_params)
     {
         for (int i = 0; i < lsh->k; i++)
-            free(lsh->hash_params[i].v);
-
+        {
+            if (lsh->hash_params[i].v)
+                free(lsh->hash_params[i].v);
+        }
         free(lsh->hash_params);
+    }
 
+    // Free linear combinations
+    if (lsh->linear_combinations)
+    {
         for (int i = 0; i < lsh->L; i++)
         {
-            free(lsh->linear_combinations[i]);
-            hash_table_destroy(lsh->hash_tables[i]);
+            if (lsh->linear_combinations[i])
+                free(lsh->linear_combinations[i]);
         }
-        
         free(lsh->linear_combinations);
-        free(lsh->amplified_hash_functions);
-        free(lsh->hash_tables);
-        free(lsh);
     }
+
+    // Destroy hash tables (guard duplicates) and free array
+    if (lsh->hash_tables)
+    {
+        for (int i = 0; i < lsh->L; i++)
+        {
+            if (lsh->hash_tables[i])
+            {
+                int duplicate = 0;
+                for (int j = 0; j < i; j++)
+                {
+                    if (lsh->hash_tables[j] == lsh->hash_tables[i])
+                    {
+                        duplicate = 1;
+                        break;
+                    }
+                }
+                if (!duplicate)
+                {
+                    hash_table_destroy(lsh->hash_tables[i]);
+                }
+                lsh->hash_tables[i] = NULL;
+            }
+        }
+        free(lsh->hash_tables);
+    }
+
+    if (lsh->amplified_hash_functions)
+        free(lsh->amplified_hash_functions);
+
+    free(lsh);
 }

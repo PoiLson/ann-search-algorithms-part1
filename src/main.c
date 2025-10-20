@@ -3,7 +3,6 @@
 int main(int argc, char **argv)
 {
     SearchParams params;
-
     srand(time(NULL));
 
     if (parse_arguments(argc, argv, &params) != 0)
@@ -12,7 +11,6 @@ int main(int argc, char **argv)
     printf("Algorithm selected: ");
 
     Dataset* dataset = read_data(params.dataset_path);
-
     if (dataset == NULL)
         exit(EXIT_FAILURE);
 
@@ -47,6 +45,9 @@ int main(int argc, char **argv)
             printf("Unknown\n");
             break;
     }
+
+    // Free loaded dataset
+    free_dataset(dataset);
 
     return EXIT_SUCCESS;
 }

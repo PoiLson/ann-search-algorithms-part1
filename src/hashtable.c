@@ -1,43 +1,7 @@
-// hybrid hash table implementation
-// using linked list for collision resolution instead of rehashing
 #include "../include/main.h"
 
-extern struct LSH* lsh; // Declare the global LSH variable
-
 // sieve of eratosthenes O(n log (log n))
-int nearest_prime_old(int n)
-{
-    // initialize all numbers as prime
-    int prime[n + 1];
-    for (int i = 0; i <= n; i++)
-    {
-        prime[i] = 1;
-    }
-
-    for (int i = 2; i * i <= n; i++)
-    {
-        // if prime[i] is 1(True) make all multiples of i as 0(False)
-        if (prime[i] == 1)
-        {
-            for (int j = i * i; j <= n; j += i)
-            {
-                prime[j] = 0;
-            }
-        }
-    }
-    // return the nearest prime number
-    for (int i = n; i >= 2; i--)
-    {
-        if (prime[i] == 1)
-        {
-            return i;
-        }
-    }
-    return 2;
-}
-
-// sieve of eratosthenes O(n log (log n))
-int nearest_prime(int n)
+static int nearest_prime(int n)
 {
     if(n < 2)
         return 2;
@@ -74,7 +38,7 @@ int nearest_prime(int n)
     return 2;
 }
 
-HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function)
+HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function, void* context, int table_index)
 {
     // initialize the hash table structure
     HashTable hash_table = (HashTable)malloc(sizeof(struct hash_table));
@@ -88,6 +52,8 @@ HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare
     hash_table->destroy = destroy;
     hash_table->compare = compare;
     hash_table->hash_function = hash_function;
+    hash_table->context = context;
+    hash_table->table_index = table_index;
 
     // initialize the table with NULL
     hash_table->table = (Node *)calloc(hash_table->capacity, sizeof(Node));
@@ -312,12 +278,7 @@ void print_hashtable(HashTable hash_table, int table_size, int dimension)
 
 void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimension)
 {
-    if (lsh == NULL)
-    {
-        printf("LSH is not initialized.\n");
-        return;
-    }
-    else if(hash_tables == NULL)
+    if (hash_tables == NULL)
     {
         printf("Hashtables are not initialized.\n");
         return;

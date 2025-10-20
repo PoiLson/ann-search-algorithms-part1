@@ -23,9 +23,6 @@ void run_lsh(SearchParams* params, Dataset* dataset)
 
 void run_hypercube(SearchParams* params, Dataset* dataset)
 {
-    // Placeholder for Hypercube algorithm implementation
-    printf("Running Hypercube with dataset: %s\n", params->dataset_path);
-    
     struct Hypercube* hyper = hyper_init(params, dataset);
 
     Dataset* query_set = read_data("query.dat");

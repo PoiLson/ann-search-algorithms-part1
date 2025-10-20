@@ -1,9 +1,7 @@
 #include "../include/main.h"
 
-struct Hypercube* hyper = NULL;
-int hyper_table_index = 0;
 
-bool f(Hashmap** map, int h_ip)
+static bool f(Hashmap** map, int h_ip)
 {
     bool* value = hashmap_getValue(*map, h_ip);
     if (value != NULL)
@@ -18,9 +16,11 @@ bool f(Hashmap** map, int h_ip)
     }
 }
 
-int hash_func_impl_hyper(const void* p, const Hypercube* hyper, int *ID)
+static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, int *ID)
 {
     int id = 0;
+    // Compute each h_i and map to bit using f 
+    // Then combine bits into final ID i.e. concatenate bits
     for (int i = 0; i < hyper->kproj; i++)
     {
         float func = dot_product_float(hyper->hash_params[i].v, p, hyper->d);
@@ -34,21 +34,26 @@ int hash_func_impl_hyper(const void* p, const Hypercube* hyper, int *ID)
     return (*ID);
 }
 
-bin_hash hyper_hash(const Hypercube* hyper, int index)
-{
-    return hash_func_impl_hyper;
-}
-
 int hash_function_hyper(HashTable ht, void* data, int* ID)
 {
-   return hyper->binary_hash_functions[hyper_table_index](data, hyper, ID);
+    //get the hypercube structure the particular hash function belongs to
+    Hypercube* hyper_ctx = (Hypercube*)hash_table_get_context(ht);
+    if (!hyper_ctx) 
+    { 
+        *ID = -1; 
+        return 0; 
+    }
+    // Use the single hash function that computes all k bits
+    return hyper_ctx->binary_hash_function(data, hyper_ctx, ID);
 }
 
 
 
 Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* dataset)
 {
-    hyper = (Hypercube*)malloc(sizeof(Hypercube));
+    // Allocate memory for Hypercube structure
+    // and set parameters
+    Hypercube* hyper = (Hypercube*)malloc(sizeof(Hypercube));
     if (!hyper)
     {
         fprintf(stderr, "Memory allocation failed\n");
@@ -60,17 +65,17 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     hyper->w = params->w;
     hyper->M = params->M;
     hyper->probes = params->probes;
-
     hyper->distance = euclidean_distance;
 
     // Initialize hash parameters
     hyper->hash_params = (Hypercube_hash_function*)malloc(hyper->kproj * sizeof(Hypercube_hash_function));
     if (!hyper->hash_params)
     {
-        free(hyper);
+        hyper_destroy(hyper);
         return NULL;
     }
 
+    // Generate random vectors and offsets for each hash function
     for (int i = 0; i < hyper->kproj; i++)
     {
         hyper->hash_params[i].v = (float*)malloc(hyper->d * sizeof(float));
@@ -78,12 +83,7 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
 
         if(!hyper->hash_params[i].v)
         {
-            for (int j = 0; j < i; j++)
-            {
-                free(hyper->hash_params[j].v);
-            }
-            free(hyper->hash_params);
-            free(hyper);
+            hyper_destroy(hyper);
             exit(EXIT_FAILURE);
         }
 
@@ -95,71 +95,32 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     hyper->map = (Hashmap**)malloc(hyper->kproj * sizeof(Hashmap*));
     if (!hyper->map)
     {
-        for (int j = 0; j < hyper->kproj; j++)
-        {
-            free(hyper->hash_params[j].v);
-        }
-        free(hyper->hash_params);
-        free(hyper);
-        return NULL;
+        hyper_destroy(hyper);
+        exit(EXIT_FAILURE);
     }
 
+    // Create a hashmap for each f function
     for (int i = 0; i < hyper->kproj; i++)
     {
         hyper->map[i] = hashmap_init();
         if (!hyper->map[i])
         {
-            // Free previously allocated hashmaps
-            for (int j = 0; j < i; j++)
-            {
-                hashmap_free(hyper->map[j]);
-            }
-            for (int j = 0; j < hyper->kproj; j++)
-            {
-                free(hyper->hash_params[j].v);
-            }
-            free(hyper->map);
-            free(hyper->hash_params);
-            free(hyper);
-            return NULL;
+            hyper_destroy(hyper);
+            exit(EXIT_FAILURE);
         }
     }
 
-    // Initialize binary hash functions
-    hyper->binary_hash_functions = (bin_hash*)malloc(hyper->kproj * sizeof(bin_hash));
-    if (!hyper->binary_hash_functions)
-    {
-        for (int j = 0; j < hyper->kproj; j++)  
-        {
-            free(hyper->hash_params[j].v);
-            hashmap_free(hyper->map[j]);
-        }
-        free(hyper->map);
-        free(hyper->hash_params);
-        free(hyper);
-        return NULL;
-    }
+    // Set the single binary hash function for hypercube
+    // (computes all k bits to form the bucket index)
+    hyper->binary_hash_function = hash_func_impl_hyper;
 
-    for (int i = 0; i < hyper->kproj; i++)
-    {
-        hyper->binary_hash_functions[i] = hyper_hash(hyper, i);
-    }
-
-    // Create hash table
-    hyper->hash_table = hash_table_create(1 << hyper->kproj, sizeof(int), NULL, NULL, hash_function_hyper);
+    // Create hash table with context and index 0
+    hyper->hash_table = hash_table_create(1 << hyper->kproj, sizeof(int), NULL, NULL, hash_function_hyper, hyper, 0);
     if (!hyper->hash_table)
     {
-        for (int j = 0; j < hyper->kproj; j++)
-        {
-            free(hyper->hash_params[j].v);
-            hashmap_free(hyper->map[j]);
-        }
-        free(hyper->binary_hash_functions);
-        free(hyper->map);
-        free(hyper->hash_params);
-        free(hyper);
-        return NULL;
-    }   
+        hyper_destroy(hyper);
+        exit(EXIT_FAILURE);
+    }
 
     // Insert dataset points into hash table
     for (int i = 0; i < dataset->size; i++)
@@ -174,8 +135,8 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
         hash_table_insert(hyper->hash_table, &i, dataset->data[i]);
     }
     
-    // print the contents of the hash table
-    print_hashtable(hyper->hash_table, 1 << hyper->kproj, dataset->dimension);
+    // print the contents of the hash table -- debug only
+    //print_hashtable(hyper->hash_table, 1 << hyper->kproj, dataset->dimension);
 
     return hyper;
 }
@@ -183,27 +144,29 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
 void hyper_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count,
                         int** range_neighbors, int* range_count, void* index_data)
 {
+    // Retrieve hypercube structure from context
     struct Hypercube* hyper = (struct Hypercube*)index_data;
 
+    // Compute the bucket index for the query point
     int q_id;
-    int bucket_idx = hyper->binary_hash_functions[0](q, hyper, &q_id);
+    int bucket_idx = hyper->binary_hash_function(q, hyper, &q_id);
 
-
+    // Access the bucket corresponding to the computed index
     Node bucket = hash_table_get_bucket(hyper->hash_table, bucket_idx);
-    //compute hamming distance and probe other buckets if needed
-    //calculate binary vector representation of bucket_idx
+    
+    // Compute Hamming distance and probe other buckets if needed
+    // Calculate binary vector representation of bucket_idx
     int* bucket_vector = (int*)malloc(hyper->d * sizeof(int));
-    printf("hyper dimension: %d\n", hyper->kproj);
-    printf("vector of bucket %d: ", bucket_idx);
     for (int i = 0; i < hyper->kproj; i++)
     {
         bucket_vector[i] = (bucket_idx >> (hyper->kproj - 1 - i)) & 1;
-        printf("%d", bucket_vector[i]);
     }
-    printf("\n");
+    
     int* neighbors = NULL;
     int neighbor_count = hyper->probes;
 
+    // Get neighboring bucket indices based on Hamming distance
+    // only the required number of probes
     get_hamming_neighbors(bucket_vector, hyper->probes, hyper->kproj, &neighbors);
     for (int n = 0; n < neighbor_count; n++)
     {
@@ -214,7 +177,6 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
         {
             neighbor_idx = (neighbor_idx << 1) | current_neighbor[b];
         }
-        printf("Probing neighbor bucket index: %d\n", neighbor_idx);
         Node neighbor_bucket = hash_table_get_bucket(hyper->hash_table, neighbor_idx);
 
         // Process the neighbor bucket
@@ -225,7 +187,6 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
 
             // Check all points in the bucket - they're candidates
             float dist = euclidean_distance(q, p);
-            printf("knn distance: %f, hashtable: %d\n", dist, neighbor_idx);
 
             // Check if this point is already in the result set (avoid duplicates)
             int already_found = 0;
@@ -244,6 +205,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
                 continue;
             }
 
+            // Insert into approx neighbors if appropriate
             if (*approx_count < params->N || dist < approx_dists[*approx_count - 1])
             {
                 if (*approx_count < params->N)
@@ -259,9 +221,44 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
                 approx_dists[i] = dist;
                 approx_neighbors[i] = data_idx;
             }
+
+            // Range search with deduplication
+            if (params->range_search && dist <= params->R)
+            {
+                // Check if this point is already in range_neighbors (avoid duplicates)
+                int already_in_range = 0;
+                for (int r = 0; r < *range_count; r++)
+                {
+                    if ((*range_neighbors)[r] == data_idx)
+                    {
+                        already_in_range = 1;
+                        break;
+                    }
+                }
+                
+                if (!already_in_range)
+                {
+                    *range_neighbors = (int*)realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
+
+                    if (*range_neighbors)
+                        (*range_neighbors)[(*range_count)++] = data_idx;
+                    else
+                    {
+                        fprintf(stderr, "Memory reallocation failed\n");
+                        //memory cleanup
+                        free(*range_neighbors);
+                        *range_neighbors = NULL;
+                        *range_count = 0;
+                        break;
+                    }
+                }
+            }
+
             neighbor_bucket = neighbor_bucket->next;
         }
     }
+
+    // Clean up
     free(bucket_vector);
     free(neighbors);
 
@@ -296,10 +293,6 @@ void hyper_destroy(struct Hypercube* hyper)
         }
         free(hyper->map);
     }
-
-    // Free binary hash functions array
-    if (hyper->binary_hash_functions)
-        free(hyper->binary_hash_functions);
 
     // Finally free the structure itself
     free(hyper);

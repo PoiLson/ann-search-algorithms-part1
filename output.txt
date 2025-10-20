@@ -1,36 +1,59 @@
-Hypercube
+LSH
 Query: 0
-Nearest neighbor-1: 50
-distanceApproximate: 0.091672
-distanceTrue: 0.091672
-Nearest neighbor-2: 98
-distanceApproximate: 2.509687
-distanceTrue: 2.509687
-Nearest neighbor-3: 25
-distanceApproximate: 12.507577
-distanceTrue: 4.382469
+Nearest neighbor-1: 31
+distanceApproximate: 0.098590
+distanceTrue: 0.098590
+Nearest neighbor-2: 40
+distanceApproximate: 15.473208
+distanceTrue: 10.927689
+Nearest neighbor-3: 49
+distanceApproximate: 23.931923
+distanceTrue: 13.930759
+R-near neighbors:
+40
+31
+78
+49
+21
+27
+-------METRICS---------
+Average AF: 1.000000
+Recall@N: 0.333333
+QPS: 76923.076923
+tApproximateAverage: 0.000013
+tTrueAverage: 0.000005
+
+LSH
+Query: 1
+Nearest neighbor-1: 5
+distanceApproximate: 0.060335
+distanceTrue: 0.060335
+Nearest neighbor-2: 19
+distanceApproximate: 21.846832
+distanceTrue: 16.287960
+Nearest neighbor-3: 28
+distanceApproximate: 24.152155
+distanceTrue: 21.846832
+R-near neighbors:
+65
+19
+5
+56
+30
+25
+42
+60
+55
+88
+98
+93
+76
+28
+69
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.666667
-QPS: 12500.000000
-tApproximateAverage: 0.000080
-tTrueAverage: 0.000002
-
-Hypercube
-Query: 1
-Nearest neighbor-1: 37
-distanceApproximate: 0.091026
-distanceTrue: 0.091026
-Nearest neighbor-2: 26
-distanceApproximate: 2.837945
-distanceTrue: 2.837945
-Nearest neighbor-3: 43
-distanceApproximate: 3.150036
-distanceTrue: 3.150036
--------METRICS---------
-Average AF: 1.000000
-Recall@N: 1.000000
-QPS: 11904.761905
-tApproximateAverage: 0.000084
-tTrueAverage: 0.000002
+QPS: 83333.333333
+tApproximateAverage: 0.000012
+tTrueAverage: 0.000003
 

@@ -1,7 +1,7 @@
 #ifndef LSH_H
 #define LSH_H
 
-// Forward declaration
+// Forward declarations
 struct LSH;
 struct SearchParams;
 struct Dataset;
@@ -10,9 +10,10 @@ struct Dataset;
 typedef struct 
 {
     float *v; // projection vector
-    float t;
+    float t; // random offset
 }LSH_hash_function;
 
+// Define function pointer types
 typedef int (*hash_func)(const void* p, const struct LSH* lsh, int table_index, int* ID);
 typedef float (*metric_func)(const void* a, const void* b);
 
@@ -32,14 +33,32 @@ typedef struct LSH
     HashTable *hash_tables; // array of hash tables
 } LSH;
 
-// Helper functions for hashing
+// ------------------- Helper functions for hashing -----------------------------
+
+// defines the LSH hash function
+// g(p) = ID(p) mod table_size
+// where ID(p) = sum(h_i(p) * r_i) mod M
+// r_i are random integers saved in the LSH struct
+// M is the number of buckets also saved in the LSH struct
+// h_i are the hash functions saved in the LSH struct
+// g() needs to be a function stored in the LSH struct so it needs to return hash_func type
 int hash_func_impl_lsh(const void* p ,const LSH* lsh, int table_index, int* ID);
-hash_func amplified_hash_function_lsh(const LSH* lsh, int table_index);
+
+// wraps the hash function to be used in the hash table
 int hash_function_lsh(HashTable ht, void* data, int* ID);
 
+
+// ------------------------- LSH main functions ---------------------------------
+
+// initializes the LSH structure, allocates memory, sets parameters, and stores data points
 LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset);
-void lsh_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count,
-                     int** range_neighbors, int* range_count, void* index_data);
+
+// performs approximate nearest neighbor search using the LSH index
+void lsh_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors,
+                        double* approx_dists, int* approx_count, int** range_neighbors, 
+                        int* range_count, void* index_data);
+
+// frees all allocated memory associated with the LSH structure
 void lsh_destroy(struct LSH* lsh);
 
 #endif

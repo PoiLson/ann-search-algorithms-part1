@@ -6,9 +6,7 @@ extern int dimension;
 float uniform_distribution(void* a, void* b)
 {
     float a_p = *(float*) a;
-    printf("!!!!!!!!!!!!!!!! %f, ", a_p);
     float b_p = *(float*) b;
-    printf("%f\n", b_p);
 
     return a_p + (b_p - a_p) * ((float)rand() / RAND_MAX);
 }
@@ -17,7 +15,6 @@ float gaussian_distribution(void)
 {
     static int haveSpare = 0;
     static float spare;
-
     if (haveSpare)
     {
         haveSpare = 0;
@@ -48,7 +45,6 @@ void generate_random_vector(float* v, int d)
 int dot_product_int(const int* a, const int* b, int d)
 {
     int sum = 0;
-
     for(int i = 0; i < d; i++)
         sum += a[i] * b[i];
 
@@ -58,18 +54,10 @@ int dot_product_int(const int* a, const int* b, int d)
 float dot_product_float(const float* a, const float* b, int d)
 {
     float sum = 0.0;
-
-    // Debug Reasons
-    // they point in the same address
-    // printf("%p vs %p\n\n", &(*a_p), &(*a));
-    // but casting does not gkriniazei, why?
-
     for(int i = 0; i < d; i++)
     {
         sum += a[i] * b[i];
-        // printf("%lf, %lf |", (double)a_p[i], (double)b_p[i]);
     }
-    // puts("!!!!!!!!!!!!");
 
     return sum;
 }
@@ -83,14 +71,12 @@ float euclidean_distance(const void* a, const void* b)
     for(int i = 0; i < dimension; i++)
     {
         float diff = a_p[i] - b_p[i];
-        // printf("dim=%d, a[%d]=%f, b[%d]=%f, diff=%f ->", dimension, i, a_p[i], i, b_p[i], diff);
         sum += diff * diff;
     }
 
     return sqrt(sum);
 }
 
-// TODO FOR HUPERCUBE another wrapper of this function
 int hamming_distance(const int* a, const int* b, int d)
 {
     int count = 0;
@@ -100,7 +86,6 @@ int hamming_distance(const int* a, const int* b, int d)
         if(a[i] != b[i])
             count++;
     }
-
     return count;
 }
 
@@ -141,7 +126,7 @@ void get_hamming_neighbors(const int* a, int probes, int d, int** neighbors)
     }
 }
 
-int compare_vectors(void* a, void* b)
+int compare_vectors(const void* a, const void* b)
 {
     float dist = euclidean_distance(a, b);
     return (dist == 0.0) ? 0 : (dist < 0.0) ? -1 : 1;

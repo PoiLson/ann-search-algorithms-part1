@@ -1,6 +1,7 @@
 #ifndef PARSEINPUT_H
 #define PARSEINPUT_H
 
+// Enumeration for algorithm types: LSH, Hypercube, IVFFlat, IVFPQ and none
 typedef enum
 {
     ALG_NONE,
@@ -10,6 +11,7 @@ typedef enum
     ALG_IVFPQ
 } AlgorithmType;
 
+// Enumeration for dataset types: MNIST, SIFT and none
 typedef enum
 {
     DATA_NONE,
@@ -17,6 +19,7 @@ typedef enum
     DATA_SIFT
 } DatasetType;
 
+// Structure to hold all search parameters
 typedef struct SearchParams
 {
     // Common parameters
@@ -49,7 +52,10 @@ typedef struct SearchParams
     int M_pq;   // number of subvectors for PQ
 } SearchParams;
 
+// Function to parse command-line arguments and populate SearchParams structure
 int parse_arguments(int argc, char **argv, SearchParams *params);
+
+// Function to print usage instructions
 void print_usage(void);
 
 #endif

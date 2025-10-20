@@ -1,5 +1,6 @@
 #include "../include/main.h"
 
+// dimention is globall so that functions in utils can access it easily
 int dimension;
 
 Dataset* read_data(const char* dataset_path)
@@ -69,6 +70,7 @@ Dataset* read_data(const char* dataset_path)
 
 void printPartialDataset(int size, const Dataset* dataset)
 {
+    //for the first 'size' points of the dataset, print the coordinates
     for (int i = 0; i < size; i++)
     {
         float* row = (float*) dataset->data[i];
@@ -80,4 +82,18 @@ void printPartialDataset(int size, const Dataset* dataset)
         }
         printf("\n");
     }
+}
+
+void free_dataset(Dataset* dataset)
+{
+    if (!dataset) return;
+    if (dataset->data)
+    {
+        for (int i = 0; i < dataset->size; i++)
+        {
+            free(dataset->data[i]);
+        }
+        free(dataset->data);
+    }
+    free(dataset);
 }

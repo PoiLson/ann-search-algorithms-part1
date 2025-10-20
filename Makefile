@@ -40,20 +40,20 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = hypercube
+ALGO = lsh
 
 # Common parameters
 # -------------------
 
-INPUT_FILE  = random_2d_points.txt
+INPUT_FILE  = random_3d_points.txt
 QUERY_FILE  = query.dat
 
 OUTPUT_FILE = output.txt
 N           = 3
-R           = 3
+R           = 40
 
 TYPE        = mnist
-RANGE       = false
+RANGE       = true
 
 # LSH defaults
 # -------------------

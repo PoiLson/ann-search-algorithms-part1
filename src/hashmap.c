@@ -54,6 +54,7 @@ bool hashmap_insert(Hashmap* map, int key, bool value)
 
 bool* hashmap_getValue(Hashmap* map, int key)
 {
+    //iterates through linked list to find key
     Pair* current = map->pairs;
     while (current != NULL)
     {

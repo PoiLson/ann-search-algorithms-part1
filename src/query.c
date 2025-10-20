@@ -1,8 +1,9 @@
 #include "../include/main.h"
 
-// Generic query function
+// Modular query function, works with any index lookup function
 void perform_query(const struct SearchParams* params, const struct Dataset* dataset, const struct Dataset* query_set, index_lookup lookup_func, void* index_data)
 {
+    // Open output file
     FILE* output_file = fopen(params->output_path, "w");
     if (!output_file)
     {
@@ -10,10 +11,20 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         return;
     }
 
+    // Metrics accumulators
     double total_approx_time = 0.0, total_true_time = 0.0;
     int query_count = query_set->size;
     double total_af = 0.0, total_recall = 0.0;
 
+    // Guard against mismatched dimensions between dataset and queries
+    if (dataset->dimension != query_set->dimension)
+    {
+        fprintf(stderr, "dataset dimension (%d) != query dimension (%d). Using min dimension for distance.\n", dataset->dimension, query_set->dimension);
+        exit(EXIT_FAILURE);
+    }
+
+    // Main query loop
+    // Iterate over each query in the query set
     for (int q_idx = 0; q_idx < query_set->size; q_idx++)
     {
         void* q = query_set->data[q_idx];
@@ -30,12 +41,11 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
             approx_dists[i] = INFINITY;
         }
 
-
         clock_t start_approx = clock();
         // Algorithm-specific index lookup
         lookup_func(q, params, approx_neighbors, approx_dists, &approx_count, &range_neighbors, &range_count, index_data);
-
         clock_t end_approx = clock();
+
         double approx_time = (double)(end_approx - start_approx) / CLOCKS_PER_SEC;
         total_approx_time += approx_time;
 
@@ -73,8 +83,8 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
                 true_dists[j] = dist;
             }
         }
-
         clock_t end_true = clock();
+        
         double true_time = (double)(end_true - start_true) / CLOCKS_PER_SEC;
         total_true_time += true_time;
 

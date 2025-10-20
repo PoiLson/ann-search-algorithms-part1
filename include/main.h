@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-// Improtant Libraries
+//------------------------- Important Libraries ------------------------------
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 #include <math.h>
 #include <float.h>
 
-// User - Defined Libraries
+// ------------------------User - Defined Libraries --------------------------
 #include "parseInput.h"
 #include "utils.h"
 

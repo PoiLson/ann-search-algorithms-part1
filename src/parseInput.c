@@ -16,8 +16,6 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
 
     for (int i = 1; i < argc; i++)
     {
-        // printf("%d, %s\n", i, argv[i]);
-
         if (strcmp(argv[i], "-d") == 0 && i + 1 < argc)
             strncpy(params->dataset_path, argv[++i], sizeof(params->dataset_path));
         else if (strcmp(argv[i], "-q") == 0 && i + 1 < argc)
