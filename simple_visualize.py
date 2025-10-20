@@ -49,7 +49,7 @@ def plot_hash_table_distribution(hash_tables):
     if num_tables == 1:
         axes = axes.reshape(2, 1)
     
-    # Colors for different buckets
+    # Colors for different buckets 
     colors = plt.cm.Set3(np.linspace(0, 1, 25))
     
     for i, (table_id, buckets) in enumerate(hash_tables.items()):

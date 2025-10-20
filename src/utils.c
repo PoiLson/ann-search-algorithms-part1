@@ -104,6 +104,43 @@ int hamming_distance(const int* a, const int* b, int d)
     return count;
 }
 
+// returns the first 'probes' neighbors from point 'a' sorted by hamming distance
+void get_hamming_neighbors(const int* a, int probes, int d, int** neighbors)
+{
+    //it only returns 'probes' neighbors
+    int count = 0;
+    *neighbors = (int*)malloc(probes * d * sizeof(int));
+    if(!(*neighbors))
+        return;
+    int distance = 0; // (number of bits)
+    while (count < probes && distance <= d)
+    {
+        for(int i = 0; i < (1 << d); i++) // iterate through all possible combinations
+        {
+            int hamming_dist = 0;
+            for(int j = 0; j < d; j++)
+            {
+                int bit_a = a[j];
+                int bit_b = (i >> (d - 1 - j)) & 1; // get j-th bit of i
+                if(bit_a != bit_b)
+                    hamming_dist++;
+            }
+            if(hamming_dist == distance)
+            {
+                // add this neighbor to the list
+                for(int k = 0; k < d; k++)
+                {
+                    (*neighbors)[count * d + k] = (i >> (d - 1 - k)) & 1;
+                }
+                count++;
+                if(count >= probes)
+                    break;
+            }
+        }
+        distance++;
+    }
+}
+
 int compare_vectors(void* a, void* b)
 {
     float dist = euclidean_distance(a, b);

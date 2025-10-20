@@ -68,7 +68,7 @@ W = 6.0
 KPROJ  = 3
 W      = 2
 M      = 10
-PROBES = 2
+PROBES = 4
 
 # IVFFLAT defaults
 # -------------------

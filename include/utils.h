@@ -10,6 +10,7 @@ float dot_product_float(const float* a, const float* b, int d);
 
 float euclidean_distance(const void* a, const void* b);
 int hamming_distance(const int *a, const int *b, int d);
+void get_hamming_neighbors(const int* a, int probes, int d, int** neighbors);
 
 int compare_vectors(void* a, void* b);
 

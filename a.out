@@ -1,7 +1,0 @@
-gcc -std=c11 -g -Iinclude  -c src/hypercube.c -o objectFiles/hypercube.o
-gcc -std=c11 -g -Iinclude  -o search objectFiles/datasets.o objectFiles/hashmap.o objectFiles/hashtable.o objectFiles/hypercube.o objectFiles/lsh.o objectFiles/main.o objectFiles/parseInput.o objectFiles/query.o objectFiles/runAlgorithms.o objectFiles/utils.o -lm
-Running algorithm: hypercube
-./search \
-	-d random_2d_points.txt \
-	-q query.dat \
-	-kproj 3 -w 2 -M 10 -probes 2 -o output.txt -N 3 -R 3 -type mnist -range false -hypercube

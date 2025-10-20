@@ -1,18 +1,36 @@
 Hypercube
 Query: 0
+Nearest neighbor-1: 50
+distanceApproximate: 0.091672
+distanceTrue: 0.091672
+Nearest neighbor-2: 98
+distanceApproximate: 2.509687
+distanceTrue: 2.509687
+Nearest neighbor-3: 25
+distanceApproximate: 12.507577
+distanceTrue: 4.382469
 -------METRICS---------
-Average AF: inf
-Recall@N: 0.000000
-QPS: 1000000.000000
-tApproximateAverage: 0.000001
-tTrueAverage: 0.000004
+Average AF: 1.000000
+Recall@N: 0.666667
+QPS: 12500.000000
+tApproximateAverage: 0.000080
+tTrueAverage: 0.000002
 
 Hypercube
 Query: 1
+Nearest neighbor-1: 37
+distanceApproximate: 0.091026
+distanceTrue: 0.091026
+Nearest neighbor-2: 26
+distanceApproximate: 2.837945
+distanceTrue: 2.837945
+Nearest neighbor-3: 43
+distanceApproximate: 3.150036
+distanceTrue: 3.150036
 -------METRICS---------
-Average AF: inf
-Recall@N: 0.000000
-QPS: inf
-tApproximateAverage: 0.000000
+Average AF: 1.000000
+Recall@N: 1.000000
+QPS: 11904.761905
+tApproximateAverage: 0.000084
 tTrueAverage: 0.000002
 

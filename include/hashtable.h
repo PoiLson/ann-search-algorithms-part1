@@ -64,6 +64,9 @@ int hash_table_capacity(HashTable hash_table);
 Node hash_table_get_bucket(HashTable hash_table, int index);
 
 // Print the hashtable given
+void print_hashtable(HashTable hash_table, int table_size, int dimension);
+
+// Print all hashtables
 void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimension);
 
 #endif
