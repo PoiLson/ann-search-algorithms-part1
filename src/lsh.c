@@ -72,9 +72,10 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
             exit(EXIT_FAILURE);
         }
 
-        // Calculate t
-        int tmp = 0;
-        lsh->hash_params[i].t = uniform_distribution(&tmp, &(lsh->w));
+    // Calculate t uniformly in [0, w)
+    float zero = 0.0f;
+    float wval = lsh->w;
+    lsh->hash_params[i].t = uniform_distribution(&zero, &wval);
     }
 
     //initialize linear combinations r[i][j]

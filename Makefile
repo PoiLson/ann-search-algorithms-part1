@@ -46,7 +46,7 @@ ALGO = lsh
 # -------------------
 
 INPUT_FILE  = Mnist_data/train-images.idx3-ubyte
-QUERY_FILE  = Mnist_data/t10k-images-3-sample.idx3-ubyte
+QUERY_FILE  = Mnist_data/t10k-images-100-sample.idx3-ubyte
 
 OUTPUT_FILE = output.txt
 N           = 3
