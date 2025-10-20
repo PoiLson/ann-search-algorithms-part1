@@ -10,7 +10,11 @@ int main(int argc, char **argv)
 
     printf("Algorithm selected: ");
 
-    Dataset* dataset = read_data(params.dataset_path);
+    Dataset* dataset = NULL;
+    if (params.dataset_type == DATA_MNIST)
+        dataset = read_data_mnist(params.dataset_path);
+    else
+        dataset = read_data(params.dataset_path);
     if (dataset == NULL)
         exit(EXIT_FAILURE);
 

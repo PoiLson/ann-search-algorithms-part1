@@ -45,12 +45,12 @@ ALGO = lsh
 # Common parameters
 # -------------------
 
-INPUT_FILE  = random_3d_points.txt
-QUERY_FILE  = query.dat
+INPUT_FILE  = Mnist_data/train-images.idx3-ubyte
+QUERY_FILE  = Mnist_data/t10k-images-3-sample.idx3-ubyte
 
 OUTPUT_FILE = output.txt
 N           = 3
-R           = 40
+R           = 4
 
 TYPE        = mnist
 RANGE       = true

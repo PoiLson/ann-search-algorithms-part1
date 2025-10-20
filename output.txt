@@ -1,59 +1,54 @@
 LSH
 Query: 0
-Nearest neighbor-1: 31
-distanceApproximate: 0.098590
-distanceTrue: 0.098590
-Nearest neighbor-2: 40
-distanceApproximate: 15.473208
-distanceTrue: 10.927689
-Nearest neighbor-3: 49
-distanceApproximate: 23.931923
-distanceTrue: 13.930759
-R-near neighbors:
-40
-31
-78
-49
-21
-27
+Nearest neighbor-1: 3228
+distanceApproximate: 1317.822388
+distanceTrue: 676.584045
+Nearest neighbor-2: 5122
+distanceApproximate: 1828.843384
+distanceTrue: 793.986755
+Nearest neighbor-3: 33531
+distanceApproximate: 1920.802979
+distanceTrue: 862.676636
 -------METRICS---------
-Average AF: 1.000000
-Recall@N: 0.333333
-QPS: 76923.076923
-tApproximateAverage: 0.000013
-tTrueAverage: 0.000005
+Average AF: 1.947759
+Recall@N: 0.000000
+QPS: 2915.451895
+tApproximateAverage: 0.000343
+tTrueAverage: 0.116499
 
 LSH
 Query: 1
-Nearest neighbor-1: 5
-distanceApproximate: 0.060335
-distanceTrue: 0.060335
-Nearest neighbor-2: 19
-distanceApproximate: 21.846832
-distanceTrue: 16.287960
-Nearest neighbor-3: 28
-distanceApproximate: 24.152155
-distanceTrue: 21.846832
-R-near neighbors:
-65
-19
-5
-56
-30
-25
-42
-60
-55
-88
-98
-93
-76
-28
-69
+Nearest neighbor-1: 46556
+distanceApproximate: 1752.674561
+distanceTrue: 1162.931641
+Nearest neighbor-2: 45239
+distanceApproximate: 2225.763184
+distanceTrue: 1211.844482
+Nearest neighbor-3: 31602
+distanceApproximate: 2276.443604
+distanceTrue: 1285.928467
 -------METRICS---------
-Average AF: 1.000000
-Recall@N: 0.666667
-QPS: 83333.333333
-tApproximateAverage: 0.000012
-tTrueAverage: 0.000003
+Average AF: 1.507117
+Recall@N: 0.000000
+QPS: 3105.590062
+tApproximateAverage: 0.000322
+tTrueAverage: 0.109925
+
+LSH
+Query: 2
+Nearest neighbor-1: 12158
+distanceApproximate: 700.864441
+distanceTrue: 321.662872
+Nearest neighbor-2: 31012
+distanceApproximate: 942.261108
+distanceTrue: 332.463531
+Nearest neighbor-3: 51051
+distanceApproximate: 965.067383
+distanceTrue: 341.048370
+-------METRICS---------
+Average AF: 2.178879
+Recall@N: 0.000000
+QPS: 3355.704698
+tApproximateAverage: 0.000298
+tTrueAverage: 0.110053
 

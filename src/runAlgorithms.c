@@ -4,7 +4,11 @@ void run_lsh(SearchParams* params, Dataset* dataset)
 {
     struct LSH* lsh = lsh_init(params, dataset);
 
-    Dataset* query_set = read_data("query.dat");
+    Dataset* query_set = NULL;
+    if (params->dataset_type == DATA_MNIST)
+        query_set = read_data_mnist(params->query_path);
+    else
+        query_set = read_data(params->query_path);
     if (query_set)
     {
         perform_query(params, dataset, query_set, lsh_index_lookup, lsh);
@@ -25,7 +29,11 @@ void run_hypercube(SearchParams* params, Dataset* dataset)
 {
     struct Hypercube* hyper = hyper_init(params, dataset);
 
-    Dataset* query_set = read_data("query.dat");
+    Dataset* query_set = NULL;
+    if (params->dataset_type == DATA_MNIST)
+        query_set = read_data_mnist(params->query_path);
+    else
+        query_set = read_data(params->query_path);
     if (query_set)
     {
         perform_query(params, dataset, query_set, hyper_index_lookup, hyper);
