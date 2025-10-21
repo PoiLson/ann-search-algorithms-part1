@@ -37,7 +37,7 @@ static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, int *ID)
 int hash_function_hyper(HashTable ht, void* data, int* ID)
 {
     //get the hypercube structure the particular hash function belongs to
-    Hypercube* hyper_ctx = (Hypercube*)hash_table_get_context(ht);
+    Hypercube* hyper_ctx = (Hypercube*)hash_table_get_algorithm_context(ht);
     if (!hyper_ctx) 
     { 
         *ID = -1; 
@@ -114,8 +114,8 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     // (computes all k bits to form the bucket index)
     hyper->binary_hash_function = hash_func_impl_hyper;
 
-    // Create hash table with context and index 0
-    hyper->hash_table = hash_table_create(1 << hyper->kproj, sizeof(int), NULL, NULL, hash_function_hyper, hyper, 0);
+    // Create hash table with algorithm context and index 0
+    hyper->hash_table = hash_table_create(1 << hyper->kproj, sizeof(int), NULL, NULL, hash_function_hyper, hyper, 0, &(dataset->dimension));
     if (!hyper->hash_table)
     {
         hyper_destroy(hyper);
@@ -186,7 +186,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             void* p = neighbor_bucket->data;
 
             // Check all points in the bucket - they're candidates
-            float dist = euclidean_distance(q, p);
+            float dist = euclidean_distance(q, p, hyper->d);
 
             // Check if this point is already in the result set (avoid duplicates)
             int already_found = 0;

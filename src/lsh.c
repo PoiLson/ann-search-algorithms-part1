@@ -26,9 +26,9 @@ int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, int* ID)
 
 int hash_function_lsh(HashTable ht, void* data, int* ID)
 {
-    // Get LSH structure from hash table context
+    // Get LSH structure from hash table algorithm context
     // also get the table index to know which amplified hash function to use
-    LSH* lsh_ctx = (LSH*)hash_table_get_context(ht);
+    LSH* lsh_ctx = (LSH*)hash_table_get_algorithm_context(ht);
     int t_idx = hash_table_get_index(ht);
     if (!lsh_ctx)
     { 
@@ -36,6 +36,10 @@ int hash_function_lsh(HashTable ht, void* data, int* ID)
         return 0;
     }
     return lsh_ctx->amplified_hash_functions[t_idx](data, lsh_ctx, t_idx, ID);
+    // ERROR: amplified functinos is just an array of function pointers that
+    // all currently point to hash_func_impl_lsh
+    // dow e need a separate array if all are indentical (since the table index is a parameter)
+    // or do we keep it for later extensions?
 }
 
 
@@ -48,7 +52,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     lsh->k = params->k; 
     lsh->w = params->w;
     lsh->table_size = dataset->size / 4; 
-    lsh->num_of_buckets = 1 << 32 - 5; // max prime for 32-bit int
+    lsh->num_of_buckets = 1 << 32 - 5; // max prime for 32-bit int -> ERROR: calculates 1 << 27, if want max prime then we have to assign it as: 4294967291u
     lsh->distance = euclidean_distance;
 
     //allocate memory for hash parameters 
@@ -113,7 +117,8 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     lsh->hash_tables = (HashTable*)malloc(lsh->L * sizeof(HashTable));
     for (int i = 0; i < lsh->L; i++)
     {
-    lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, compare_vectors, hash_function_lsh, lsh, i);
+        lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, compare_vectors, hash_function_lsh, lsh, i, &(dataset->dimension));
+        
         if(!lsh->hash_tables[i])
         {
             lsh_destroy(lsh);
@@ -162,7 +167,7 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
             void* p = bucket->data;
 
             // Check all points in the bucket - they're candidates
-            float dist = euclidean_distance(q, p);
+            float dist = euclidean_distance(q, p, lsh->d);
 
             // Check if this point is already in the result set (avoid duplicates)
             int already_found = 0;

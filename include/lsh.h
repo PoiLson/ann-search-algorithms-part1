@@ -15,7 +15,7 @@ typedef struct
 
 // Define function pointer types
 typedef int (*hash_func)(const void* p, const struct LSH* lsh, int table_index, int* ID);
-typedef float (*metric_func)(const void* a, const void* b);
+typedef float (*metric_func)(const void* a, const void* b, const int dimension);
 
 // Data Structure for the full LSH
 typedef struct LSH

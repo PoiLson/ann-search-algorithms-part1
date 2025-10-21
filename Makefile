@@ -61,7 +61,7 @@ RANGE       = true
 # For high-dim data: Use K=8-12, L=10-15, W=2-4
 K = 3
 L = 20
-W = 6.0
+W = 2.0
 
 # Hypercube defaults
 # -------------------

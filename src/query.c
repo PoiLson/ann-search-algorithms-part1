@@ -65,7 +65,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         {
             void* p = dataset->data[i];
 
-            float dist = euclidean_distance(q, p);
+            float dist = euclidean_distance(q, p, dataset->dimension);
 
             if (true_count < params->N || dist < true_dists[true_count - 1])
             {

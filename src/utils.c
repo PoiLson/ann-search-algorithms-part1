@@ -1,7 +1,5 @@
 #include "../include/main.h"
 
-extern int dimension;
-
 // Generates a random number uniformly distributed between a and b 
 float uniform_distribution(void* a, void* b)
 {
@@ -62,7 +60,7 @@ float dot_product_float(const float* a, const float* b, int d)
     return sum;
 }
 
-float euclidean_distance(const void* a, const void* b)
+float euclidean_distance(const void* a, const void* b, const int dimension)
 {
     float sum = 0.0;
     float* a_p = (float*)a;
@@ -126,8 +124,9 @@ void get_hamming_neighbors(const int* a, int probes, int d, int** neighbors)
     }
 }
 
-int compare_vectors(const void* a, const void* b)
+int compare_vectors(const void* a, const void* b, const void* metricContext)
 {
-    float dist = euclidean_distance(a, b);
+    int dimension = *(const int*)metricContext;
+    float dist = euclidean_distance(a, b, dimension);
     return (dist == 0.0) ? 0 : (dist < 0.0) ? -1 : 1;
 }

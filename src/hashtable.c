@@ -38,7 +38,7 @@ static int nearest_prime(int n)
     return 2;
 }
 
-HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function, void* context, int table_index)
+HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function, void* algorithmContext, int table_index, const void* metricContext)
 {
     // initialize the hash table structure
     HashTable hash_table = (HashTable)malloc(sizeof(struct hash_table));
@@ -52,8 +52,9 @@ HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare
     hash_table->destroy = destroy;
     hash_table->compare = compare;
     hash_table->hash_function = hash_function;
-    hash_table->context = context;
+    hash_table->algorithmContext = algorithmContext;
     hash_table->table_index = table_index;
+    hash_table->metricContext = metricContext;
 
     // initialize the table with NULL
     hash_table->table = (Node *)calloc(hash_table->capacity, sizeof(Node));
@@ -73,7 +74,7 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     if(ID == -1)
     {
         perror("ID not configurated!\n");
-        EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     // create a new node
@@ -107,7 +108,7 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     return 0;
 }
 
-void *hash_table_search(HashTable hash_table, void *key)
+void* hash_table_search(HashTable hash_table, void *key)
 {
     int ID = -1;
     // get the hash value
@@ -123,7 +124,7 @@ void *hash_table_search(HashTable hash_table, void *key)
     Node current = hash_table->table[hash_value];
     while (current != NULL)
     {
-        if (hash_table->compare(current->key, key) == 0)
+        if (hash_table->compare(current->key, key, hash_table->metricContext) == 0)
         {
             return current->data;
         }
@@ -132,6 +133,11 @@ void *hash_table_search(HashTable hash_table, void *key)
     return NULL;
 }
 
+/*
+    Note: field 'context' is owned by the algorithm, not by the hash table.
+    The hash table will not free it in hash_table_destroy().
+    'context' will be freed from the algorithm's respoective destroy function
+*/
 void hash_table_destroy(HashTable hash_table)
 {
     // destroy the table and the elements in it
@@ -180,7 +186,7 @@ int hash_table_remove(HashTable hash_table, void *key)
     Node prev = NULL;
     while (current != NULL)
     {
-        if (hash_table->compare(current->key, key) == 0)
+        if (hash_table->compare(current->key, key, hash_table->metricContext) == 0)
         {
             // if the key is found, remove the node
             if (prev == NULL)

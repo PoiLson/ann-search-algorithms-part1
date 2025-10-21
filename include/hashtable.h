@@ -14,7 +14,7 @@ typedef struct hash_table *HashTable;
 
 // Function pointer types
 typedef void (*funtion)(void *);
-typedef int (*Compare_fun)(const void*, const void*);
+typedef int (*Compare_fun)(const void*, const void*, const void*);
 typedef int (*Hash_fun)(HashTable, void*, int*);
 
 
@@ -28,8 +28,11 @@ typedef struct hash_table
     Hash_fun hash_function; // function to hash data to buckets
 
     // Optional context so hash functions can avoid globals
-    void *context;        // pointer to context data (e.g., LSH*, Hypercube*)
+    void* algorithmContext;        // pointer to algorithm context data (e.g., LSH*, Hypercube*), Algorithm context for hashing
     int table_index;      // index of this table in a family (e.g., 0 to L-1 for LSH)
+
+    // DID NOT DELETED IT, SO WE DO NOT HAVE TO CHANGE THE PROTOTYPE OF SEARCH AND REMOVE
+    const void* metricContext; // this will be the dimension pointer or any metric context
 
     Node *table;
 }hash_table;
@@ -50,7 +53,7 @@ struct node
 static int nearest_prime(int n);
 
 // Creates a hash table with a given capacity/ nummber of buckets
-HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function, void* context, int table_index);
+HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function, void* algorithmContext, int table_index, const void* metricContext);
 
 // Inserts a key and data in the hash table
 int hash_table_insert(HashTable hash_table, void *key, void *data);
@@ -79,8 +82,15 @@ void print_hashtable(HashTable hash_table, int table_size, int dimension);
 // Print all hashtables
 void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimension);
 
-// Helpers to retrieve hash table context and index
-static inline void* hash_table_get_context(HashTable ht) { return ((struct hash_table*)ht)->context; }
-static inline int hash_table_get_index(HashTable ht) { return ((struct hash_table*)ht)->table_index; }
+// Helpers to retrieve hash table algorithm context and index
+static inline void* hash_table_get_algorithm_context(HashTable ht)
+{
+    return ((struct hash_table*)ht)->algorithmContext;
+}
+
+static inline int hash_table_get_index(HashTable ht)
+{
+    return ((struct hash_table*)ht)->table_index;
+}
 
 #endif

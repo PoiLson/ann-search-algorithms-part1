@@ -86,7 +86,8 @@ static Dataset* read_mnist_idx3_file(FILE* file)
         }
         for (int p = 0; p < dataset->dimension; p++)
         {
-            img[p] = (float)buf[p]; // keep 0..255 range; normalization can be applied by caller if desired
+            // img[p] = (float)buf[p]; // keep 0..255 range; normalization can be applied by caller if desired
+            img[p] = ((float)buf[p]) / 255.0f; // normalize 0..1
         }
         dataset->data[i] = img;
     }
