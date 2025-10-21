@@ -29,7 +29,6 @@ typedef struct LSH
     metric_func distance; // distance function
     LSH_hash_function *hash_params; // array of hash parameters
     int **linear_combinations; // array of r[i][j], i in[L], j in[k] for g(p)
-    hash_func *amplified_hash_functions; // array of amplified hash functions
     HashTable *hash_tables; // array of hash tables
 } LSH;
 

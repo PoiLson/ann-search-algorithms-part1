@@ -1,9 +1,6 @@
 #include "../include/main.h"
 
 
-// dimention is globall so that functions in utils can access it easily
-int dimension;
-
 // Read a big-endian 32-bit unsigned integer from file
 static int read_be_u32(FILE* f, uint32_t* out)
 {
@@ -43,7 +40,6 @@ static Dataset* read_mnist_idx3_file(FILE* file)
     }
     dataset->size = (int)num_images;
     dataset->dimension = (int)(rows * cols);
-    dimension = dataset->dimension;
 
     dataset->data = (void**)malloc(dataset->size * sizeof(void*));
     if (!dataset->data)
@@ -53,7 +49,7 @@ static Dataset* read_mnist_idx3_file(FILE* file)
         exit(EXIT_FAILURE);
     }
 
-    // Read each image: rows*cols bytes => convert to float [0..255]
+    // Read each image: rows*cols bytes => convert to int [0..255]
     const size_t pixels = (size_t)rows * (size_t)cols;
     unsigned char *buf = (unsigned char*)malloc(pixels);
     if (!buf)
@@ -75,7 +71,7 @@ static Dataset* read_mnist_idx3_file(FILE* file)
             exit(EXIT_FAILURE);
         }
 
-        float* img = (float*)malloc(dataset->dimension * sizeof(float));
+        int* img = (int*)malloc(dataset->dimension * sizeof(int));
         if (!img)
         {
             fprintf(stderr, "Memory allocation failed for MNIST image %d\n", i);
@@ -86,8 +82,8 @@ static Dataset* read_mnist_idx3_file(FILE* file)
         }
         for (int p = 0; p < dataset->dimension; p++)
         {
-            // img[p] = (float)buf[p]; // keep 0..255 range; normalization can be applied by caller if desired
-            img[p] = ((float)buf[p]) / 255.0f; // normalize 0..1
+            img[p] = (int)buf[p]; // keep 0..255 range; normalization can be applied by caller if desired
+            // img[p] = ((int)buf[p]) / 255; // normalize 0..1
         }
         dataset->data[i] = img;
     }
@@ -117,7 +113,7 @@ Dataset* read_data_mnist(const char* images_path)
 
 Dataset* read_data(const char* dataset_path)
 {
-    // Parse as text file with first line: <size> <dimension> then floats
+    // Parse as text file with first line: <size> <dimension> then ints
     FILE* file = fopen(dataset_path, "r");
     if (!file)
     {
@@ -141,9 +137,7 @@ Dataset* read_data(const char* dataset_path)
         exit(EXIT_FAILURE);
     }
 
-    dimension = dataset->dimension;
-
-    dataset->data = (void**)malloc(dataset->size * sizeof(float*));
+    dataset->data = (void**)malloc(dataset->size * sizeof(int*));
     if (dataset->data == NULL)
     {
         fprintf(stderr, "Error allocating memory for dataset\n");
@@ -154,8 +148,8 @@ Dataset* read_data(const char* dataset_path)
     
     for (int i = 0; i < dataset->size; i++)
     {
-        dataset->data[i] = (void*)malloc(dataset->dimension * sizeof(float));
-        float* data = (float*)dataset->data[i];
+        dataset->data[i] = (void*)malloc(dataset->dimension * sizeof(int));
+        int* data = (int*)dataset->data[i];
         if (data == NULL)
         {
             fprintf(stderr, "Error allocating memory for point %d\n", i);
@@ -167,7 +161,7 @@ Dataset* read_data(const char* dataset_path)
         
         for (int j = 0; j < dataset->dimension; j++)
         {
-            if (fscanf(file, "%f", &(data[j])) != 1)
+            if (fscanf(file, "%d", &(data[j])) != 1)
             {
                 fprintf(stderr, "Error reading point %d, coordinate %d\n", i, j);
                 fclose(file);
@@ -187,12 +181,12 @@ void printPartialDataset(int size, const Dataset* dataset)
     //for the first 'size' points of the dataset, print the coordinates
     for (int i = 0; i < size && i < dataset->size; i++)
     {
-        float* row = (float*) dataset->data[i];
+        int* row = (int*) dataset->data[i];
 
         printf("Point %d: ", i);
         for (int j = 0; j < dataset->dimension; j++)
         {
-            printf("%f ", row[j]);
+            printf("%d ", row[j]);
         }
         printf("\n");
     }

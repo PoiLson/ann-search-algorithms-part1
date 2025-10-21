@@ -60,6 +60,17 @@ float dot_product_float(const float* a, const float* b, int d)
     return sum;
 }
 
+float dot_product_float_int(const float* a, const int* b, int d)
+{
+    float sum = 0.0;
+    for(int i = 0; i < d; i++)
+    {
+        sum += a[i] * (float)b[i];
+    }
+
+    return sum;
+}
+
 float euclidean_distance(const void* a, const void* b, const int dimension)
 {
     float sum = 0.0;
@@ -69,6 +80,21 @@ float euclidean_distance(const void* a, const void* b, const int dimension)
     for(int i = 0; i < dimension; i++)
     {
         float diff = a_p[i] - b_p[i];
+        sum += diff * diff;
+    }
+
+    return sqrt(sum);
+}
+
+float euclidean_distance_int(const void* a, const void* b, const int dimension)
+{
+    float sum = 0.0;
+    int* a_p = (int*)a;
+    int* b_p = (int*)b;
+
+    for(int i = 0; i < dimension; i++)
+    {
+        float diff = (float)a_p[i] - (float)b_p[i];
         sum += diff * diff;
     }
 

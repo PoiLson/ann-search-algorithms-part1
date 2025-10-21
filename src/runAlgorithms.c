@@ -3,6 +3,8 @@
 void run_lsh(SearchParams* params, Dataset* dataset)
 {
     struct LSH* lsh = lsh_init(params, dataset);
+    printf("exiting...\n");
+    if (!lsh) return;
     
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)

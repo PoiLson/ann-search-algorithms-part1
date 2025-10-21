@@ -3,6 +3,8 @@
 int main(int argc, char **argv)
 {
     SearchParams params;
+    // Fixed seed for reproducible results in exercises
+    // unsigned int seed = 42;
     srand(time(NULL));
 
     if (parse_arguments(argc, argv, &params) != 0)
@@ -20,8 +22,9 @@ int main(int argc, char **argv)
 
     printf("Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
 
-    //print some points
-    // printPartialDataset(20, dataset);
+    // print some points
+    // printPartialDataset(2, dataset);
+    // return 0;
 
     switch (params.algorithm)
     {

@@ -42,6 +42,15 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 ALGO = lsh
 
+# DEBUGGING PURPOSES
+#---------------------
+# INPUT_FILE  = random_3d_points.txt
+# QUERY_FILE  = query.dat
+# TYPE = sift
+# K = 6
+# L = 10 
+# W = 4
+
 # Common parameters
 # -------------------
 
@@ -49,19 +58,19 @@ INPUT_FILE  = Mnist_data/train-images.idx3-ubyte
 QUERY_FILE  = Mnist_data/t10k-images-100-sample.idx3-ubyte
 
 OUTPUT_FILE = output.txt
-N           = 3
+N           = 5
 R           = 4
 
 TYPE        = mnist
-RANGE       = true
+RANGE       = false
 
 # LSH defaults
 # -------------------
 # For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
-# For high-dim data: Use K=8-12, L=10-15, W=2-4
-K = 3
-L = 20
-W = 2.0
+# For MNIST (784D, pixel values 0-255): Use K=10-14, L=5-10, W=400-800
+K = 10
+L = 8
+W = 4.0
 
 # Hypercube defaults
 # -------------------

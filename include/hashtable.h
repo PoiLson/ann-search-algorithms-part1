@@ -42,7 +42,7 @@ typedef struct hash_table
 // holds key/identifier, the actual data, an ID value for g(p), and pointer to next node
 struct node
 {
-    void* key; //the identifier for the data item?
+    void* key; //the identifier of the node, e.g., index of the point in the dataset
     void* data; //the vector the node has
     int ID; // the hash value it has but not with mod table_size
     
