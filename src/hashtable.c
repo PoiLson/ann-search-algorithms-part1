@@ -1,7 +1,7 @@
 #include "../include/main.h"
 
 // sieve of eratosthenes O(n log (log n))
-static int nearest_prime(int n)
+int nearest_prime(int n)
 {
     if(n < 2)
         return 2;

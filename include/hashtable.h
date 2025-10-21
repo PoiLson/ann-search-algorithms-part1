@@ -42,15 +42,15 @@ typedef struct hash_table
 // holds key/identifier, the actual data, an ID value for g(p), and pointer to next node
 struct node
 {
-    void* key;
-    void* data;
-    int ID;
+    void* key; //the identifier for the data item?
+    void* data; //the vector the node has
+    int ID; // the hash value it has but not with mod table_size
     
     struct node *next;
 };
 
 // Finds the prime number before a given number
-static int nearest_prime(int n);
+int nearest_prime(int n);
 
 // Creates a hash table with a given capacity/ nummber of buckets
 HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function, void* algorithmContext, int table_index, const void* metricContext);

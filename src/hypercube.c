@@ -43,6 +43,7 @@ int hash_function_hyper(HashTable ht, void* data, int* ID)
         *ID = -1; 
         return 0; 
     }
+
     // Use the single hash function that computes all k bits
     return hyper_ctx->binary_hash_function(data, hyper_ctx, ID);
 }

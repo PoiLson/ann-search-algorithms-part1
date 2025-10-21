@@ -4,6 +4,8 @@
 // And also the hash value (g(p)) for that vector
 int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, int* ID)
 {
+    printf("LSH: table %d, id=%d, bucket=%d\n", table_index, *ID, (*ID) % lsh->table_size);
+
     long long id = 0;
     for (int i = 0; i < lsh->k; i++)
     {
@@ -29,14 +31,16 @@ int hash_function_lsh(HashTable ht, void* data, int* ID)
     // Get LSH structure from hash table algorithm context
     // also get the table index to know which amplified hash function to use
     LSH* lsh_ctx = (LSH*)hash_table_get_algorithm_context(ht);
-    int t_idx = hash_table_get_index(ht);
     if (!lsh_ctx)
-    { 
+    {
         *ID = -1;
         return 0;
     }
+
+    int t_idx = hash_table_get_index(ht);
+
     return lsh_ctx->amplified_hash_functions[t_idx](data, lsh_ctx, t_idx, ID);
-    // ERROR: amplified functinos is just an array of function pointers that
+    // ERROR: amplified functions is just an array of function pointers that
     // all currently point to hash_func_impl_lsh
     // dow e need a separate array if all are indentical (since the table index is a parameter)
     // or do we keep it for later extensions?
@@ -51,8 +55,12 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     lsh->L = params->L;
     lsh->k = params->k; 
     lsh->w = params->w;
-    lsh->table_size = dataset->size / 4; 
-    lsh->num_of_buckets = 1 << 32 - 5; // max prime for 32-bit int -> ERROR: calculates 1 << 27, if want max prime then we have to assign it as: 4294967291u
+    // lsh->table_size = dataset->size / 4; 
+    // lsh->num_of_buckets = 1 << 32 - 5; // max prime for 32-bit int -> ERROR: calculates 1 << 27, if want max prime then we have to assign it as: 4294967291u
+    
+    lsh->table_size = nearest_prime(dataset->size / lsh->L); // e.g., ~3000
+    lsh->num_of_buckets = nearest_prime(lsh->table_size * 2); // e.g., ~6000
+
     lsh->distance = euclidean_distance;
 
     //allocate memory for hash parameters 
@@ -115,6 +123,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 
     // create a hash table for each hash table in LSH
     lsh->hash_tables = (HashTable*)malloc(lsh->L * sizeof(HashTable));
+    // ERROR WANT TO CHECK STH
     for (int i = 0; i < lsh->L; i++)
     {
         lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, compare_vectors, hash_function_lsh, lsh, i, &(dataset->dimension));
