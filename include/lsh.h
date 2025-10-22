@@ -1,6 +1,8 @@
 #ifndef LSH_H
 #define LSH_H
 
+#include <stdint.h>
+
 // Forward declarations
 struct LSH;
 struct SearchParams;
@@ -14,7 +16,7 @@ typedef struct
 }LSH_hash_function;
 
 // Define function pointer types
-typedef int (*hash_func)(const void* p, const struct LSH* lsh, int table_index, int* ID);
+typedef int (*hash_func)(const void* p, const struct LSH* lsh, int table_index, uint64_t* ID);
 typedef float (*metric_func)(const void* a, const void* b, const int dimension);
 
 // Data Structure for the full LSH
@@ -25,7 +27,7 @@ typedef struct LSH
     int k; // number of hash functions per table
     float w; // window size
     int table_size; // size of each hash table
-    int num_of_buckets; // number of buckets in each hash table, maybe (m) in the future TODO
+    uint64_t num_of_buckets; // large modulus M for ID composition (supports up to ~2^64)
     metric_func distance; // distance function
     LSH_hash_function *hash_params; // array of hash parameters
     int **linear_combinations; // array of r[i][j], i in[L], j in[k] for g(p)
@@ -41,10 +43,10 @@ typedef struct LSH
 // M is the number of buckets also saved in the LSH struct
 // h_i are the hash functions saved in the LSH struct
 // g() needs to be a function stored in the LSH struct so it needs to return hash_func type
-int hash_func_impl_lsh(const void* p ,const LSH* lsh, int table_index, int* ID);
+int hash_func_impl_lsh(const void* p ,const LSH* lsh, int table_index, uint64_t* ID);
 
 // wraps the hash function to be used in the hash table
-int hash_function_lsh(HashTable ht, void* data, int* ID);
+int hash_function_lsh(HashTable ht, void* data, uint64_t* ID);
 
 
 // ------------------------- LSH main functions ---------------------------------

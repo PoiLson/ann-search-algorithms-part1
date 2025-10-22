@@ -68,9 +68,9 @@ RANGE       = false
 # -------------------
 # For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
 # For MNIST (784D, pixel values 0-255): Use K=10-14, L=5-10, W=400-800
-K = 10
-L = 8
-W = 4.0
+K = 12
+L = 30
+W = 350.0
 
 # Hypercube defaults
 # -------------------

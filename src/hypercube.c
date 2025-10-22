@@ -16,7 +16,7 @@ static bool f(Hashmap** map, int h_ip)
     }
 }
 
-static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, int *ID)
+static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID)
 {
     int id = 0;
     // Compute each h_i and map to bit using f 
@@ -30,17 +30,18 @@ static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, int *ID)
         id = (id << 1) | bit; // Shift left and add the new bit
     }
 
-    *ID = (int)id;
-    return (*ID);
+    if (ID)
+        *ID = (uint64_t)id;
+    return id;
 }
 
-int hash_function_hyper(HashTable ht, void* data, int* ID)
+int hash_function_hyper(HashTable ht, void* data, uint64_t* ID)
 {
     //get the hypercube structure the particular hash function belongs to
     Hypercube* hyper_ctx = (Hypercube*)hash_table_get_algorithm_context(ht);
     if (!hyper_ctx) 
     { 
-        *ID = -1; 
+        if (ID) *ID = 0ULL; 
         return 0; 
     }
 
@@ -149,7 +150,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     struct Hypercube* hyper = (struct Hypercube*)index_data;
 
     // Compute the bucket index for the query point
-    int q_id;
+    uint64_t q_id;
     int bucket_idx = hyper->binary_hash_function(q, hyper, &q_id);
 
     // Access the bucket corresponding to the computed index

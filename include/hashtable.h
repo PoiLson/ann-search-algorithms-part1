@@ -1,5 +1,7 @@
 #ifndef HASHTABLE_H
 #define HASHTABLE_H
+
+#include <stdint.h>
 // hybrid hash table implementation
 // the way it handles collisions is by chaining with linked lists, so it has fixed capacity
 
@@ -15,7 +17,7 @@ typedef struct hash_table *HashTable;
 // Function pointer types
 typedef void (*funtion)(void *);
 typedef int (*Compare_fun)(const void*, const void*, const void*);
-typedef int (*Hash_fun)(HashTable, void*, int*);
+typedef int (*Hash_fun)(HashTable, void*, uint64_t*);
 
 
 typedef struct hash_table
@@ -44,7 +46,7 @@ struct node
 {
     void* key; //the identifier of the node, e.g., index of the point in the dataset
     void* data; //the vector the node has
-    int ID; // the hash value it has but not with mod table_size
+    uint64_t ID; // the hash value (can store full 64-bit ID)
     
     struct node *next;
 };

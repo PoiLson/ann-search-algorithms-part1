@@ -40,6 +40,24 @@ void generate_random_vector(float* v, int d)
         v[i] = gaussian_distribution();
 }
 
+void normalize_vector(float* v, int d)
+{
+    if (!v || d <= 0) return;
+    float sumsq = 0.0f;
+    for (int i = 0; i < d; i++)
+        sumsq += v[i] * v[i];
+    if (sumsq <= 0.0f)
+    {
+        // fallback to unit basis vector if random vector degenerates (extremely unlikely)
+        for (int i = 0; i < d; i++) v[i] = 0.0f;
+        v[0] = 1.0f;
+        return;
+    }
+    float inv = 1.0f / sqrtf(sumsq);
+    for (int i = 0; i < d; i++)
+        v[i] *= inv;
+}
+
 int dot_product_int(const int* a, const int* b, int d)
 {
     int sum = 0;

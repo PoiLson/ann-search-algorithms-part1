@@ -64,18 +64,12 @@ HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare
 int hash_table_insert(HashTable hash_table, void *key, void *data)
 {
     //get the ID value
-    int ID = -1;
+    uint64_t ID = 0ULL;
 
     // get the hash value
     int hash_value = hash_table->hash_function(hash_table, data, &ID);
 
-    // if ID is not correct, hash_value will also be not correct
-    // so no need for further checks
-    if(ID == -1)
-    {
-        perror("ID not configurated!\n");
-        exit(EXIT_FAILURE);
-    }
+    // Note: ID is optional metadata in the node; hash_value determines bucket.
 
     // create a new node
     Node new_node = (Node)malloc(sizeof(struct node));
@@ -89,6 +83,7 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     new_node->key = (void*)malloc(hash_table->key_size);
     memcpy(new_node->key, key, hash_table->key_size);
 
+    // Store ID as 64-bit
     new_node->ID = ID;
     new_node->next = NULL;
 
@@ -110,7 +105,7 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
 
 void* hash_table_search(HashTable hash_table, void *key)
 {
-    int ID = -1;
+    uint64_t ID = 0ULL;
     // get the hash value
     int hash_value = hash_table->hash_function(hash_table, key, &ID);
 
@@ -171,7 +166,7 @@ int hash_table_size(HashTable hash_table)
 
 int hash_table_remove(HashTable hash_table, void *key)
 {
-    int ID = -1;
+    uint64_t ID = 0ULL;
     // get the hash value
     int hash_value = hash_table->hash_function(hash_table, key, &ID);
 

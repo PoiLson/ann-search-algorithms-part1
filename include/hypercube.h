@@ -1,11 +1,13 @@
 #ifndef HYPERCUBE_H
 #define HYPERCUBE_H
 
+#include <stdint.h>
+
 // Forward declaration
 struct Hypercube;
 
 //define function pointer
-typedef int (*bin_hash)(const void* p, const struct Hypercube* hyper, int *ID);
+typedef int (*bin_hash)(const void* p, const struct Hypercube* hyper, uint64_t *ID);
 
 //structure for hypercube hash function parameters
 //namely the v normal vector and t offset
@@ -38,10 +40,10 @@ typedef struct Hypercube
 static bool f(Hashmap** map, int h_ip);
 
 //defines the hypercube hash function
-static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, int *ID);
+static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID);
 
 //modifies the hash function to be used in the hash table
-int hash_function_hyper(HashTable ht, void* data, int* ID);
+int hash_function_hyper(HashTable ht, void* data, uint64_t* ID);
 
 //--------------------------Hypercube main functions-----------------------------
 

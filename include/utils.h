@@ -11,6 +11,9 @@ float gaussian_distribution(void);
 //generates a random vector of dimension d with Gaussian distributed components
 void generate_random_vector(float* v, int d);
 
+// normalizes a float vector to unit L2 norm; if zero vector, sets v[0]=1 and others 0
+void normalize_vector(float* v, int d);
+
 //computes the dot product of two integer vectors of dimension d
 int dot_product_int(const int* a, const int* b, int d);
 
