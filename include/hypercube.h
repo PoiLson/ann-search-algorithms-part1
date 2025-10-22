@@ -25,6 +25,7 @@ typedef struct Hypercube
     int M; // max number of points to check
     float w; // window size
     int probes; // number of probes
+    int dataset_size; // size of dataset for visited array allocation
     metric_func distance; // distance function
     Hypercube_hash_function *hash_params; // array of hash parameters
     Hashmap** map; // array of pointers to hashmaps for f functions

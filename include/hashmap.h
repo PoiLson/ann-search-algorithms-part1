@@ -1,27 +1,13 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
 // Simple hashmap implementation for storing pairs of (int, bool)
+// Uses open addressing with linear probing for better cache performance
 
-// Used in Hypercube for f functions
-// Each Pair represents a mapping from h_i(p) to f's output (0 or 1)
-typedef struct Pair
-{
-    int key; //h_i(p)
-    bool value; //f's result
-    
-    struct Pair* nextPair;
-} Pair;
+// Forward declaration
+typedef struct Hashmap Hashmap;
 
-// Hashmap structure containing linked list of Pairs
-typedef struct Hashmap
-{
-    Pair* pairs; //head of the linked list
-    int size; //number of Pairs in the table
-   
-} Hashmap;
-
-// initialize a new hashmap by allocating memory for it
-Hashmap* hashmap_init();
+// initialize a new hashmap by allocating memory for it with given capacity
+Hashmap* hashmap_init(int capacity);
 
 //frees all memory used by the hashmap
 void hashmap_free(Hashmap* map);

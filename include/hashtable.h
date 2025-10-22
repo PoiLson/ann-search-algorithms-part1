@@ -8,7 +8,7 @@
 //forward declarations
 struct LSH; 
 
-typedef struct node *Node;
+typedef struct node *Node; // legacy type (no longer used for traversal)
 typedef struct hash_table *HashTable;
 
 #define MAP_EOF (Node)0
@@ -19,6 +19,20 @@ typedef void (*funtion)(void *);
 typedef int (*Compare_fun)(const void*, const void*, const void*);
 typedef int (*Hash_fun)(HashTable, void*, uint64_t*);
 
+
+// Entry stored in a bucket (array-based buckets)
+typedef struct HTEntry {
+    void* key;      // key (e.g., dataset index)
+    void* data;     // pointer to vector
+    uint64_t ID;    // full 64-bit amplified ID (optional filter)
+} HTEntry;
+
+// Internal bucket representation: dynamic array of entries
+typedef struct HTBucket {
+    HTEntry* items;
+    int count;
+    int capacity;
+} HTBucket;
 
 typedef struct hash_table
 {
@@ -36,20 +50,13 @@ typedef struct hash_table
     // DID NOT DELETED IT, SO WE DO NOT HAVE TO CHANGE THE PROTOTYPE OF SEARCH AND REMOVE
     const void* metricContext; // this will be the dimension pointer or any metric context
 
-    Node *table;
+    // Array of buckets implemented as dynamic arrays (cache-friendly)
+    HTBucket* buckets;
 }hash_table;
 
 
-// Node structure for linked list in each bucket
-// holds key/identifier, the actual data, an ID value for g(p), and pointer to next node
-struct node
-{
-    void* key; //the identifier of the node, e.g., index of the point in the dataset
-    void* data; //the vector the node has
-    uint64_t ID; // the hash value (can store full 64-bit ID)
-    
-    struct node *next;
-};
+// Legacy node structure kept for backward compatibility with old APIs (unused now)
+struct node { void* key; void* data; uint64_t ID; struct node *next; };
 
 // Finds the prime number before a given number
 int nearest_prime(int n);
@@ -75,7 +82,11 @@ int hash_table_remove(HashTable hash_table, void *key);
 // Returns the capacity of the hash table
 int hash_table_capacity(HashTable hash_table); 
 
-// Returns the head of the linked list at the given index
+// Returns a pointer to the contiguous entries array for a bucket and sets out_count
+// The returned pointer is owned by the table; do not free it.
+const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, int index, int* out_count);
+
+// Deprecated: linked-list API (returns NULL)
 Node hash_table_get_bucket(HashTable hash_table, int index);
 
 // Print the hashtable given

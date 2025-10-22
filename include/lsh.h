@@ -26,6 +26,7 @@ typedef struct LSH
     int L; // number of hash tables
     int k; // number of hash functions per table
     float w; // window size
+    int dataset_size; // total number of points in the dataset (for visited array)
     int table_size; // size of each hash table
     uint64_t num_of_buckets; // large modulus M for ID composition (supports up to ~2^64)
     metric_func distance; // distance function

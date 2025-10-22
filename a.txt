@@ -1,16 +1,11 @@
-gcc -std=c11 -g -Iinclude  -c src/datasets.c -o objectFiles/datasets.o
-gcc -std=c11 -g -Iinclude  -c src/hashmap.c -o objectFiles/hashmap.o
-gcc -std=c11 -g -Iinclude  -c src/hashtable.c -o objectFiles/hashtable.o
-gcc -std=c11 -g -Iinclude  -c src/hypercube.c -o objectFiles/hypercube.o
-gcc -std=c11 -g -Iinclude  -c src/lsh.c -o objectFiles/lsh.o
-gcc -std=c11 -g -Iinclude  -c src/main.c -o objectFiles/main.o
-gcc -std=c11 -g -Iinclude  -c src/parseInput.c -o objectFiles/parseInput.o
-gcc -std=c11 -g -Iinclude  -c src/query.c -o objectFiles/query.o
-gcc -std=c11 -g -Iinclude  -c src/runAlgorithms.c -o objectFiles/runAlgorithms.o
-gcc -std=c11 -g -Iinclude  -c src/utils.c -o objectFiles/utils.o
-gcc -std=c11 -g -Iinclude  -o search objectFiles/datasets.o objectFiles/hashmap.o objectFiles/hashtable.o objectFiles/hypercube.o objectFiles/lsh.o objectFiles/main.o objectFiles/parseInput.o objectFiles/query.o objectFiles/runAlgorithms.o objectFiles/utils.o -lm
-Running algorithm: lsh
+Running algorithm: hypercube
 ./search \
 	-d Mnist_data/train-images.idx3-ubyte \
 	-q Mnist_data/t10k-images-100-sample.idx3-ubyte \
-	-k 4 -L 20 -w 2400 -o output.txt -N 5 -R 4 -type mnist -lsh -range false
+	-kproj 7 -w 2000 -M 10 -probes 35 -o output.txt -N 1 -R 500 -type mnist -range false -hypercube
+Algorithm selected: Dataset loaded: 60000 points of dimension 784
+Hypercube
+make[1]: Entering directory '/home/marialtr/project-2'
+Cleaning up...
+rm -f objectFiles/*.o search
+make[1]: Leaving directory '/home/marialtr/project-2'

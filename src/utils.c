@@ -36,8 +36,30 @@ float gaussian_distribution(void)
 
 void generate_random_vector(float* v, int d)
 {
-    for(int i = 0; i < d; i++)
+    // Optimized bulk generation using Box-Muller (generates pairs)
+    // This reduces the number of rand() calls and sqrt/log computations by half
+    int i = 0;
+    
+    // Generate pairs of Gaussian random numbers using Box-Muller
+    while (i < d - 1)
+    {
+        float u, v_temp, s;
+        do {
+            u = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            v_temp = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            s = u * u + v_temp * v_temp;
+        } while (s >= 1.0f || s == 0.0f);
+        
+        float multiplier = sqrtf(-2.0f * logf(s) / s);
+        v[i++] = u * multiplier;
+        v[i++] = v_temp * multiplier;
+    }
+    
+    // Handle odd dimension: generate one more if needed
+    if (i < d)
+    {
         v[i] = gaussian_distribution();
+    }
 }
 
 void normalize_vector(float* v, int d)
@@ -78,16 +100,7 @@ float dot_product_float(const float* a, const float* b, int d)
     return sum;
 }
 
-float dot_product_float_int(const float* a, const int* b, int d)
-{
-    float sum = 0.0;
-    for(int i = 0; i < d; i++)
-    {
-        sum += a[i] * (float)b[i];
-    }
-
-    return sum;
-}
+// dot_product_float_int moved to utils.h as static inline for performance
 
 float euclidean_distance(const void* a, const void* b, const int dimension)
 {
@@ -104,20 +117,7 @@ float euclidean_distance(const void* a, const void* b, const int dimension)
     return sqrt(sum);
 }
 
-float euclidean_distance_int(const void* a, const void* b, const int dimension)
-{
-    float sum = 0.0;
-    int* a_p = (int*)a;
-    int* b_p = (int*)b;
-
-    for(int i = 0; i < dimension; i++)
-    {
-        float diff = (float)a_p[i] - (float)b_p[i];
-        sum += diff * diff;
-    }
-
-    return sqrt(sum);
-}
+// euclidean_distance_int moved to utils.h as static inline for performance
 
 int hamming_distance(const int* a, const int* b, int d)
 {

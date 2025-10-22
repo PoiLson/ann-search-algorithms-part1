@@ -23,8 +23,16 @@ static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t 
     // Then combine bits into final ID i.e. concatenate bits
     for (int i = 0; i < hyper->kproj; i++)
     {
-        float func = dot_product_float(hyper->hash_params[i].v, p, hyper->d);
-        int h_i = (int)floor((func + hyper->hash_params[i].t) / hyper->w);
+        // Use int-aware dot product for MNIST integer data
+        float func = dot_product_float_int(hyper->hash_params[i].v, p, hyper->d);
+        float val = (func + hyper->hash_params[i].t) / hyper->w;
+        
+        // Fast integer truncation instead of floor()
+        // For negative values, (int) truncates toward zero, but floor goes toward -infinity
+        // So we need to adjust: if val < 0 and val != integer, subtract 1
+        int h_i = (int)val;
+        if (val < 0.0f && val != (float)h_i)
+            h_i--;
 
         bool bit = f(&(hyper->map[i]), h_i);
         id = (id << 1) | bit; // Shift left and add the new bit
@@ -67,7 +75,9 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     hyper->w = params->w;
     hyper->M = params->M;
     hyper->probes = params->probes;
-    hyper->distance = euclidean_distance;
+    hyper->dataset_size = dataset->size; ///add it as a func parameter TODO tomorrow
+    // Use int-based distance for MNIST integer data
+    hyper->distance = euclidean_distance_int;
 
     // Initialize hash parameters
     hyper->hash_params = (Hypercube_hash_function*)malloc(hyper->kproj * sizeof(Hypercube_hash_function));
@@ -104,7 +114,7 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     // Create a hashmap for each f function
     for (int i = 0; i < hyper->kproj; i++)
     {
-        hyper->map[i] = hashmap_init();
+        hyper->map[i] = hashmap_init(2048);
         if (!hyper->map[i])
         {
             hyper_destroy(hyper);
@@ -149,12 +159,25 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     // Retrieve hypercube structure from context
     struct Hypercube* hyper = (struct Hypercube*)index_data;
 
+    // Allocate visited array for O(1) duplicate detection (instead of O(N) linear scan)
+    // This dramatically speeds up queries when examining many candidates
+    bool* visited = (bool*)calloc(hyper->dataset_size, sizeof(bool));
+    if (!visited) {
+        fprintf(stderr, "Failed to allocate visited array\n");
+        return;
+    }
+
+    // Range search optimization: allocate in chunks to avoid repeated realloc
+    int range_capacity = 0;
+    const int RANGE_ALLOC_CHUNK = 128; // Grow by 128 entries at a time
+
     // Compute the bucket index for the query point
     uint64_t q_id;
     int bucket_idx = hyper->binary_hash_function(q, hyper, &q_id);
 
     // Access the bucket corresponding to the computed index
-    Node bucket = hash_table_get_bucket(hyper->hash_table, bucket_idx);
+    int bucket_count = 0;
+    const HTEntry* bucket = hash_table_get_bucket_entries(hyper->hash_table, bucket_idx, &bucket_count);
     
     // Compute Hamming distance and probe other buckets if needed
     // Calculate binary vector representation of bucket_idx
@@ -179,33 +202,22 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
         {
             neighbor_idx = (neighbor_idx << 1) | current_neighbor[b];
         }
-        Node neighbor_bucket = hash_table_get_bucket(hyper->hash_table, neighbor_idx);
+        int neighbor_count_entries = 0;
+        const HTEntry* neighbor_bucket = hash_table_get_bucket_entries(hyper->hash_table, neighbor_idx, &neighbor_count_entries);
 
-        // Process the neighbor bucket
-        while (neighbor_bucket)
+        // Process the neighbor bucket entries array
+        for (int bi = 0; bi < neighbor_count_entries; ++bi)
         {
-            int data_idx = *(int*)neighbor_bucket->key;
-            void* p = neighbor_bucket->data;
+            int data_idx = *(int*)neighbor_bucket[bi].key;
+            void* p = neighbor_bucket[bi].data;
 
-            // Check all points in the bucket - they're candidates
-            float dist = euclidean_distance(q, p, hyper->d);
-
-            // Check if this point is already in the result set (avoid duplicates)
-            int already_found = 0;
-            for (int i = 0; i < *approx_count; i++)
-            {
-                if (approx_neighbors[i] == data_idx)
-                {
-                    already_found = 1;
-                    break;
-                }
-            }
-
-            if (already_found)
-            {
-                neighbor_bucket = neighbor_bucket->next;
+            // O(1) duplicate check using visited array instead of O(N) linear scan
+            if (visited[data_idx])
                 continue;
-            }
+            visited[data_idx] = true;
+
+            // Use int-based distance computation for MNIST integer data
+            float dist = euclidean_distance_int(q, p, hyper->d);
 
             // Insert into approx neighbors if appropriate
             if (*approx_count < params->N || dist < approx_dists[*approx_count - 1])
@@ -224,43 +236,35 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
                 approx_neighbors[i] = data_idx;
             }
 
-            // Range search with deduplication
+            // Range search (visited array already handles deduplication)
             if (params->range_search && dist <= params->R)
             {
-                // Check if this point is already in range_neighbors (avoid duplicates)
-                int already_in_range = 0;
-                for (int r = 0; r < *range_count; r++)
+                // Allocate in chunks to avoid repeated realloc overhead
+                if (*range_count >= range_capacity)
                 {
-                    if ((*range_neighbors)[r] == data_idx)
+                    range_capacity += RANGE_ALLOC_CHUNK;
+                    int* new_range = (int*)realloc(*range_neighbors, range_capacity * sizeof(int));
+                    if (!new_range)
                     {
-                        already_in_range = 1;
-                        break;
-                    }
-                }
-                
-                if (!already_in_range)
-                {
-                    *range_neighbors = (int*)realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
-
-                    if (*range_neighbors)
-                        (*range_neighbors)[(*range_count)++] = data_idx;
-                    else
-                    {
-                        fprintf(stderr, "Memory reallocation failed\n");
-                        //memory cleanup
+                        fprintf(stderr, "Memory reallocation failed for range_neighbors\n");
                         free(*range_neighbors);
                         *range_neighbors = NULL;
                         *range_count = 0;
-                        break;
+                        free(visited);
+                        free(bucket_vector);
+                        free(neighbors);
+                        return;
                     }
+                    *range_neighbors = new_range;
                 }
+                (*range_neighbors)[(*range_count)++] = data_idx;
             }
 
-            neighbor_bucket = neighbor_bucket->next;
         }
     }
 
     // Clean up
+    free(visited);
     free(bucket_vector);
     free(neighbors);
 

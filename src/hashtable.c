@@ -56,8 +56,8 @@ HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare
     hash_table->table_index = table_index;
     hash_table->metricContext = metricContext;
 
-    // initialize the table with NULL
-    hash_table->table = (Node *)calloc(hash_table->capacity, sizeof(Node));
+    // initialize buckets array
+    hash_table->buckets = (HTBucket*)calloc(hash_table->capacity, sizeof(HTBucket));
     return hash_table;
 }
 
@@ -69,36 +69,32 @@ int hash_table_insert(HashTable hash_table, void *key, void *data)
     // get the hash value
     int hash_value = hash_table->hash_function(hash_table, data, &ID);
 
-    // Note: ID is optional metadata in the node; hash_value determines bucket.
+    // Note: ID is optional metadata in the entry; hash_value determines bucket.
 
-    // create a new node
-    Node new_node = (Node)malloc(sizeof(struct node));
-    if (new_node == NULL)
+    // ensure capacity in the target bucket
+    HTBucket* b = &hash_table->buckets[hash_value];
+    if (b->capacity == 0)
     {
-        return -1;
+        b->capacity = 4;
+        b->items = (HTEntry*)malloc(b->capacity * sizeof(HTEntry));
+        if (!b->items) return -1;
     }
-    new_node->data = data;
-
-    // PROBLEM, TODO
-    new_node->key = (void*)malloc(hash_table->key_size);
-    memcpy(new_node->key, key, hash_table->key_size);
-
-    // Store ID as 64-bit
-    new_node->ID = ID;
-    new_node->next = NULL;
-
-    // if the table is empty, insert the node
-    if (hash_table->table[hash_value] == NULL)
+    else if (b->count >= b->capacity)
     {
-        hash_table->table[hash_value] = new_node;
-        hash_table->size++;
-        return 0;
+        int new_cap = b->capacity * 2;
+        HTEntry* new_items = (HTEntry*)realloc(b->items, new_cap * sizeof(HTEntry));
+        if (!new_items) return -1;
+        b->items = new_items;
+        b->capacity = new_cap;
     }
 
-    // if the table is not empty, insert the node at the start of the list
-    Node current = hash_table->table[hash_value];
-    new_node->next = current;
-    hash_table->table[hash_value] = new_node;
+    // append entry at end
+    HTEntry* e = &b->items[b->count++];
+    e->data = data;
+    e->key = (void*)malloc(hash_table->key_size);
+    if (!e->key) return -1;
+    memcpy(e->key, key, hash_table->key_size);
+    e->ID = ID;
     hash_table->size++;
     return 0;
 }
@@ -109,21 +105,12 @@ void* hash_table_search(HashTable hash_table, void *key)
     // get the hash value
     int hash_value = hash_table->hash_function(hash_table, key, &ID);
 
-    // if the table is empty, return NULL
-    if (hash_table->table[hash_value] == NULL)
+    HTBucket* b = &hash_table->buckets[hash_value];
+    if (!b || b->count == 0) return NULL;
+    for (int i = 0; i < b->count; ++i)
     {
-        return NULL;
-    }
-
-    // search for the key in the list
-    Node current = hash_table->table[hash_value];
-    while (current != NULL)
-    {
-        if (hash_table->compare(current->key, key, hash_table->metricContext) == 0)
-        {
-            return current->data;
-        }
-        current = current->next;
+        if (hash_table->compare && hash_table->compare(b->items[i].key, key, hash_table->metricContext) == 0)
+            return b->items[i].data;
     }
     return NULL;
 }
@@ -138,24 +125,22 @@ void hash_table_destroy(HashTable hash_table)
     // destroy the table and the elements in it
     for (int i = 0; i < hash_table->capacity; i++)
     {
-        if (hash_table->table[i] != NULL)
+        HTBucket* b = &hash_table->buckets[i];
+        if (b->items)
         {
-            Node current = hash_table->table[i];
-            while (current != NULL)
+            for (int j = 0; j < b->count; ++j)
             {
-                Node temp = current;
-                current = current->next;
-                if (hash_table->destroy != NULL)
-                {
-                    hash_table->destroy(temp->data);
-                }
-                free(temp->key);
-                free(temp);
+                if (hash_table->destroy)
+                    hash_table->destroy(b->items[j].data);
+                free(b->items[j].key);
             }
+            free(b->items);
+            b->items = NULL;
+            b->count = b->capacity = 0;
         }
     }
 
-    free(hash_table->table);
+    free(hash_table->buckets);
     free(hash_table);
 }
 
@@ -170,34 +155,23 @@ int hash_table_remove(HashTable hash_table, void *key)
     // get the hash value
     int hash_value = hash_table->hash_function(hash_table, key, &ID);
 
-    // if the table is empty, return
-    if (hash_table->table[hash_value] == NULL)
+    HTBucket* b = &hash_table->buckets[hash_value];
+    if (!b || b->count == 0) return -1;
+    for (int i = 0; i < b->count; ++i)
     {
-        return -1;
-    }
-
-    // search for the key in the list
-    Node current = hash_table->table[hash_value];
-    Node prev = NULL;
-    while (current != NULL)
-    {
-        if (hash_table->compare(current->key, key, hash_table->metricContext) == 0)
+        if (hash_table->compare && hash_table->compare(b->items[i].key, key, hash_table->metricContext) == 0)
         {
-            // if the key is found, remove the node
-            if (prev == NULL)
-            {
-                hash_table->table[hash_value] = current->next;
-            }
-            else
-            {
-                prev->next = current->next;
-            }
-            free(current);
+            // remove by shifting last into i (order not preserved) or memmove
+            free(b->items[i].key);
+            if (hash_table->destroy)
+                hash_table->destroy(b->items[i].data);
+            // shift tail left
+            if (i < b->count - 1)
+                memmove(&b->items[i], &b->items[i+1], (b->count - i - 1) * sizeof(HTEntry));
+            b->count--;
             hash_table->size--;
             return 0;
         }
-        prev = current;
-        current = current->next;
     }
     return -1;
 }
@@ -207,13 +181,23 @@ int hash_table_capacity(HashTable hash_table)
     return hash_table->capacity;
 }
 
-Node hash_table_get_bucket(HashTable hash_table, int index)
+const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, int index, int* out_count)
 {
     if (index < 0 || index >= hash_table->capacity)
     {
+        if (out_count) *out_count = 0;
         return NULL;
     }
-    return hash_table->table[index];
+    HTBucket* b = &hash_table->buckets[index];
+    if (out_count) *out_count = b->count;
+    return b->items;
+}
+
+// Deprecated legacy function
+Node hash_table_get_bucket(HashTable hash_table, int index)
+{
+    (void)hash_table; (void)index;
+    return NULL;
 }
 
 void print_hashtable(HashTable hash_table, int table_size, int dimension)
@@ -227,22 +211,20 @@ void print_hashtable(HashTable hash_table, int table_size, int dimension)
     // Print the contents of the hash table
     for (int j = 0; j < table_size; j++)
     {
-        Node bucket = hash_table_get_bucket(hash_table, j);
+        int cnt = 0;
+        const HTEntry* bucket = hash_table_get_bucket_entries(hash_table, j, &cnt);
 
-        if (bucket != NULL)
+        if (bucket != NULL && cnt > 0)
         {
             printf(" Bucket %d: ", j);
 
-            Node currentBucket = bucket;
-            
-            while (currentBucket != NULL )
+            for (int bi = 0; bi < cnt; ++bi)
             {
-
-                if (currentBucket->data == NULL)
+                if (bucket[bi].data == NULL)
                     printf("(NULL_DATA) -> ");
                 else
                 {
-                    float* point = (float*)currentBucket->data;
+                    float* point = (float*)bucket[bi].data;
 
                     // Check if we can safely read the point
                     printf("(");
@@ -258,13 +240,6 @@ void print_hashtable(HashTable hash_table, int table_size, int dimension)
 
                     printf(") -> ");
                 }
-                
-                // Check if next pointer is accessible before dereferencing
-                if (currentBucket->next != NULL)
-                    currentBucket = currentBucket->next;
-                else
-                    currentBucket = NULL;
-
             }
 
             printf("NULL\n");

@@ -15,7 +15,14 @@ int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, uint64_t*
     {
         float func = dot_product_float_int(table_hash_params[i].v, p, lsh->d);
         // printf("  LSH: dot product(%d) = %.2f\n", i, func);
-        int h_i = (int)floor((func + table_hash_params[i].t) / lsh->w);
+        
+        float val = (func + table_hash_params[i].t) / lsh->w;
+        
+        // Fast integer truncation instead of floor()
+        // For negative values, (int) truncates toward zero, but floor goes toward -infinity
+        int h_i = (int)val;
+        if (val < 0.0f && val != (float)h_i)
+            h_i--;
 
         // Combine using linear combination: ID = sum(r_i * h_i) mod M
         long long r_i = lsh->linear_combinations[table_index][i];
@@ -61,6 +68,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     lsh->L = params->L;
     lsh->k = params->k; 
     lsh->w = params->w;
+    lsh->dataset_size = dataset->size;
     // lsh->table_size = dataset->size / 4; 
     // lsh->num_of_buckets = (1 << 16) - 4; // need a larger number?
 
@@ -173,6 +181,18 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
     // Cast index_data to LSH structure
     struct LSH* lsh = (struct LSH*)index_data;
 
+    // Use a visited array for O(1) duplicate detection across all tables
+    bool* visited = (bool*)calloc(lsh->dataset_size, sizeof(bool));
+    if (!visited)
+    {
+        fprintf(stderr, "Failed to allocate visited array.\n");
+        return;
+    }
+
+    // Range neighbors dynamic capacity (grow in chunks instead of per-item realloc)
+    const int RANGE_ALLOC_CHUNK = 128;
+    int range_capacity = (*range_neighbors && *range_count > 0) ? *range_count : 0;
+
     // Debug/diagnostic: track how many UNIQUE candidates we examine across all L tables
     // We keep a simple dynamic array of seen indices for this query (linear check is fine for diagnostics)
     // int* seen_candidates = NULL;
@@ -188,20 +208,18 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
         // printf("INSIDE OF LSH INDEX LOOKUP\n");
         int bucket_idx = hash_func_impl_lsh(q, lsh, tbl_idx, &q_id);
 
-        Node bucket = hash_table_get_bucket(lsh->hash_tables[tbl_idx], bucket_idx);
-        while (bucket)
+        int bucket_count = 0;
+        const HTEntry* bucket = hash_table_get_bucket_entries(lsh->hash_tables[tbl_idx], bucket_idx, &bucket_count);
+        for (int bi = 0; bi < bucket_count; ++bi)
         {
-            int data_idx = *(int*)bucket->key;
-            void* p = bucket->data;
+            int data_idx = *(int*)bucket[bi].key;
+            void* p = bucket[bi].data;
 
 
 
 
-            if (bucket->ID != q_id)
-            {
-                bucket = bucket->next;
+            if (bucket[bi].ID != q_id)
                 continue;
-            }
 
 
 
@@ -231,25 +249,16 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
             //     }
             // }
 
-            // Check all points in the bucket - they're candidates
-            float dist = euclidean_distance_int(q, p, lsh->d);
-
-            // Check if this point is already in the result set (avoid duplicates)
-            int already_found = 0;
-            for (int i = 0; i < *approx_count; i++)
-            {
-                if (approx_neighbors[i] == data_idx)
-                {
-                    already_found = 1;
-                    break;
-                }
-            }
-
-            if (already_found)
-            {
-                bucket = bucket->next;
+            // Skip duplicate candidates across tables using visited array
+            if (data_idx >= 0 && data_idx < lsh->dataset_size && visited[data_idx])
                 continue;
-            }
+
+            // Mark as visited now to avoid reprocessing
+            if (data_idx >= 0 && data_idx < lsh->dataset_size)
+                visited[data_idx] = true;
+
+            // Compute distance for this candidate
+            float dist = euclidean_distance_int(q, p, lsh->d);
 
             if (*approx_count < params->N || dist < approx_dists[*approx_count - 1])
             {
@@ -270,35 +279,26 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
 
             if (params->range_search && dist <= params->R)
             {
-                // Check if this point is already in range_neighbors (avoid duplicates)
-                int already_in_range = 0;
-                for (int r = 0; r < *range_count; r++)
+                // Ensure capacity and append without per-item realloc
+                if (*range_count >= range_capacity)
                 {
-                    if ((*range_neighbors)[r] == data_idx)
+                    int new_capacity = range_capacity + RANGE_ALLOC_CHUNK;
+                    int* new_buf = (int*)realloc(*range_neighbors, new_capacity * sizeof(int));
+                    if (!new_buf)
                     {
-                        already_in_range = 1;
-                        break;
-                    }
-                }
-                
-                if (!already_in_range)
-                {
-                    *range_neighbors = (int*)realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
-
-                    if (*range_neighbors)
-                        (*range_neighbors)[(*range_count)++] = data_idx;
-                    else
-                    {
-                        fprintf(stderr, "Memory reallocation failed\n");
-                        //memory cleanup
+                        fprintf(stderr, "Memory reallocation failed for range neighbors.\n");
                         free(*range_neighbors);
                         *range_neighbors = NULL;
                         *range_count = 0;
                         break;
                     }
+                    *range_neighbors = new_buf;
+                    range_capacity = new_capacity;
                 }
+
+                // Append this neighbor
+                (*range_neighbors)[(*range_count)++] = data_idx;
             }
-            bucket = bucket->next;
         }
     }
 
@@ -309,12 +309,14 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
     // Free diagnostic buffer
     // free(seen_candidates);
 
-    //cleanup if no range neighbors found
+    // cleanup if no range neighbors found
     if (*range_count == 0)
     {
         free(*range_neighbors);
         *range_neighbors = NULL;
     }
+
+    free(visited);
 }
 
 void lsh_destroy(struct LSH* lsh)

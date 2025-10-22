@@ -44,7 +44,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = lsh
+ALGO = hypercube
 
 # DEBUGGING PURPOSES
 #---------------------
@@ -62,8 +62,8 @@ INPUT_FILE  = Mnist_data/train-images.idx3-ubyte
 QUERY_FILE  = Mnist_data/t10k-images-100-sample.idx3-ubyte
 
 OUTPUT_FILE = output.txt
-N           = 5
-R           = 4
+N           = 1
+R           = 500
 
 TYPE        = mnist
 RANGE       = false
@@ -78,10 +78,10 @@ W = 2400
 
 # Hypercube defaults
 # -------------------
-KPROJ       = 3
-HYPERCUBE_W = 2
-M           = 10
-PROBES      = 4
+KPROJ       = 7
+HYPERCUBE_W = 2000
+M           = 200
+PROBES      = 35
 
 # IVFFLAT defaults
 # -------------------

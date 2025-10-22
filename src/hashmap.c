@@ -1,114 +1,65 @@
 #include "../include/main.h"
 
-Hashmap* hashmap_init()
-{
-    Hashmap* map = (Hashmap*)malloc(sizeof(Hashmap));
-    map->pairs = NULL;
-    map->size = 0;
-    return map; 
+typedef struct {
+    int key;
+    bool value;
+    bool occupied;
+} Entry;
+
+struct Hashmap {
+    Entry* table;
+    int capacity;
+    int size;
+};
+
+static inline int hash_int(int key, int capacity) {
+    // simple multiplicative hash
+    unsigned int h = (unsigned int)key * 2654435761u;
+    return (int)(h % capacity);
 }
 
-void hashmap_free(Hashmap* map)
-{
-    Pair* current = map->pairs;
-    while (current != NULL)
-    {
-        Pair* temp = current;
-        current = current->nextPair;
-        free(temp);
-    }
+Hashmap* hashmap_init(int capacity) {
+    Hashmap* map = malloc(sizeof(Hashmap));
+    map->capacity = capacity;
+    map->size = 0;
+    map->table = calloc(capacity, sizeof(Entry));
+    return map;
+}
+
+void hashmap_free(Hashmap* map) {
+    free(map->table);
     free(map);
 }
 
-bool hashmap_search(Hashmap* map, int key)
-{
-    Pair* current = map->pairs;
-    while (current != NULL)
-    {
-        if (current->key == key)
-        {
-            return true;
-        }
-        current = current->nextPair;
-    }
-    return false;
-}
-
-
-bool hashmap_insert(Hashmap* map, int key, bool value)
-{
-    Pair* current = map->pairs;
-
-    Pair* newPair = (Pair*)malloc(sizeof(Pair));
-    if (newPair == NULL)
-    {
-        return false; // Memory allocation failed
-    }
-    newPair->key = key;
-    newPair->value = value;
-    newPair->nextPair = current;
-    map->pairs = newPair;
-    map->size++;
-    return true;
-}
-
-bool* hashmap_getValue(Hashmap* map, int key)
-{
-    //iterates through linked list to find key
-    Pair* current = map->pairs;
-    while (current != NULL)
-    {
-        if (current->key == key)
-        {
-            return &current->value;
-        }
-        current = current->nextPair;
+bool* hashmap_getValue(Hashmap* map, int key) {
+    int idx = hash_int(key, map->capacity);
+    for (int i = 0; i < map->capacity; i++) {
+        int probe = (idx + i) % map->capacity;
+        if (!map->table[probe].occupied) return NULL;
+        if (map->table[probe].key == key) return &map->table[probe].value;
     }
     return NULL;
 }
 
-bool hashmap_remove(Hashmap* map, int key)
-{
-    Pair* current = map->pairs;
-    Pair* previous = NULL;
-    while (current != NULL)
-    {
-        if (current->key == key)
-        {
-            if (previous == NULL)
-            {
-                map->pairs = current->nextPair;
-            }
-            else
-            {
-                previous->nextPair = current->nextPair;
-            }
-            free(current);
-            map->size--;
+bool hashmap_insert(Hashmap* map, int key, bool value) {
+    if (map->size * 2 >= map->capacity) {
+        // TODO: grow table if needed
+        return false;
+    }
+    int idx = hash_int(key, map->capacity);
+    for (int i = 0; i < map->capacity; i++) {
+        int probe = (idx + i) % map->capacity;
+        if (!map->table[probe].occupied) {
+            map->table[probe].key = key;
+            map->table[probe].value = value;
+            map->table[probe].occupied = true;
+            map->size++;
             return true;
         }
-        previous = current;
-        current = current->nextPair;
+        if (map->table[probe].key == key) {
+            map->table[probe].value = value;
+            return true;
+        }
     }
     return false;
-}
-
-int hashmap_size(Hashmap* map)
-{
-    return map->size;
-}
-
-bool hashmap_is_empty(Hashmap* map)
-{
-    return map->size == 0;
-}
-
-void hashmap_print(Hashmap* map)
-{
-    Pair* current = map->pairs;
-    while (current != NULL)
-    {
-        printf("Key: %d, Value: %d\n", current->key, current->value);
-        current = current->nextPair;
-    }
 }
