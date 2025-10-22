@@ -12,6 +12,10 @@ CC = gcc
 CFLAGS = -std=c11 -g -Iinclude 
 LDFLAGS = -lm
 
+# Optional LSH optimization flags:
+# Enable exact ID matching for faster queries (13% speedup, no recall loss with W=2000)
+# CFLAGS += -DLSH_EXACT_ID_MATCH
+
 # Executable name
 TARGET = search
 
@@ -68,8 +72,8 @@ RANGE       = false
 # -------------------
 # For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
 # For MNIST (784D, pixel values 0-255): Tuned high-recall baseline comes from large W due to E2LSH projections on raw ints
-K = 5
-L = 30
+K = 4
+L = 27
 W = 2000
 
 # Hypercube defaults

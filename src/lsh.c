@@ -64,7 +64,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     // lsh->table_size = dataset->size / 4; 
     // lsh->num_of_buckets = (1 << 16) - 4; // need a larger number?
 
-    lsh->table_size = nearest_prime(dataset->size / 64);
+    lsh->table_size = nearest_prime(dataset->size / 4);
     // Set M to the largest 32-bit prime (2^32 - 5) to avoid overflow in older impls
     lsh->num_of_buckets = 4294967291ULL;
 
@@ -175,13 +175,16 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
 
     // Debug/diagnostic: track how many UNIQUE candidates we examine across all L tables
     // We keep a simple dynamic array of seen indices for this query (linear check is fine for diagnostics)
-    int* seen_candidates = NULL;
-    int seen_count = 0;
+    // int* seen_candidates = NULL;
+    // int seen_count = 0;
+
+    // Early stopping: prevent examining excessive candidates (protects against degenerate cases)
+    // const int MAX_CANDIDATES = 25 * lsh->L;  // Configurable threshold (e.g., 10L-25L)
 
     // For each hash table, compute the bucket index for the query point
     for (int tbl_idx = 0; tbl_idx < lsh->L; tbl_idx++)
     {
-    uint64_t q_id = 0ULL;
+        uint64_t q_id = 0ULL;
         // printf("INSIDE OF LSH INDEX LOOKUP\n");
         int bucket_idx = hash_func_impl_lsh(q, lsh, tbl_idx, &q_id);
 
@@ -191,30 +194,42 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
             int data_idx = *(int*)bucket->key;
             void* p = bucket->data;
 
+
+
+
+            if (bucket->ID != q_id)
+            {
+                bucket = bucket->next;
+                continue;
+            }
+
+
+
+
             // Count unique candidates (union of buckets across all tables)
-            int already_seen = 0;
-            for (int s = 0; s < seen_count; s++)
-            {
-                if (seen_candidates[s] == data_idx)
-                {
-                    already_seen = 1;
-                    break;
-                }
-            }
-            if (!already_seen)
-            {
-                int* tmp = (int*)realloc(seen_candidates, (seen_count + 1) * sizeof(int));
-                if (tmp)
-                {
-                    seen_candidates = tmp;
-                    seen_candidates[seen_count++] = data_idx;
-                }
-                else
-                {
-                    // If realloc fails, skip counting further to avoid crashing diagnostics
-                    // (algorithm continues functioning without candidate stats)
-                }
-            }
+            // int already_seen = 0;
+            // for (int s = 0; s < seen_count; s++)
+            // {
+            //     if (seen_candidates[s] == data_idx)
+            //     {
+            //         already_seen = 1;
+            //         break;
+            //     }
+            // }
+            // if (!already_seen)
+            // {
+            //     int* tmp = (int*)realloc(seen_candidates, (seen_count + 1) * sizeof(int));
+            //     if (tmp)
+            //     {
+            //         seen_candidates = tmp;
+            //         seen_candidates[seen_count++] = data_idx;
+            //     }
+            //     else
+            //     {
+            //         // If realloc fails, skip counting further to avoid crashing diagnostics
+            //         // (algorithm continues functioning without candidate stats)
+            //     }
+            // }
 
             // Check all points in the bucket - they're candidates
             float dist = euclidean_distance_int(q, p, lsh->d);
@@ -289,10 +304,10 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
 
     // Print diagnostic: total unique candidates examined for this query
     // Rule of thumb: if consistently < 10*L, not enough overlap/collisions
-    printf("Candidates examined (unique): %d (L=%d, threshold ~%d)\n", seen_count, lsh->L, 10 * lsh->L);
+    // printf("Candidates examined (unique): %d (L=%d, threshold ~%d)\n", seen_count, lsh->L, 10 * lsh->L);
 
     // Free diagnostic buffer
-    free(seen_candidates);
+    // free(seen_candidates);
 
     //cleanup if no range neighbors found
     if (*range_count == 0)
