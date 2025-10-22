@@ -58,7 +58,7 @@ INPUT_FILE  = Mnist_data/train-images.idx3-ubyte
 QUERY_FILE  = Mnist_data/t10k-images-100-sample.idx3-ubyte
 
 OUTPUT_FILE = output.txt
-N           = 1
+N           = 5
 R           = 4
 
 TYPE        = mnist
@@ -67,17 +67,17 @@ RANGE       = false
 # LSH defaults
 # -------------------
 # For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
-# For MNIST (784D, pixel values 0-255): Use K=10-14, L=5-10, W=400-800
-K = 10
+# For MNIST (784D, pixel values 0-255): Tuned high-recall baseline comes from large W due to E2LSH projections on raw ints
+K = 5
 L = 30
-W = 30
+W = 2000
 
 # Hypercube defaults
 # -------------------
-KPROJ  = 3
-W      = 2
-M      = 10
-PROBES = 4
+KPROJ       = 3
+HYPERCUBE_W = 2
+M           = 10
+PROBES      = 4
 
 # IVFFLAT defaults
 # -------------------
@@ -104,8 +104,8 @@ ifeq ($(ALGO), lsh)
 endif
 
 ifeq ($(ALGO), hypercube)
-    ALGO_FLAG = -hypercube
-    ALGO_PARAMS = -kproj $(KPROJ) -w $(W) -M $(M) -probes $(PROBES) -o $(OUTPUT_FILE) -N $(N) -R $(R) -type $(TYPE) -range $(RANGE) $(ALGO_FLAG)
+	ALGO_FLAG = -hypercube
+	ALGO_PARAMS = -kproj $(KPROJ) -w $(HYPERCUBE_W) -M $(M) -probes $(PROBES) -o $(OUTPUT_FILE) -N $(N) -R $(R) -type $(TYPE) -range $(RANGE) $(ALGO_FLAG)
 endif
 
 ifeq ($(ALGO), ivfflat)
