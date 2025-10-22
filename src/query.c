@@ -151,5 +151,22 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         free(true_dists);
     }
 
+    // Final aggregated metrics over all queries
+    if (query_count > 0)
+    {
+        double avg_af = total_af / (double)query_count;
+        double avg_recall = total_recall / (double)query_count;
+        double avg_t_approx = total_approx_time / (double)query_count;
+        double avg_t_true = total_true_time / (double)query_count;
+        double qps_overall = (total_approx_time > 0.0) ? ((double)query_count / total_approx_time) : 0.0;
+
+        fprintf(output_file, "===== OVERALL METRICS =====\n");
+        fprintf(output_file, "Average AF (mean over queries): %f\n", avg_af);
+        fprintf(output_file, "Average Recall@N: %f\n", avg_recall);
+        fprintf(output_file, "Average tApproximate: %f\n", avg_t_approx);
+        fprintf(output_file, "Average tTrue: %f\n", avg_t_true);
+        fprintf(output_file, "QPS_overall: %f\n", qps_overall);
+    }
+
     fclose(output_file);
 }

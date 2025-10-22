@@ -61,7 +61,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     // lsh->table_size = dataset->size / 4; 
     // lsh->num_of_buckets = (1 << 16) - 4; // need a larger number?
 
-    lsh->table_size = nearest_prime(dataset->size / 32);
+    lsh->table_size = nearest_prime(dataset->size / 64);
     // Set M to the largest 32-bit prime (2^32 - 5) to avoid overflow in older impls
     lsh->num_of_buckets = 4294967291ULL;
 
@@ -82,7 +82,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         lsh->hash_params[i].v = (float*)malloc(lsh->d * sizeof(float));
         generate_random_vector(lsh->hash_params[i].v, lsh->d);
         // Normalize projection vector to unit length for stable hashing
-        // normalize_vector(lsh->hash_params[i].v, lsh->d);
+        normalize_vector(lsh->hash_params[i].v, lsh->d);
 
         if(!lsh->hash_params[i].v)
         {
@@ -114,7 +114,7 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
                 tmp = rand(); // ensure non-zero
             }
             // bound them in range [1, 1000]
-            // tmp = (tmp % 1000) + 1;
+            tmp = (tmp % 1000) + 1;
             lsh->linear_combinations[i][j] = tmp; // random int for r[i][j]
         }
     }
