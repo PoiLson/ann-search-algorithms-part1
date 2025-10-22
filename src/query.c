@@ -89,12 +89,12 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         total_true_time += true_time;
 
         // Metrics
-        printf("TRUE NEIGHBORS\n");
-        for(int idx = 0; idx < params->N && idx < approx_count; idx++)
-        {
-            printf("%d - %lf, ", true_neighbors[idx], true_dists[idx]);
-        }
-        puts("");
+        // printf("TRUE NEIGHBORS\n");
+        // for(int idx = 0; idx < params->N && idx < approx_count; idx++)
+        // {
+        //     printf("%d - %lf, ", true_neighbors[idx], true_dists[idx]);
+        // }
+        // puts("");
 
 
         double af = (true_dists[0] > 0.0) ? approx_dists[0] / true_dists[0] : 1.0;
