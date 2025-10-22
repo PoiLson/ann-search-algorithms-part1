@@ -9,10 +9,13 @@ int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, uint64_t*
     // Work modulo M using 64-bit unsigned where M may be up to 2^32-5
     uint64_t M = lsh->num_of_buckets;
     uint64_t id = 0;
+    // Use the hash parameters corresponding to this table
+    const LSH_hash_function* table_hash_params = lsh->hash_params[table_index];
     for (int i = 0; i < lsh->k; i++)
     {
-        float func = dot_product_float_int(lsh->hash_params[i].v, p, lsh->d);
-        int h_i = (int)floor((func + lsh->hash_params[i].t) / lsh->w);
+        float func = dot_product_float_int(table_hash_params[i].v, p, lsh->d);
+        // printf("  LSH: dot product(%d) = %.2f\n", i, func);
+        int h_i = (int)floor((func + table_hash_params[i].t) / lsh->w);
 
         // Combine using linear combination: ID = sum(r_i * h_i) mod M
         long long r_i = lsh->linear_combinations[table_index][i];
@@ -67,33 +70,41 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 
     lsh->distance = euclidean_distance_int;
 
-    //allocate memory for hash parameters 
-    lsh->hash_params = (LSH_hash_function*)malloc(lsh->k * sizeof(LSH_hash_function));
-    if(!lsh->hash_params)
+    // Allocate memory for per-table hash parameters (L x k)
+    lsh->hash_params = (LSH_hash_function**)malloc(lsh->L * sizeof(LSH_hash_function*));
+    if (!lsh->hash_params)
     {
         lsh_destroy(lsh);
         exit(EXIT_FAILURE);
     }
 
-    // generate vectors and t for each hash function
-    // and store them in lsh->hash_params
-    for (int i = 0; i < lsh->k; i++)
+    // For each table, generate K independent hash functions (v, t)
+    for (int tbl = 0; tbl < lsh->L; tbl++)
     {
-        lsh->hash_params[i].v = (float*)malloc(lsh->d * sizeof(float));
-        generate_random_vector(lsh->hash_params[i].v, lsh->d);
-        // Normalize projection vector to unit length for stable hashing
-        normalize_vector(lsh->hash_params[i].v, lsh->d);
-
-        if(!lsh->hash_params[i].v)
+        lsh->hash_params[tbl] = (LSH_hash_function*)malloc(lsh->k * sizeof(LSH_hash_function));
+        if (!lsh->hash_params[tbl])
         {
             lsh_destroy(lsh);
             exit(EXIT_FAILURE);
         }
 
-    // Calculate t uniformly in [0, w)
-    float zero = 0.0f;
-    float wval = lsh->w;
-    lsh->hash_params[i].t = uniform_distribution(&zero, &wval);
+        for (int i = 0; i < lsh->k; i++)
+        {
+            lsh->hash_params[tbl][i].v = (float*)malloc(lsh->d * sizeof(float));
+            if (!lsh->hash_params[tbl][i].v)
+            {
+                lsh_destroy(lsh);
+                exit(EXIT_FAILURE);
+            }
+            generate_random_vector(lsh->hash_params[tbl][i].v, lsh->d);
+            // Optional: Normalize projection vector for cosine LSH; keep commented for E2LSH behavior
+            // normalize_vector(lsh->hash_params[tbl][i].v, lsh->d);
+
+            // Calculate t uniformly in [0, w)
+            float zero = 0.0f;
+            float wval = lsh->w;
+            lsh->hash_params[tbl][i].t = uniform_distribution(&zero, &wval);
+        }
     }
 
     //initialize linear combinations r[i][j]
@@ -299,10 +310,17 @@ void lsh_destroy(struct LSH* lsh)
     // Free hash params and their vectors
     if (lsh->hash_params)
     {
-        for (int i = 0; i < lsh->k; i++)
+        for (int tbl = 0; tbl < lsh->L; tbl++)
         {
-            if (lsh->hash_params[i].v)
-                free(lsh->hash_params[i].v);
+            if (lsh->hash_params[tbl])
+            {
+                for (int i = 0; i < lsh->k; i++)
+                {
+                    if (lsh->hash_params[tbl][i].v)
+                        free(lsh->hash_params[tbl][i].v);
+                }
+                free(lsh->hash_params[tbl]);
+            }
         }
         free(lsh->hash_params);
     }

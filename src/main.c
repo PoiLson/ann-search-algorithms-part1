@@ -5,7 +5,7 @@ int main(int argc, char **argv)
     SearchParams params;
     // Fixed seed for reproducible results in exercises
     // unsigned int seed = 42;
-    srand(time(NULL));
+    srand(42);
 
     if (parse_arguments(argc, argv, &params) != 0)
         exit(EXIT_FAILURE);

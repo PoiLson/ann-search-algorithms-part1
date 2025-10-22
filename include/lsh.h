@@ -29,7 +29,9 @@ typedef struct LSH
     int table_size; // size of each hash table
     uint64_t num_of_buckets; // large modulus M for ID composition (supports up to ~2^64)
     metric_func distance; // distance function
-    LSH_hash_function *hash_params; // array of hash parameters
+    // Per-table hash parameters: for each table (L), we have k hash functions (v, t)
+    // Access pattern: hash_params[table_index][i]
+    LSH_hash_function **hash_params; 
     int **linear_combinations; // array of r[i][j], i in[L], j in[k] for g(p)
     HashTable *hash_tables; // array of hash tables
 } LSH;
@@ -45,7 +47,6 @@ typedef struct LSH
 // g() needs to be a function stored in the LSH struct so it needs to return hash_func type
 int hash_func_impl_lsh(const void* p ,const LSH* lsh, int table_index, uint64_t* ID);
 
-// wraps the hash function to be used in the hash table
 int hash_function_lsh(HashTable ht, void* data, uint64_t* ID);
 
 

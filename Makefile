@@ -58,7 +58,7 @@ INPUT_FILE  = Mnist_data/train-images.idx3-ubyte
 QUERY_FILE  = Mnist_data/t10k-images-100-sample.idx3-ubyte
 
 OUTPUT_FILE = output.txt
-N           = 5
+N           = 1
 R           = 4
 
 TYPE        = mnist
@@ -68,9 +68,9 @@ RANGE       = false
 # -------------------
 # For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
 # For MNIST (784D, pixel values 0-255): Use K=10-14, L=5-10, W=400-800
-K = 11
+K = 10
 L = 30
-W = 5755.0
+W = 30
 
 # Hypercube defaults
 # -------------------
