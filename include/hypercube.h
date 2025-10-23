@@ -29,7 +29,8 @@ typedef struct Hypercube
     DataType data_type; // type of data (int or float)
     metric_func distance; // distance function
     Hypercube_hash_function *hash_params; // array of hash parameters
-    Hashmap** map; // array of pointers to hashmaps for f functions
+    uint32_t* f_a; // array of a_i coefficients for 2-universal hash (one per bit)
+    uint32_t* f_b; // array of b_i offsets for 2-universal hash (one per bit)
     bin_hash binary_hash_function; // single hash function that computes all k bits
     
     HashTable hash_table; // hash table
@@ -37,9 +38,16 @@ typedef struct Hypercube
 
 //-----------------------Helper functions for hashing----------------------------
 
-// f function to map h_i to {0,1} uniformly, using hashmaps
-// to store/ access previously computed values
-static bool f(Hashmap** map, int h_ip);
+// f function to map h_i to {0,1} using 2-universal hashing for balanced bits
+static inline bool f(uint32_t a, uint32_t b, int h_i)
+{
+    // 2-universal hash: ((a * h + b) mod prime) & 1
+    // Use a large prime (2^31 - 1) for modulo
+    const uint32_t PRIME = 2147483647U; // 2^31 - 1 (Mersenne prime)
+    uint32_t h_unsigned = (uint32_t)h_i;
+    uint64_t temp = ((uint64_t)a * h_unsigned + b) % PRIME;
+    return (bool)(temp & 1U);
+}
 
 //defines the hypercube hash function
 static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID);

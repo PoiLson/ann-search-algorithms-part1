@@ -43,8 +43,28 @@ bool* hashmap_getValue(Hashmap* map, int key) {
 
 bool hashmap_insert(Hashmap* map, int key, bool value) {
     if (map->size * 2 >= map->capacity) {
-        // TODO: grow table if needed
-        return false;
+        // grow table
+        int new_capacity = map->capacity * 2;
+        Entry* new_table = calloc(new_capacity, sizeof(Entry));
+        if (!new_table) return false;
+
+        // Rehash all existing entries
+        for (int i = 0; i < map->capacity; i++) {
+            if (map->table[i].occupied) {
+                int new_idx = hash_int(map->table[i].key, new_capacity);
+                for (int j = 0; j < new_capacity; j++) {
+                    int probe = (new_idx + j) % new_capacity;
+                    if (!new_table[probe].occupied) {
+                        new_table[probe] = map->table[i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        free(map->table);
+        map->table = new_table;
+        map->capacity = new_capacity;
     }
     int idx = hash_int(key, map->capacity);
     for (int i = 0; i < map->capacity; i++) {

@@ -1,21 +1,6 @@
 #include "../include/main.h"
 
 
-static bool f(Hashmap** map, int h_ip)
-{
-    bool* value = hashmap_getValue(*map, h_ip);
-    if (value != NULL)
-    {
-        return *value;
-    }
-    else
-    {
-        bool bit = rand() % 2;
-        hashmap_insert(*map, h_ip, bit);
-        return bit;
-    }
-}
-
 static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID)
 {
     int id = 0;
@@ -39,7 +24,8 @@ static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t 
         if (val < 0.0f && val != (float)h_i)
             h_i--;
 
-        bool bit = f(&(hyper->map[i]), h_i);
+        // Use 2-universal hash for deterministic, balanced bit assignment
+        bool bit = f(hyper->f_a[i], hyper->f_b[i], h_i);
         id = (id << 1) | bit; // Shift left and add the new bit
     }
 
@@ -48,10 +34,62 @@ static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t 
     return id;
 }
 
+// Diagnostic: check per-bit balance of f_i outputs on the dataset
+static void hyper_check_f_balance(const Hypercube* hyper, const Dataset* dataset, int sample_size)
+{
+    const int k = hyper->kproj;
+    long long* ones = (long long*)calloc(k, sizeof(long long));
+    long long* zeros = (long long*)calloc(k, sizeof(long long));
+    if (!ones || !zeros)
+    {
+        free(ones); free(zeros);
+        fprintf(stderr, "[diag] Failed to allocate counters for f_i balance\n");
+        return;
+    }
+
+    int total = dataset->size;
+    if (sample_size > 0 && sample_size < total) total = sample_size;
+
+    for (int i = 0; i < total; ++i)
+    {
+        const void* p = dataset->data[i];
+        for (int j = 0; j < k; ++j)
+        {
+            float func;
+            if (hyper->data_type == DATA_TYPE_FLOAT)
+                func = dot_product_float(hyper->hash_params[j].v, (const float*)p, hyper->d);
+            else
+                func = dot_product_float_int(hyper->hash_params[j].v, (const int*)p, hyper->d);
+
+            float val = (func + hyper->hash_params[j].t) / hyper->w;
+            int h_i = (int)val;
+            if (val < 0.0f && val != (float)h_i) h_i--;
+
+            bool bit = f(hyper->f_a[j], hyper->f_b[j], h_i);
+            if (bit) ones[j]++; else zeros[j]++;
+        }
+    }
+
+    fprintf(stderr, "[diag] Hypercube f_i balance over %d/%d points (k=%d):\n", total, dataset->size, k);
+    double avg_ones = 0.0;
+    for (int j = 0; j < k; ++j)
+    {
+        long long tot = ones[j] + zeros[j];
+        double p1 = (tot > 0) ? ((double)ones[j] / (double)tot) : 0.0;
+        avg_ones += p1;
+        fprintf(stderr, "  bit %2d: ones=%lld zeros=%lld p1=%.3f\n", j, ones[j], zeros[j], p1);
+    }
+    if (k > 0) avg_ones /= (double)k; else avg_ones = 0.0;
+    fprintf(stderr, "  avg p1 across bits = %.3f (target ~0.5)\n", avg_ones);
+
+    free(ones); free(zeros);
+}
+
 int hash_function_hyper(HashTable ht, void* data, uint64_t* ID)
 {
     //get the hypercube structure the particular hash function belongs to
     Hypercube* hyper_ctx = (Hypercube*)hash_table_get_algorithm_context(ht);
+
     if (!hyper_ctx) 
     { 
         if (ID) *ID = 0ULL; 
@@ -113,23 +151,24 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
         hyper->hash_params[i].t = uniform_distribution(&tmp, &(hyper->w));
     }
 
-    // Initialize hashmaps for f functions
-    hyper->map = (Hashmap**)malloc(hyper->kproj * sizeof(Hashmap*));
-    if (!hyper->map)
+    // Initialize 2-universal hash parameters for f functions (one a,b pair per bit)
+    hyper->f_a = (uint32_t*)malloc(hyper->kproj * sizeof(uint32_t));
+    hyper->f_b = (uint32_t*)malloc(hyper->kproj * sizeof(uint32_t));
+    if (!hyper->f_a || !hyper->f_b)
     {
         hyper_destroy(hyper);
         exit(EXIT_FAILURE);
     }
 
-    // Create a hashmap for each f function
+    // Generate random a_i (must be odd for good properties) and b_i for each bit
     for (int i = 0; i < hyper->kproj; i++)
     {
-        hyper->map[i] = hashmap_init(2048);
-        if (!hyper->map[i])
-        {
-            hyper_destroy(hyper);
-            exit(EXIT_FAILURE);
-        }
+        // a_i must be odd; generate random uint32 and set LSB
+        hyper->f_a[i] = ((uint32_t)rand() << 16) | ((uint32_t)rand() & 0xFFFF);
+        hyper->f_a[i] |= 1U; // ensure odd
+        
+        // b_i can be any uint32
+        hyper->f_b[i] = ((uint32_t)rand() << 16) | ((uint32_t)rand() & 0xFFFF);
     }
 
     // Set the single binary hash function for hypercube
@@ -157,11 +196,23 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
         hash_table_insert(hyper->hash_table, &i, dataset->data[i]);
     }
     
+    // Optional diagnostic: check f_i balance if requested via env var
+    const char* chk = getenv("HYPER_BALANCE");
+    if (chk && chk[0] != '\0' && chk[0] != '0')
+    {
+        int sample = 0;
+        const char* s = getenv("HYPER_BALANCE_SAMPLE");
+        if (s) sample = atoi(s);
+        hyper_check_f_balance(hyper, dataset, sample);
+    }
+
     // print the contents of the hash table -- debug only
     //print_hashtable(hyper->hash_table, 1 << hyper->kproj, dataset->dimension);
 
     return hyper;
 }
+
+// End of patch
 
 void hyper_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count,
                         int** range_neighbors, int* range_count, void* index_data)
@@ -231,12 +282,11 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
 
             // Count examined points and enforce M threshold
             checked++;
-            // if (checked >= hyper->M)
-            // {
-            //     reached_m = 1;
-            //     // process current point before exiting? We already counted it; keep results as-is
-            //     break;
-            // }
+            if (checked >= hyper->M)
+            {
+                reached_m = 1;
+                break; // exit current bucket
+            }
 
             // Use int-based distance computation for MNIST integer data
             float dist = hyper->distance(q, p, hyper->d);
@@ -284,9 +334,12 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
 
         }
         if (reached_m)
-            break;
+            break; // exit probing further buckets
     }
-    printf("Hypercube examined %d unique points for query\n", checked);
+    // Clean up allocations
+    free(visited);
+    free(bucket_vector);
+    free(neighbors);
 }
 
 
@@ -309,16 +362,11 @@ void hyper_destroy(struct Hypercube* hyper)
         free(hyper->hash_params);
     }
 
-    // Free hashmaps
-    if (hyper->map)
-    {
-        for (int i = 0; i < hyper->kproj; i++)
-        {
-            if (hyper->map[i])
-                hashmap_free(hyper->map[i]);
-        }
-        free(hyper->map);
-    }
+    // Free 2-universal hash coefficient arrays
+    if (hyper->f_a)
+        free(hyper->f_a);
+    if (hyper->f_b)
+        free(hyper->f_b);
 
     // Finally free the structure itself
     free(hyper);
