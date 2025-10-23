@@ -10,11 +10,14 @@ typedef struct Dataset
     int dimension;
 } Dataset;
 
-// reads dataset from a file(dataset_path) and returns a pointer to a Dataset struct
-Dataset* read_data(const char* dataset_path);
-
-// reads MNIST IDX3 images file (big-endian) and returns a Dataset of floats [0..255]
+// reads MNIST IDX3 images file (big-endian) and returns a Dataset of integers [0..255]
 Dataset* read_data_mnist(const char* images_path);
+
+// reads SIFT IDX3 image descriptor file (little-endian) and returns a Dataset of floats
+Dataset* read_data_sift(const char* images_path);
+
+// reads dataset from a file(dataset_path) and returns a pointer to a Dataset struct
+Dataset* read_data_experiment(const char* dataset_path);
 
 //helper: prints first 'size' points of the dataset. used for debugging
 void printPartialDataset(int size, const Dataset* dataset);
