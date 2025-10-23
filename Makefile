@@ -105,6 +105,38 @@ SEED      = 10
 # Algorithm-specific parameters (auto-selected by ALGO)
 # ==============================================================
 
+# MNIST-optimized parameters
+ifeq ($(ALGO), lsh)
+    ALGO_PARAMS_MNIST = -k 4 -L 20 -w 2400 -o $(OUTPUT_FILE) -N 5 -R 4 -type mnist -lsh -range false
+endif
+
+ifeq ($(ALGO), hypercube)
+    ALGO_PARAMS_MNIST = -kproj 7 -w 2000 -M 2000000 -probes 35 -o $(OUTPUT_FILE) -N 5 -R 4 -type mnist -range false -hypercube
+endif
+
+
+
+
+
+
+
+# SIFT-optimized parameters
+ifeq ($(ALGO), lsh)
+    ALGO_PARAMS_SIFT = -k 4 -L 15 -w 1000 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -lsh -range false
+endif
+
+ifeq ($(ALGO), hypercube)
+    ALGO_PARAMS_SIFT = -kproj 14 -w 4000 -M 1000 -probes 35 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -range false -hypercube
+endif
+
+
+
+
+
+
+
+
+# Generic parameters (for backward compatibility with 'make all')
 ifeq ($(ALGO), lsh)
     ALGO_FLAG = -lsh
     ALGO_PARAMS = -k $(K) -L $(L) -w $(W) -o $(OUTPUT_FILE) -N $(N) -R $(R) -type $(TYPE) $(ALGO_FLAG) -range $(RANGE)
@@ -169,7 +201,25 @@ clean:
 	rm -f $(OBJDIR)/*.o $(TARGET)
 
 # ==============================================================
+# Dataset-specific preset targets
+# ==============================================================
+
+mnist: $(OBJDIR) $(TARGET)
+	@echo "Running $(ALGO) on MNIST dataset..."
+	./$(TARGET) \
+		-d Data/MNIST/train-images.idx3-ubyte \
+		-q Data/MNIST/t10k-images-100-sample.idx3-ubyte \
+		$(ALGO_PARAMS_MNIST)
+
+sift: $(OBJDIR) $(TARGET)
+	@echo "Running $(ALGO) on SIFT dataset..."
+	./$(TARGET) \
+		-d Data/SIFT/sift_base.fvecs \
+		-q Data/SIFT/sift_query_100.fvecs \
+		$(ALGO_PARAMS_SIFT)
+
+# ==============================================================
 # Phony targets
 # ==============================================================
 
-.PHONY: all clean
+.PHONY: all clean mnist sift

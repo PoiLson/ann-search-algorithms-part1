@@ -191,7 +191,8 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     
     // Compute Hamming distance and probe other buckets if needed
     // Calculate binary vector representation of bucket_idx
-    int* bucket_vector = (int*)malloc(hyper->d * sizeof(int));
+    // Only kproj bits are needed for the cube representation
+    int* bucket_vector = (int*)malloc(hyper->kproj * sizeof(int));
     for (int i = 0; i < hyper->kproj; i++)
     {
         bucket_vector[i] = (bucket_idx >> (hyper->kproj - 1 - i)) & 1;
@@ -202,6 +203,8 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
 
     // Get neighboring bucket indices based on Hamming distance
     // only the required number of probes
+    int checked = 0; // number of distinct points examined
+    int reached_m = 0;
     get_hamming_neighbors(bucket_vector, hyper->probes, hyper->kproj, &neighbors);
     for (int n = 0; n < neighbor_count; n++)
     {
@@ -226,8 +229,17 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
                 continue;
             visited[data_idx] = true;
 
+            // Count examined points and enforce M threshold
+            checked++;
+            // if (checked >= hyper->M)
+            // {
+            //     reached_m = 1;
+            //     // process current point before exiting? We already counted it; keep results as-is
+            //     break;
+            // }
+
             // Use int-based distance computation for MNIST integer data
-            float dist = euclidean_distance_int(q, p, hyper->d);
+            float dist = hyper->distance(q, p, hyper->d);
 
             // Insert into approx neighbors if appropriate
             if (*approx_count < params->N || dist < approx_dists[*approx_count - 1])
@@ -271,14 +283,12 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             }
 
         }
+        if (reached_m)
+            break;
     }
-
-    // Clean up
-    free(visited);
-    free(bucket_vector);
-    free(neighbors);
-
+    printf("Hypercube examined %d unique points for query\n", checked);
 }
+
 
 void hyper_destroy(struct Hypercube* hyper)
 {

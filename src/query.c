@@ -22,6 +22,8 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         fprintf(stderr, "dataset dimension (%d) != query dimension (%d). Using min dimension for distance.\n", dataset->dimension, query_set->dimension);
         exit(EXIT_FAILURE);
     }
+    //choose distance function based on data type
+    float (*distance_func)(const void*, const void*, const int) = (dataset->data_type == DATA_TYPE_FLOAT) ? euclidean_distance : euclidean_distance_int;
 
     // Main query loop
     // Iterate over each query in the query set
@@ -49,7 +51,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         double approx_time = (double)(end_approx - start_approx) / CLOCKS_PER_SEC;
         total_approx_time += approx_time;
 
-        // True kNN (brute force)
+          // True kNN (brute force)
         int* true_neighbors = (int*)malloc(params->N * sizeof(int));
         double* true_dists = (double*)malloc(params->N * sizeof(double));
         int true_count = 0;
@@ -65,7 +67,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         {
             void* p = dataset->data[i];
 
-            float dist = euclidean_distance_int(q, p, dataset->dimension);
+            float dist = distance_func(q, p, dataset->dimension);
 
             if (true_count < params->N || dist < true_dists[true_count - 1])
             {
@@ -87,14 +89,6 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         
         double true_time = (double)(end_true - start_true) / CLOCKS_PER_SEC;
         total_true_time += true_time;
-
-        // Metrics
-        // printf("TRUE NEIGHBORS\n");
-        // for(int idx = 0; idx < params->N && idx < approx_count; idx++)
-        // {
-        //     printf("%d - %lf, ", true_neighbors[idx], true_dists[idx]);
-        // }
-        // puts("");
 
 
         double af = (true_dists[0] > 0.0) ? approx_dists[0] / true_dists[0] : 1.0;
