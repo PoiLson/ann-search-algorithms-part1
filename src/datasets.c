@@ -1,5 +1,8 @@
 #include "../include/main.h"
 
+/*
+    Functions to read the MNIST dataset
+*/
 
 // Read a big-endian 32-bit unsigned integer from file
 static int read_be_u32(FILE* f, uint32_t* out)
@@ -111,7 +114,34 @@ Dataset* read_data_mnist(const char* images_path)
     return ds;
 }
 
-Dataset* read_data(const char* dataset_path)
+
+/*
+    Functions to read the SIFT dataset
+*/
+
+Dataset* read_data_sift(const char* images_path)
+{
+    FILE* file = fopen(images_path, "rb");
+    if (!file)
+    {
+        fprintf(stderr, "Error opening MNIST images file: %s\n", images_path);
+        exit(EXIT_FAILURE);
+    }
+    Dataset* ds = read_mnist_idx3_file(file);
+    fclose(file);
+    if (!ds)
+    {
+        fprintf(stderr, "Invalid MNIST images file (magic 2051 expected): %s\n", images_path);
+        exit(EXIT_FAILURE);
+    }
+    return ds;
+}
+
+/*
+    Functions to read the EXPERIMENTS dataset (for debugging purposes)
+*/
+
+Dataset* read_data_experiment(const char* dataset_path)
 {
     // Parse as text file with first line: <size> <dimension> then ints
     FILE* file = fopen(dataset_path, "r");

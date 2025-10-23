@@ -15,16 +15,26 @@ int main(int argc, char **argv)
     Dataset* dataset = NULL;
     if (params.dataset_type == DATA_MNIST)
         dataset = read_data_mnist(params.dataset_path);
-    else
-        dataset = read_data(params.dataset_path);
-    if (dataset == NULL)
-        exit(EXIT_FAILURE);
+    else if(params.dataset_type == DATA_SIFT)
+        dataset = read_data_sift(params.dataset_path);
+    else if(params.dataset_type == DATA_EXP)
+        dataset = read_data_experiment(params.dataset_path);
 
-    printf("Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
+    if (dataset == NULL)
+    {
+        perror("Dataset not correct\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(params.dataset_type == DATA_MNIST)
+        printf("MNIST Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
+    else if(params.dataset_type == DATA_SIFT)
+        printf("SIFT Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
+    else if(params.dataset_type == DATA_EXP)
+        printf("EXPERIMENT Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
 
     // print some points
     // printPartialDataset(2, dataset);
-    // return 0;
 
     switch (params.algorithm)
     {

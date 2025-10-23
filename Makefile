@@ -48,8 +48,8 @@ ALGO = hypercube
 
 # DEBUGGING PURPOSES
 #---------------------
-# INPUT_FILE  = random_3d_points.txt
-# QUERY_FILE  = query.dat
+# INPUT_FILE  = Data/EXPERIMENTS/random_3d_points.txt
+# QUERY_FILE  = Data/EXPERIMENTS/query.dat
 # TYPE = sift
 # K = 6
 # L = 10 
@@ -58,8 +58,8 @@ ALGO = hypercube
 # Common parameters
 # -------------------
 
-INPUT_FILE  = Mnist_data/train-images.idx3-ubyte
-QUERY_FILE  = Mnist_data/t10k-images-100-sample.idx3-ubyte
+INPUT_FILE  = Data/MNIST/train-images.idx3-ubyte
+QUERY_FILE  = Data/MNIST/t10k-images-100-sample.idx3-ubyte
 
 OUTPUT_FILE = output.txt
 N           = 1

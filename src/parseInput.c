@@ -29,6 +29,8 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
                 params->dataset_type = DATA_MNIST;
             else if (strcmp(argv[i], "sift") == 0)
                 params->dataset_type = DATA_SIFT;
+            else
+                params->dataset_type  = DATA_EXP;
         }
         else if (strcmp(argv[i], "-range") == 0 && i + 1 < argc)
             params->range_search = (strcmp(argv[++i], "true") == 0);
