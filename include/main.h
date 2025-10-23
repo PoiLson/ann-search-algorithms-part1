@@ -17,11 +17,11 @@
 #include "utils.h"
 
 #include "hashmap.h"
+#include "datasets.h"  // Must come before lsh.h and hypercube.h (defines DataType)
 
 #include "hashtable.h"
 #include "lsh.h"
 
-#include "datasets.h"
 #include "query.h"
 #include "runAlgorithms.h"
 

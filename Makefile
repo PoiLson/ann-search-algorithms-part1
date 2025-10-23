@@ -58,14 +58,17 @@ ALGO = hypercube
 # Common parameters
 # -------------------
 
-INPUT_FILE  = Data/MNIST/train-images.idx3-ubyte
-QUERY_FILE  = Data/MNIST/t10k-images-100-sample.idx3-ubyte
+# INPUT_FILE  = Data/MNIST/train-images.idx3-ubyte
+# QUERY_FILE  = Data/MNIST/t10k-images-100-sample.idx3-ubyte
+
+INPUT_FILE  = Data/SIFT/sift_base.fvecs
+QUERY_FILE  = Data/SIFT/sift_query_100.fvecs
 
 OUTPUT_FILE = output.txt
 N           = 1
 R           = 500
 
-TYPE        = mnist
+TYPE        = sift
 RANGE       = false
 
 # LSH defaults

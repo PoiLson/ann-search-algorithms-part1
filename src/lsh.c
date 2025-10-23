@@ -13,7 +13,12 @@ int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, uint64_t*
     const LSH_hash_function* table_hash_params = lsh->hash_params[table_index];
     for (int i = 0; i < lsh->k; i++)
     {
-        float func = dot_product_float_int(table_hash_params[i].v, p, lsh->d);
+        // Use appropriate dot product based on data type
+        float func;
+        if (lsh->data_type == DATA_TYPE_FLOAT)
+            func = dot_product_float(table_hash_params[i].v, (const float*)p, lsh->d);
+        else
+            func = dot_product_float_int(table_hash_params[i].v, (const int*)p, lsh->d);
         // printf("  LSH: dot product(%d) = %.2f\n", i, func);
         
         float val = (func + table_hash_params[i].t) / lsh->w;
@@ -76,7 +81,12 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
     // Set M to the largest 32-bit prime (2^32 - 5) to avoid overflow in older impls
     lsh->num_of_buckets = 4294967291ULL;
 
-    lsh->distance = euclidean_distance_int;
+    // Store data type and select distance function
+    lsh->data_type = dataset->data_type;
+    if (dataset->data_type == DATA_TYPE_FLOAT)
+        lsh->distance = euclidean_distance;  // float-based distance
+    else
+        lsh->distance = euclidean_distance_int;  // int-based distance
 
     // Allocate memory for per-table hash parameters (L x k)
     lsh->hash_params = (LSH_hash_function**)malloc(lsh->L * sizeof(LSH_hash_function*));

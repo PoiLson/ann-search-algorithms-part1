@@ -23,8 +23,13 @@ static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t 
     // Then combine bits into final ID i.e. concatenate bits
     for (int i = 0; i < hyper->kproj; i++)
     {
-        // Use int-aware dot product for MNIST integer data
-        float func = dot_product_float_int(hyper->hash_params[i].v, p, hyper->d);
+        // Use appropriate dot product based on data type
+        float func;
+        if (hyper->data_type == DATA_TYPE_FLOAT)
+            func = dot_product_float(hyper->hash_params[i].v, (const float*)p, hyper->d);
+        else
+            func = dot_product_float_int(hyper->hash_params[i].v, (const int*)p, hyper->d);
+            
         float val = (func + hyper->hash_params[i].t) / hyper->w;
         
         // Fast integer truncation instead of floor()
@@ -75,9 +80,14 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     hyper->w = params->w;
     hyper->M = params->M;
     hyper->probes = params->probes;
-    hyper->dataset_size = dataset->size; ///add it as a func parameter TODO tomorrow
-    // Use int-based distance for MNIST integer data
-    hyper->distance = euclidean_distance_int;
+    hyper->dataset_size = dataset->size;
+    
+    // Store data type and select distance function
+    hyper->data_type = dataset->data_type;
+    if (dataset->data_type == DATA_TYPE_FLOAT)
+        hyper->distance = euclidean_distance;  // float-based distance
+    else
+        hyper->distance = euclidean_distance_int;  // int-based distance
 
     // Initialize hash parameters
     hyper->hash_params = (Hypercube_hash_function*)malloc(hyper->kproj * sizeof(Hypercube_hash_function));

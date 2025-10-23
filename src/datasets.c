@@ -43,6 +43,7 @@ static Dataset* read_mnist_idx3_file(FILE* file)
     }
     dataset->size = (int)num_images;
     dataset->dimension = (int)(rows * cols);
+    dataset->data_type = DATA_TYPE_INT;
 
     dataset->data = (void**)malloc(dataset->size * sizeof(void*));
     if (!dataset->data)
@@ -119,22 +120,114 @@ Dataset* read_data_mnist(const char* images_path)
     Functions to read the SIFT dataset
 */
 
-Dataset* read_data_sift(const char* images_path)
+// SIFT .fvecs format: each vector is stored as:
+// [4 bytes: dimension (int32 little-endian)] [dimension * 4 bytes: float32 values (little-endian)]
+Dataset* read_data_sift(const char* fvecs_path)
 {
-    FILE* file = fopen(images_path, "rb");
+    FILE* file = fopen(fvecs_path, "rb");
     if (!file)
     {
-        fprintf(stderr, "Error opening MNIST images file: %s\n", images_path);
+        fprintf(stderr, "Error opening SIFT fvecs file: %s\n", fvecs_path);
         exit(EXIT_FAILURE);
     }
-    Dataset* ds = read_mnist_idx3_file(file);
-    fclose(file);
-    if (!ds)
+
+    // First pass: count vectors and read dimension
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // Read first dimension to determine vector size
+    int32_t dimension = 0;
+    if (fread(&dimension, sizeof(int32_t), 1, file) != 1)
     {
-        fprintf(stderr, "Invalid MNIST images file (magic 2051 expected): %s\n", images_path);
+        fprintf(stderr, "Error reading dimension from SIFT file\n");
+        fclose(file);
         exit(EXIT_FAILURE);
     }
-    return ds;
+    fseek(file, 0, SEEK_SET);
+
+    // Calculate number of vectors
+    size_t vector_size_bytes = sizeof(int32_t) + dimension * sizeof(float);
+    int num_vectors = (int)(file_size / vector_size_bytes);
+
+    if (num_vectors == 0 || dimension == 0)
+    {
+        fprintf(stderr, "Invalid SIFT file: num_vectors=%d, dimension=%d\n", num_vectors, dimension);
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate dataset
+    Dataset* dataset = (Dataset*)malloc(sizeof(Dataset));
+    if (!dataset)
+    {
+        fprintf(stderr, "Memory allocation failed for SIFT dataset struct\n");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+    dataset->size = num_vectors;
+    dataset->dimension = dimension;
+    dataset->data_type = DATA_TYPE_FLOAT;
+
+    dataset->data = (void**)malloc(dataset->size * sizeof(void*));
+    if (!dataset->data)
+    {
+        fprintf(stderr, "Memory allocation failed for SIFT data pointers\n");
+        free(dataset);
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Read each vector
+    for (int i = 0; i < dataset->size; i++)
+    {
+        // Read dimension (should match)
+        int32_t vec_dim = 0;
+        if (fread(&vec_dim, sizeof(int32_t), 1, file) != 1)
+        {
+            fprintf(stderr, "Error reading dimension for vector %d\n", i);
+            for (int j = 0; j < i; j++) free(dataset->data[j]);
+            free(dataset->data);
+            free(dataset);
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        if (vec_dim != dimension)
+        {
+            fprintf(stderr, "Dimension mismatch at vector %d: expected %d, got %d\n", i, dimension, vec_dim);
+            for (int j = 0; j < i; j++) free(dataset->data[j]);
+            free(dataset->data);
+            free(dataset);
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Allocate and read float vector
+        float* vec = (float*)malloc(dimension * sizeof(float));
+        if (!vec)
+        {
+            fprintf(stderr, "Memory allocation failed for SIFT vector %d\n", i);
+            for (int j = 0; j < i; j++) free(dataset->data[j]);
+            free(dataset->data);
+            free(dataset);
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        if (fread(vec, sizeof(float), dimension, file) != (size_t)dimension)
+        {
+            fprintf(stderr, "Error reading vector %d data\n", i);
+            free(vec);
+            for (int j = 0; j < i; j++) free(dataset->data[j]);
+            free(dataset->data);
+            free(dataset);
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        dataset->data[i] = vec;
+    }
+
+    fclose(file);
+    return dataset;
 }
 
 /*
@@ -166,6 +259,8 @@ Dataset* read_data_experiment(const char* dataset_path)
         free(dataset);
         exit(EXIT_FAILURE);
     }
+
+    dataset->data_type = DATA_TYPE_INT;  // Experimental data is int
 
     dataset->data = (void**)malloc(dataset->size * sizeof(int*));
     if (dataset->data == NULL)

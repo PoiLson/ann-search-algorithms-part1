@@ -26,6 +26,7 @@ typedef struct Hypercube
     float w; // window size
     int probes; // number of probes
     int dataset_size; // size of dataset for visited array allocation
+    DataType data_type; // type of data (int or float)
     metric_func distance; // distance function
     Hypercube_hash_function *hash_params; // array of hash parameters
     Hashmap** map; // array of pointers to hashmaps for f functions

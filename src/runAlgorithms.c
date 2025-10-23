@@ -9,8 +9,10 @@ void run_lsh(SearchParams* params, Dataset* dataset)
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)
         query_set = read_data_mnist(params->query_path);
+    else if (params->dataset_type == DATA_SIFT)
+        query_set = read_data_sift(params->query_path);
     else
-        query_set = read_data(params->query_path);
+        query_set = read_data_experiment(params->query_path);
 
     if (query_set)
     {
@@ -35,8 +37,10 @@ void run_hypercube(SearchParams* params, Dataset* dataset)
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)
         query_set = read_data_mnist(params->query_path);
+    else if (params->dataset_type == DATA_SIFT)
+        query_set = read_data_sift(params->query_path);
     else
-        query_set = read_data(params->query_path);
+        query_set = read_data_experiment(params->query_path);
     if (query_set)
     {
         perform_query(params, dataset, query_set, hyper_index_lookup, hyper);

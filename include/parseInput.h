@@ -14,6 +14,7 @@ typedef enum
 // Enumeration for dataset types: MNIST, SIFT and none
 typedef enum
 {
+    DATA_NONE,
     DATA_EXP,
     DATA_MNIST,
     DATA_SIFT
