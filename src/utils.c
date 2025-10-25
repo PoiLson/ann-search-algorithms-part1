@@ -131,41 +131,100 @@ int hamming_distance(const int* a, const int* b, int d)
     return count;
 }
 
-// returns the first 'probes' neighbors from point 'a' sorted by hamming distance
-void get_hamming_neighbors(const int* a, int probes, int d, int** neighbors)
-{
-    //it only returns 'probes' neighbors
-    int count = 0;
-    *neighbors = (int*)malloc(probes * d * sizeof(int));
-    if(!(*neighbors))
-        return;
-    int distance = 0; // (number of bits)
-    while (count < probes && distance <= d)
-    {
-        for(int i = 0; i < (1 << d); i++) // iterate through all possible combinations
-        {
-            int hamming_dist = 0;
-            for(int j = 0; j < d; j++)
-            {
-                int bit_a = a[j];
-                int bit_b = (i >> (d - 1 - j)) & 1; // get j-th bit of i
-                if(bit_a != bit_b)
-                    hamming_dist++;
-            }
-            if(hamming_dist == distance)
-            {
-                // add this neighbor to the list
-                for(int k = 0; k < d; k++)
-                {
-                    (*neighbors)[count * d + k] = (i >> (d - 1 - k)) & 1;
-                }
-                count++;
-                if(count >= probes)
-                    break;
-            }
-        }
-        distance++;
+long long factorial(int n) {
+    if (n < 0) {
+        return 0; // Factorial is not defined for negative numbers
     }
+    long long res = 1;
+    for (int i = 2; i <= n; i++) {
+        res *= i;
+    }
+    return res;
+}
+
+long nCr(int n, int r)
+{
+    if (n < r) {
+        return -1;
+    }
+    else {
+        return factorial(n) / (factorial(r) * factorial(n - r));
+    }
+}
+
+// returns the first 'probes' neighbors from point 'a' sorted by hamming distance
+void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* neighbors)
+{
+    uint64_t mask = 0;
+    mask = (1 << kproj) - 1;
+    printf("mask is: %ld\n", mask);
+
+    int totalNeighbors = 0;
+    if(totalNeighbors < probes)
+    {
+        // add itself to the list of neighbors
+        neighbors[totalNeighbors] = bucket;
+        totalNeighbors++;
+    }
+
+    uint64_t element = 0;
+    for(int k = 0; k < kproj; k++)
+    {
+        element += 1 << k;
+        for(long idx = 0; idx < nCr(kproj, k+1); idx++)
+        {
+            uint64_t temp = (element >> (kproj - 1)) & 1;
+            printf("element: %ld\n", element);
+
+            //insert the neighbor
+            if(totalNeighbors < probes)
+            {
+                neighbors[totalNeighbors] = (bucket ^ element) & mask;
+                totalNeighbors++;
+            }
+            else
+                return;
+
+            element = ((element << 1) + temp) & mask;
+        }
+    }
+
+
+
+    //PREVIOUS IMPLEMENTATION
+
+    // //it only returns 'probes' neighbors
+    // int count = 0;
+    
+    // int digits = 0; // (number of bits)
+    // int hamming_dist = 0; // for taking ourselves
+    // while (count < probes && digits <= d)
+    // {
+    //     for(int i = 0; i < (1 << d); i++) // iterate through all possible combinations, e.g. 2^3 = 8 buckets we want to see
+    //     {
+    //         int hamming_dist = 0;
+    //         for(int j = 0; j < d; j++)
+    //         {
+    //             int bit_a = a[j];
+    //             int bit_b = (i >> (d - 1 - j)) & 1; // get j-th bit of i
+    //             if(bit_a != bit_b)
+    //                 hamming_dist++;
+    //         }
+    //         if(hamming_dist == digits)
+    //         {
+    //             // add this neighbor to the list
+    //             for(int k = 0; k < d; k++)
+    //             {
+    //                 (*neighbors)[count * d + k] = (i >> (d - 1 - k)) & 1;
+    //             }
+    //             count++;
+    //             if(count >= probes)
+    //                 break;
+    //         }
+    //     }
+
+    //     digits++;
+    // }
 }
 
 int compare_vectors(const void* a, const void* b, const void* metricContext)
