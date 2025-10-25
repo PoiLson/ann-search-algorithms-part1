@@ -18,9 +18,9 @@ distanceTrue: 256.314270
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 9.589199
-tApproximateAverage: 0.104284
-tTrueAverage: 0.320041
+QPS: 10.535077
+tApproximateAverage: 0.094921
+tTrueAverage: 0.309283
 
 LSH
 Query: 1
@@ -42,9 +42,9 @@ distanceTrue: 235.766830
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 8.991108
-tApproximateAverage: 0.111221
-tTrueAverage: 0.277436
+QPS: 8.749136
+tApproximateAverage: 0.114297
+tTrueAverage: 0.302058
 
 LSH
 Query: 2
@@ -66,9 +66,9 @@ distanceTrue: 186.273987
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 8.253208
-tApproximateAverage: 0.121165
-tTrueAverage: 0.304262
+QPS: 7.981164
+tApproximateAverage: 0.125295
+tTrueAverage: 0.299942
 
 LSH
 Query: 3
@@ -90,9 +90,9 @@ distanceTrue: 186.839508
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.033250
-tApproximateAverage: 0.247939
-tTrueAverage: 0.338189
+QPS: 7.627241
+tApproximateAverage: 0.131109
+tTrueAverage: 0.307873
 
 LSH
 Query: 4
@@ -114,9 +114,9 @@ distanceTrue: 229.257492
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.600000
-QPS: 13.950309
-tApproximateAverage: 0.071683
-tTrueAverage: 0.402019
+QPS: 13.706892
+tApproximateAverage: 0.072956
+tTrueAverage: 0.301653
 
 LSH
 Query: 5
@@ -138,9 +138,9 @@ distanceTrue: 265.764923
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.628750
-tApproximateAverage: 0.150858
-tTrueAverage: 0.352934
+QPS: 10.741254
+tApproximateAverage: 0.093099
+tTrueAverage: 0.298341
 
 LSH
 Query: 6
@@ -162,9 +162,9 @@ distanceTrue: 236.190598
 -------METRICS---------
 Average AF: 1.009926
 Recall@N: 0.600000
-QPS: 5.574757
-tApproximateAverage: 0.179380
-tTrueAverage: 0.383036
+QPS: 8.903927
+tApproximateAverage: 0.112310
+tTrueAverage: 0.301411
 
 LSH
 Query: 7
@@ -186,9 +186,9 @@ distanceTrue: 164.441483
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.184258
-tApproximateAverage: 0.238991
-tTrueAverage: 0.337760
+QPS: 7.706119
+tApproximateAverage: 0.129767
+tTrueAverage: 0.302527
 
 LSH
 Query: 8
@@ -210,9 +210,9 @@ distanceTrue: 231.484344
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.813524
-tApproximateAverage: 0.207748
-tTrueAverage: 0.278983
+QPS: 6.916634
+tApproximateAverage: 0.144579
+tTrueAverage: 0.308975
 
 LSH
 Query: 9
@@ -234,9 +234,9 @@ distanceTrue: 221.722794
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 10.731226
-tApproximateAverage: 0.093186
-tTrueAverage: 0.411797
+QPS: 10.960706
+tApproximateAverage: 0.091235
+tTrueAverage: 0.310694
 
 LSH
 Query: 10
@@ -258,9 +258,9 @@ distanceTrue: 260.700989
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.600000
-QPS: 12.981281
-tApproximateAverage: 0.077034
-tTrueAverage: 0.308148
+QPS: 11.906321
+tApproximateAverage: 0.083989
+tTrueAverage: 0.307655
 
 LSH
 Query: 11
@@ -282,9 +282,9 @@ distanceTrue: 195.248566
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.815936
-tApproximateAverage: 0.146715
-tTrueAverage: 0.355147
+QPS: 6.667600
+tApproximateAverage: 0.149979
+tTrueAverage: 0.307564
 
 LSH
 Query: 12
@@ -306,9 +306,9 @@ distanceTrue: 209.766541
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.911878
-tApproximateAverage: 0.169151
-tTrueAverage: 0.270789
+QPS: 7.752178
+tApproximateAverage: 0.128996
+tTrueAverage: 0.308074
 
 LSH
 Query: 13
@@ -330,9 +330,9 @@ distanceTrue: 225.922546
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.017137
-tApproximateAverage: 0.166192
-tTrueAverage: 0.351488
+QPS: 7.565899
+tApproximateAverage: 0.132172
+tTrueAverage: 0.309959
 
 LSH
 Query: 14
@@ -354,9 +354,9 @@ distanceTrue: 245.036728
 -------METRICS---------
 Average AF: 1.008490
 Recall@N: 0.600000
-QPS: 6.669957
-tApproximateAverage: 0.149926
-tTrueAverage: 0.278762
+QPS: 8.687946
+tApproximateAverage: 0.115102
+tTrueAverage: 0.309005
 
 LSH
 Query: 15
@@ -378,9 +378,9 @@ distanceTrue: 218.279633
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 6.164392
-tApproximateAverage: 0.162222
-tTrueAverage: 0.367324
+QPS: 8.552564
+tApproximateAverage: 0.116924
+tTrueAverage: 0.319098
 
 LSH
 Query: 16
@@ -402,9 +402,9 @@ distanceTrue: 213.386978
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.196560
-tApproximateAverage: 0.192435
-tTrueAverage: 0.490848
+QPS: 7.601383
+tApproximateAverage: 0.131555
+tTrueAverage: 0.316110
 
 LSH
 Query: 17
@@ -426,9 +426,9 @@ distanceTrue: 227.052856
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.523782
-tApproximateAverage: 0.221054
-tTrueAverage: 0.401844
+QPS: 6.442178
+tApproximateAverage: 0.155227
+tTrueAverage: 0.311372
 
 LSH
 Query: 18
@@ -450,9 +450,9 @@ distanceTrue: 235.250931
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 8.017575
-tApproximateAverage: 0.124726
-tTrueAverage: 0.300845
+QPS: 9.444744
+tApproximateAverage: 0.105879
+tTrueAverage: 0.309359
 
 LSH
 Query: 19
@@ -474,9 +474,9 @@ distanceTrue: 202.277039
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.809021
-tApproximateAverage: 0.146864
-tTrueAverage: 0.263322
+QPS: 10.214922
+tApproximateAverage: 0.097896
+tTrueAverage: 0.305853
 
 LSH
 Query: 20
@@ -498,9 +498,9 @@ distanceTrue: 153.453583
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.034624
-tApproximateAverage: 0.142154
-tTrueAverage: 0.436878
+QPS: 7.648886
+tApproximateAverage: 0.130738
+tTrueAverage: 0.309822
 
 LSH
 Query: 21
@@ -522,9 +522,9 @@ distanceTrue: 166.874207
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.791570
-tApproximateAverage: 0.263743
-tTrueAverage: 0.414119
+QPS: 7.039477
+tApproximateAverage: 0.142056
+tTrueAverage: 0.304448
 
 LSH
 Query: 22
@@ -546,9 +546,9 @@ distanceTrue: 173.695129
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 9.265865
-tApproximateAverage: 0.107923
-tTrueAverage: 0.356486
+QPS: 8.188801
+tApproximateAverage: 0.122118
+tTrueAverage: 0.300671
 
 LSH
 Query: 23
@@ -570,9 +570,9 @@ distanceTrue: 211.653015
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 9.947082
-tApproximateAverage: 0.100532
-tTrueAverage: 0.511815
+QPS: 11.865211
+tApproximateAverage: 0.084280
+tTrueAverage: 0.300656
 
 LSH
 Query: 24
@@ -594,9 +594,9 @@ distanceTrue: 190.821899
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.837916
-tApproximateAverage: 0.171294
-tTrueAverage: 0.406905
+QPS: 10.302799
+tApproximateAverage: 0.097061
+tTrueAverage: 0.300355
 
 LSH
 Query: 25
@@ -618,9 +618,9 @@ distanceTrue: 245.299820
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.644615
-tApproximateAverage: 0.177160
-tTrueAverage: 0.331844
+QPS: 11.003521
+tApproximateAverage: 0.090880
+tTrueAverage: 0.303695
 
 LSH
 Query: 26
@@ -642,9 +642,9 @@ distanceTrue: 179.307007
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 6.309148
-tApproximateAverage: 0.158500
-tTrueAverage: 0.482082
+QPS: 10.282353
+tApproximateAverage: 0.097254
+tTrueAverage: 0.300055
 
 LSH
 Query: 27
@@ -666,9 +666,9 @@ distanceTrue: 185.768677
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.070961
-tApproximateAverage: 0.325631
-tTrueAverage: 0.253960
+QPS: 6.634423
+tApproximateAverage: 0.150729
+tTrueAverage: 0.303961
 
 LSH
 Query: 28
@@ -690,9 +690,9 @@ distanceTrue: 202.524078
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.644121
-tApproximateAverage: 0.150509
-tTrueAverage: 0.336321
+QPS: 8.477737
+tApproximateAverage: 0.117956
+tTrueAverage: 0.301629
 
 LSH
 Query: 29
@@ -714,9 +714,9 @@ distanceTrue: 161.839432
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.959312
-tApproximateAverage: 0.125639
-tTrueAverage: 0.319883
+QPS: 10.783997
+tApproximateAverage: 0.092730
+tTrueAverage: 0.299867
 
 LSH
 Query: 30
@@ -738,9 +738,9 @@ distanceTrue: 215.297470
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.816591
-tApproximateAverage: 0.127933
-tTrueAverage: 0.277434
+QPS: 11.520339
+tApproximateAverage: 0.086803
+tTrueAverage: 0.303205
 
 LSH
 Query: 31
@@ -762,9 +762,9 @@ distanceTrue: 240.449585
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 8.922517
-tApproximateAverage: 0.112076
-tTrueAverage: 0.303998
+QPS: 9.551737
+tApproximateAverage: 0.104693
+tTrueAverage: 0.299698
 
 LSH
 Query: 32
@@ -786,9 +786,9 @@ distanceTrue: 205.219391
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.903691
-tApproximateAverage: 0.203928
-tTrueAverage: 0.523772
+QPS: 8.305303
+tApproximateAverage: 0.120405
+tTrueAverage: 0.299727
 
 LSH
 Query: 33
@@ -810,9 +810,9 @@ distanceTrue: 266.003754
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 9.512666
-tApproximateAverage: 0.105123
-tTrueAverage: 0.240744
+QPS: 10.486357
+tApproximateAverage: 0.095362
+tTrueAverage: 0.304675
 
 LSH
 Query: 34
@@ -834,9 +834,9 @@ distanceTrue: 232.314438
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.307915
-tApproximateAverage: 0.158531
-tTrueAverage: 0.401218
+QPS: 7.171029
+tApproximateAverage: 0.139450
+tTrueAverage: 0.302857
 
 LSH
 Query: 35
@@ -858,9 +858,9 @@ distanceTrue: 238.296036
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.886535
-tApproximateAverage: 0.204644
-tTrueAverage: 0.393809
+QPS: 8.150557
+tApproximateAverage: 0.122691
+tTrueAverage: 0.303554
 
 LSH
 Query: 36
@@ -882,9 +882,9 @@ distanceTrue: 250.349762
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 4.379875
-tApproximateAverage: 0.228317
-tTrueAverage: 0.490191
+QPS: 7.641755
+tApproximateAverage: 0.130860
+tTrueAverage: 0.299671
 
 LSH
 Query: 37
@@ -906,9 +906,9 @@ distanceTrue: 237.381546
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.717063
-tApproximateAverage: 0.174915
-tTrueAverage: 0.337185
+QPS: 8.302614
+tApproximateAverage: 0.120444
+tTrueAverage: 0.301786
 
 LSH
 Query: 38
@@ -930,9 +930,9 @@ distanceTrue: 214.532043
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.667713
-tApproximateAverage: 0.176438
-tTrueAverage: 0.397670
+QPS: 10.819583
+tApproximateAverage: 0.092425
+tTrueAverage: 0.304474
 
 LSH
 Query: 39
@@ -954,9 +954,9 @@ distanceTrue: 169.133087
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.331428
-tApproximateAverage: 0.187567
-tTrueAverage: 0.341344
+QPS: 8.580303
+tApproximateAverage: 0.116546
+tTrueAverage: 0.307134
 
 LSH
 Query: 40
@@ -978,9 +978,9 @@ distanceTrue: 194.414505
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.649022
-tApproximateAverage: 0.215099
-tTrueAverage: 0.440903
+QPS: 8.157671
+tApproximateAverage: 0.122584
+tTrueAverage: 0.302794
 
 LSH
 Query: 41
@@ -1002,9 +1002,9 @@ distanceTrue: 188.098373
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.594341
-tApproximateAverage: 0.131677
-tTrueAverage: 0.493803
+QPS: 10.680566
+tApproximateAverage: 0.093628
+tTrueAverage: 0.298794
 
 LSH
 Query: 42
@@ -1026,9 +1026,9 @@ distanceTrue: 218.746429
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 3.703429
-tApproximateAverage: 0.270020
-tTrueAverage: 0.420947
+QPS: 8.588188
+tApproximateAverage: 0.116439
+tTrueAverage: 0.301588
 
 LSH
 Query: 43
@@ -1050,9 +1050,9 @@ distanceTrue: 253.747910
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 3.974168
-tApproximateAverage: 0.251625
-tTrueAverage: 0.258043
+QPS: 7.792957
+tApproximateAverage: 0.128321
+tTrueAverage: 0.305770
 
 LSH
 Query: 44
@@ -1074,9 +1074,9 @@ distanceTrue: 206.448547
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 13.425342
-tApproximateAverage: 0.074486
-tTrueAverage: 0.378227
+QPS: 12.055600
+tApproximateAverage: 0.082949
+tTrueAverage: 0.300544
 
 LSH
 Query: 45
@@ -1098,9 +1098,9 @@ distanceTrue: 195.440521
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.525092
-tApproximateAverage: 0.220990
-tTrueAverage: 0.491768
+QPS: 8.377665
+tApproximateAverage: 0.119365
+tTrueAverage: 0.301946
 
 LSH
 Query: 46
@@ -1122,9 +1122,9 @@ distanceTrue: 199.143158
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.362821
-tApproximateAverage: 0.157163
-tTrueAverage: 0.285645
+QPS: 10.107953
+tApproximateAverage: 0.098932
+tTrueAverage: 0.299821
 
 LSH
 Query: 47
@@ -1146,9 +1146,9 @@ distanceTrue: 292.190002
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.356471
-tApproximateAverage: 0.157320
-tTrueAverage: 0.241029
+QPS: 9.248897
+tApproximateAverage: 0.108121
+tTrueAverage: 0.302778
 
 LSH
 Query: 48
@@ -1170,9 +1170,9 @@ distanceTrue: 224.886642
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.678914
-tApproximateAverage: 0.176090
-tTrueAverage: 0.404760
+QPS: 11.161711
+tApproximateAverage: 0.089592
+tTrueAverage: 0.303261
 
 LSH
 Query: 49
@@ -1194,9 +1194,9 @@ distanceTrue: 164.070114
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.322091
-tApproximateAverage: 0.136573
-tTrueAverage: 0.541105
+QPS: 11.360409
+tApproximateAverage: 0.088025
+tTrueAverage: 0.301001
 
 LSH
 Query: 50
@@ -1218,9 +1218,9 @@ distanceTrue: 230.110840
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.014668
-tApproximateAverage: 0.199415
-tTrueAverage: 0.440520
+QPS: 11.277008
+tApproximateAverage: 0.088676
+tTrueAverage: 0.299969
 
 LSH
 Query: 51
@@ -1242,9 +1242,9 @@ distanceTrue: 213.644562
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.743061
-tApproximateAverage: 0.267161
-tTrueAverage: 0.506326
+QPS: 7.969080
+tApproximateAverage: 0.125485
+tTrueAverage: 0.307152
 
 LSH
 Query: 52
@@ -1266,9 +1266,9 @@ distanceTrue: 170.754211
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.150053
-tApproximateAverage: 0.317455
-tTrueAverage: 0.550548
+QPS: 7.608324
+tApproximateAverage: 0.131435
+tTrueAverage: 0.302440
 
 LSH
 Query: 53
@@ -1290,9 +1290,9 @@ distanceTrue: 199.877457
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.987432
-tApproximateAverage: 0.200504
-tTrueAverage: 0.446742
+QPS: 10.188798
+tApproximateAverage: 0.098147
+tTrueAverage: 0.302922
 
 LSH
 Query: 54
@@ -1314,9 +1314,9 @@ distanceTrue: 151.894699
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.330797
-tApproximateAverage: 0.157958
-tTrueAverage: 0.511281
+QPS: 12.706803
+tApproximateAverage: 0.078698
+tTrueAverage: 0.299421
 
 LSH
 Query: 55
@@ -1338,9 +1338,9 @@ distanceTrue: 162.302185
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.411818
-tApproximateAverage: 0.155962
-tTrueAverage: 0.543311
+QPS: 13.768605
+tApproximateAverage: 0.072629
+tTrueAverage: 0.298653
 
 LSH
 Query: 56
@@ -1362,9 +1362,9 @@ distanceTrue: 184.417999
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.563668
-tApproximateAverage: 0.219122
-tTrueAverage: 0.537779
+QPS: 8.448372
+tApproximateAverage: 0.118366
+tTrueAverage: 0.300781
 
 LSH
 Query: 57
@@ -1386,9 +1386,9 @@ distanceTrue: 184.363770
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.853847
-tApproximateAverage: 0.259481
-tTrueAverage: 0.245271
+QPS: 6.084539
+tApproximateAverage: 0.164351
+tTrueAverage: 0.300959
 
 LSH
 Query: 58
@@ -1410,9 +1410,9 @@ distanceTrue: 244.055328
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.794779
-tApproximateAverage: 0.128291
-tTrueAverage: 0.548159
+QPS: 11.322848
+tApproximateAverage: 0.088317
+tTrueAverage: 0.302797
 
 LSH
 Query: 59
@@ -1434,9 +1434,9 @@ distanceTrue: 127.035431
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 9.621398
-tApproximateAverage: 0.103935
-tTrueAverage: 0.335358
+QPS: 20.645374
+tApproximateAverage: 0.048437
+tTrueAverage: 0.301061
 
 LSH
 Query: 60
@@ -1458,9 +1458,9 @@ distanceTrue: 224.376923
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.525587
-tApproximateAverage: 0.132880
-tTrueAverage: 0.501926
+QPS: 11.553214
+tApproximateAverage: 0.086556
+tTrueAverage: 0.299517
 
 LSH
 Query: 61
@@ -1482,9 +1482,9 @@ distanceTrue: 173.790100
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.430817
-tApproximateAverage: 0.225692
-tTrueAverage: 0.520448
+QPS: 10.135204
+tApproximateAverage: 0.098666
+tTrueAverage: 0.302905
 
 LSH
 Query: 62
@@ -1506,9 +1506,9 @@ distanceTrue: 150.675140
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 11.237723
-tApproximateAverage: 0.088986
-tTrueAverage: 0.539017
+QPS: 12.515801
+tApproximateAverage: 0.079899
+tTrueAverage: 0.299812
 
 LSH
 Query: 63
@@ -1530,9 +1530,9 @@ distanceTrue: 185.124283
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.502934
-tApproximateAverage: 0.285475
-tTrueAverage: 0.517084
+QPS: 8.102611
+tApproximateAverage: 0.123417
+tTrueAverage: 0.303256
 
 LSH
 Query: 64
@@ -1554,9 +1554,9 @@ distanceTrue: 200.044998
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 5.847133
-tApproximateAverage: 0.171024
-tTrueAverage: 0.545563
+QPS: 10.725241
+tApproximateAverage: 0.093238
+tTrueAverage: 0.304425
 
 LSH
 Query: 65
@@ -1578,9 +1578,9 @@ distanceTrue: 179.387848
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.481813
-tApproximateAverage: 0.223124
-tTrueAverage: 0.538673
+QPS: 9.181556
+tApproximateAverage: 0.108914
+tTrueAverage: 0.298477
 
 LSH
 Query: 66
@@ -1602,9 +1602,9 @@ distanceTrue: 234.539978
 -------METRICS---------
 Average AF: 1.123631
 Recall@N: 0.800000
-QPS: 8.239947
-tApproximateAverage: 0.121360
-tTrueAverage: 0.551231
+QPS: 13.154779
+tApproximateAverage: 0.076018
+tTrueAverage: 0.302243
 
 LSH
 Query: 67
@@ -1626,9 +1626,9 @@ distanceTrue: 193.028488
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.704457
-tApproximateAverage: 0.129795
-tTrueAverage: 0.390409
+QPS: 13.452432
+tApproximateAverage: 0.074336
+tTrueAverage: 0.299552
 
 LSH
 Query: 68
@@ -1650,9 +1650,9 @@ distanceTrue: 160.078110
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.795239
-tApproximateAverage: 0.263488
-tTrueAverage: 0.523472
+QPS: 8.296070
+tApproximateAverage: 0.120539
+tTrueAverage: 0.299381
 
 LSH
 Query: 69
@@ -1674,9 +1674,9 @@ distanceTrue: 252.711304
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.134264
-tApproximateAverage: 0.241881
-tTrueAverage: 0.412947
+QPS: 9.292471
+tApproximateAverage: 0.107614
+tTrueAverage: 0.301548
 
 LSH
 Query: 70
@@ -1698,9 +1698,9 @@ distanceTrue: 103.812332
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.484667
-tApproximateAverage: 0.222982
-tTrueAverage: 0.513064
+QPS: 9.501007
+tApproximateAverage: 0.105252
+tTrueAverage: 0.300897
 
 LSH
 Query: 71
@@ -1722,9 +1722,9 @@ distanceTrue: 220.449539
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 8.194370
-tApproximateAverage: 0.122035
-tTrueAverage: 0.435216
+QPS: 13.386881
+tApproximateAverage: 0.074700
+tTrueAverage: 0.302982
 
 LSH
 Query: 72
@@ -1746,9 +1746,9 @@ distanceTrue: 287.080139
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 5.993192
-tApproximateAverage: 0.166856
-tTrueAverage: 0.512754
+QPS: 11.819353
+tApproximateAverage: 0.084607
+tTrueAverage: 0.298785
 
 LSH
 Query: 73
@@ -1770,9 +1770,9 @@ distanceTrue: 254.988235
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.009066
-tApproximateAverage: 0.199638
-tTrueAverage: 0.449059
+QPS: 12.564235
+tApproximateAverage: 0.079591
+tTrueAverage: 0.300249
 
 LSH
 Query: 74
@@ -1794,9 +1794,9 @@ distanceTrue: 193.416641
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.598468
-tApproximateAverage: 0.277896
-tTrueAverage: 0.527209
+QPS: 7.044784
+tApproximateAverage: 0.141949
+tTrueAverage: 0.303252
 
 LSH
 Query: 75
@@ -1818,9 +1818,9 @@ distanceTrue: 254.234146
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.810005
-tApproximateAverage: 0.207900
-tTrueAverage: 0.511737
+QPS: 9.942730
+tApproximateAverage: 0.100576
+tTrueAverage: 0.300008
 
 LSH
 Query: 76
@@ -1842,9 +1842,9 @@ distanceTrue: 211.146866
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.421082
-tApproximateAverage: 0.155737
-tTrueAverage: 0.501476
+QPS: 14.209390
+tApproximateAverage: 0.070376
+tTrueAverage: 0.302775
 
 LSH
 Query: 77
@@ -1866,9 +1866,9 @@ distanceTrue: 256.146454
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.600000
-QPS: 9.604579
-tApproximateAverage: 0.104117
-tTrueAverage: 0.519222
+QPS: 14.496115
+tApproximateAverage: 0.068984
+tTrueAverage: 0.304346
 
 LSH
 Query: 78
@@ -1890,9 +1890,9 @@ distanceTrue: 215.520294
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.059730
-tApproximateAverage: 0.197639
-tTrueAverage: 0.409482
+QPS: 9.842035
+tApproximateAverage: 0.101605
+tTrueAverage: 0.301197
 
 LSH
 Query: 79
@@ -1914,9 +1914,9 @@ distanceTrue: 161.369141
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 6.848846
-tApproximateAverage: 0.146010
-tTrueAverage: 0.442885
+QPS: 13.010669
+tApproximateAverage: 0.076860
+tTrueAverage: 0.301267
 
 LSH
 Query: 80
@@ -1938,9 +1938,9 @@ distanceTrue: 242.088821
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 8.929608
-tApproximateAverage: 0.111987
-tTrueAverage: 0.404034
+QPS: 14.073803
+tApproximateAverage: 0.071054
+tTrueAverage: 0.300039
 
 LSH
 Query: 81
@@ -1962,9 +1962,9 @@ distanceTrue: 256.717743
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.677796
-tApproximateAverage: 0.149750
-tTrueAverage: 0.369026
+QPS: 13.377211
+tApproximateAverage: 0.074754
+tTrueAverage: 0.299426
 
 LSH
 Query: 82
@@ -1986,9 +1986,9 @@ distanceTrue: 251.358307
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.600000
-QPS: 5.112213
-tApproximateAverage: 0.195610
-tTrueAverage: 0.536034
+QPS: 9.049119
+tApproximateAverage: 0.110508
+tTrueAverage: 0.306119
 
 LSH
 Query: 83
@@ -2010,9 +2010,9 @@ distanceTrue: 188.767059
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 3.573419
-tApproximateAverage: 0.279844
-tTrueAverage: 0.356664
+QPS: 8.052762
+tApproximateAverage: 0.124181
+tTrueAverage: 0.299277
 
 LSH
 Query: 84
@@ -2034,9 +2034,9 @@ distanceTrue: 222.546631
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 6.056202
-tApproximateAverage: 0.165120
-tTrueAverage: 0.379740
+QPS: 7.422087
+tApproximateAverage: 0.134733
+tTrueAverage: 0.299700
 
 LSH
 Query: 85
@@ -2058,9 +2058,9 @@ distanceTrue: 243.078171
 -------METRICS---------
 Average AF: 1.001049
 Recall@N: 0.800000
-QPS: 24.417043
-tApproximateAverage: 0.040955
-tTrueAverage: 0.299485
+QPS: 17.093141
+tApproximateAverage: 0.058503
+tTrueAverage: 0.300431
 
 LSH
 Query: 86
@@ -2082,9 +2082,9 @@ distanceTrue: 211.052124
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 24.330900
-tApproximateAverage: 0.041100
-tTrueAverage: 0.243188
+QPS: 21.565202
+tApproximateAverage: 0.046371
+tTrueAverage: 0.298316
 
 LSH
 Query: 87
@@ -2106,9 +2106,9 @@ distanceTrue: 188.066483
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 11.321438
-tApproximateAverage: 0.088328
-tTrueAverage: 0.501208
+QPS: 18.053474
+tApproximateAverage: 0.055391
+tTrueAverage: 0.300957
 
 LSH
 Query: 88
@@ -2130,9 +2130,9 @@ distanceTrue: 142.038727
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 10.132739
-tApproximateAverage: 0.098690
-tTrueAverage: 0.493450
+QPS: 15.424720
+tApproximateAverage: 0.064831
+tTrueAverage: 0.299482
 
 LSH
 Query: 89
@@ -2154,9 +2154,9 @@ distanceTrue: 159.799881
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 16.923624
-tApproximateAverage: 0.059089
-tTrueAverage: 0.407820
+QPS: 12.953703
+tApproximateAverage: 0.077198
+tTrueAverage: 0.304517
 
 LSH
 Query: 90
@@ -2178,9 +2178,9 @@ distanceTrue: 130.115326
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.460840
-tApproximateAverage: 0.183122
-tTrueAverage: 0.527351
+QPS: 8.194102
+tApproximateAverage: 0.122039
+tTrueAverage: 0.305542
 
 LSH
 Query: 91
@@ -2202,9 +2202,9 @@ distanceTrue: 264.850891
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.600000
-QPS: 7.372348
-tApproximateAverage: 0.135642
-tTrueAverage: 0.347838
+QPS: 12.463078
+tApproximateAverage: 0.080237
+tTrueAverage: 0.300714
 
 LSH
 Query: 92
@@ -2226,9 +2226,9 @@ distanceTrue: 271.801392
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 5.072563
-tApproximateAverage: 0.197139
-tTrueAverage: 0.461237
+QPS: 10.197318
+tApproximateAverage: 0.098065
+tTrueAverage: 0.302827
 
 LSH
 Query: 93
@@ -2250,9 +2250,9 @@ distanceTrue: 200.274811
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 9.325748
-tApproximateAverage: 0.107230
-tTrueAverage: 0.478030
+QPS: 12.498750
+tApproximateAverage: 0.080008
+tTrueAverage: 0.302426
 
 LSH
 Query: 94
@@ -2274,9 +2274,9 @@ distanceTrue: 190.509842
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 6.526265
-tApproximateAverage: 0.153227
-tTrueAverage: 0.406918
+QPS: 11.526580
+tApproximateAverage: 0.086756
+tTrueAverage: 0.299603
 
 LSH
 Query: 95
@@ -2298,9 +2298,9 @@ distanceTrue: 254.627182
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 7.205805
-tApproximateAverage: 0.138777
-tTrueAverage: 0.524269
+QPS: 13.538945
+tApproximateAverage: 0.073861
+tTrueAverage: 0.301050
 
 LSH
 Query: 96
@@ -2322,9 +2322,9 @@ distanceTrue: 254.084625
 -------METRICS---------
 Average AF: 1.020004
 Recall@N: 0.800000
-QPS: 6.519202
-tApproximateAverage: 0.153393
-tTrueAverage: 0.351817
+QPS: 12.215829
+tApproximateAverage: 0.081861
+tTrueAverage: 0.300474
 
 LSH
 Query: 97
@@ -2346,9 +2346,9 @@ distanceTrue: 256.869629
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 8.230046
-tApproximateAverage: 0.121506
-tTrueAverage: 0.361513
+QPS: 13.354523
+tApproximateAverage: 0.074881
+tTrueAverage: 0.302606
 
 LSH
 Query: 98
@@ -2370,9 +2370,9 @@ distanceTrue: 105.361282
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 1.000000
-QPS: 4.908843
-tApproximateAverage: 0.203714
-tTrueAverage: 0.403502
+QPS: 9.001953
+tApproximateAverage: 0.111087
+tTrueAverage: 0.306023
 
 LSH
 Query: 99
@@ -2394,13 +2394,13 @@ distanceTrue: 237.983200
 -------METRICS---------
 Average AF: 1.000000
 Recall@N: 0.800000
-QPS: 6.784813
-tApproximateAverage: 0.147388
-tTrueAverage: 0.361405
+QPS: 11.507877
+tApproximateAverage: 0.086897
+tTrueAverage: 0.300323
 
 ===== OVERALL METRICS =====
 Average AF (mean over queries): 1.001631
 Average Recall@N: 0.936000
-Average tApproximate: 0.167418
-Average tTrue: 0.410516
-QPS_overall: 5.973079
+Average tApproximate: 0.102322
+Average tTrue: 0.302899
+QPS_overall: 9.773090

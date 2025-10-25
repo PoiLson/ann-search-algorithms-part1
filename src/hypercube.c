@@ -242,23 +242,14 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     int bucket_count = 0;
     const HTEntry* bucket = hash_table_get_bucket_entries(hyper->hash_table, bucket_idx, &bucket_count);
     
-    // Compute Hamming distance and probe other buckets if needed
-    // Calculate binary vector representation of bucket_idx
-    // Only kproj bits are needed for the cube representation
-    int* bucket_vector = (int*)malloc(hyper->kproj * sizeof(int));
-    for (int i = 0; i < hyper->kproj; i++)
-    {
-        bucket_vector[i] = (int)((bucket_idx >> (hyper->kproj - 1 - i)) & 1ULL);
-    }
-    
-    int* neighbors = NULL;
+    uint64_t* neighbors = (uint64_t*)malloc(hyper->probes * sizeof(uint64_t));
     int neighbor_count = hyper->probes;
 
     // Get neighboring bucket indices based on Hamming distance
     // only the required number of probes
     int checked = 0; // number of distinct points examined
     int reached_m = 0;
-    get_hamming_neighbors(bucket_vector, hyper->probes, hyper->kproj, &neighbors);
+    get_hamming_neighbors(bucket_idx, hyper->probes, hyper->kproj, neighbors);
     for (int n = 0; n < neighbor_count; n++)
     {
         uint64_t neighbor_idx = 0ULL;
@@ -325,7 +316,6 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
                         *range_neighbors = NULL;
                         *range_count = 0;
                         free(visited);
-                        free(bucket_vector);
                         free(neighbors);
                         return;
                     }
@@ -340,7 +330,6 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     }
     // Clean up allocations
     free(visited);
-    free(bucket_vector);
     free(neighbors);
 }
 

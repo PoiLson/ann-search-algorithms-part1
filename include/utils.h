@@ -54,7 +54,7 @@ static inline float euclidean_distance_int(const void* a, const void* b, const i
 int hamming_distance(const int *a, const int *b, int d);
 
 //returns the first 'probes' neighbors from point 'a' sorted by hamming distance
-void get_hamming_neighbors(const int* a, int probes, int d, int** neighbors);
+void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* neighbors);
 
 //comparison function for two vectors a and b
 int compare_vectors(const void* a, const void* b, const void* metricContext);

@@ -34,9 +34,21 @@ typedef struct LSH
     // Per-table hash parameters: for each table (L), we have k hash functions (v, t)
     // Access pattern: hash_params[table_index][i]
     LSH_hash_function **hash_params; 
-    int **linear_combinations; // array of r[i][j], i in[L], j in[k] for g(p)
+    int **linear_combinations_1; // array of r[i][j], i in[L], j in[k] for g(p)
+    int **linear_combinations_2; // array of r[i][j], i in[L], j in[k] for g(p)
+    
+    
+    
     HashTable *hash_tables; // array of hash tables
 } LSH;
+
+
+
+#define R_RANGE (1U << 29)  // values in [1, 2^29]
+
+void init_linear_combinations(LSH* lsh);
+
+
 
 // ------------------- Helper functions for hashing -----------------------------
 

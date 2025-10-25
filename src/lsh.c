@@ -60,52 +60,103 @@ static void lsh_diag_print_stats(int* arr, int n, int L)
 // Calculates ID of a vector of the dataset
 // And also the hash value (g(p)) for that vector
 // Core implementation of LSH hash function
+// int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, uint64_t* outID)
+// {
+//     // assert(lsh != nullptr);
+//     // assert(lsh->num_of_buckets > 0);
+
+//     uint64_t M = lsh->num_of_buckets;
+//     uint64_t id = 0;
+
+//     // Use the hash parameters corresponding to this table
+//     const LSH_hash_function* table_hash_params = lsh->hash_params[table_index];
+
+//     for (int i = 0; i < lsh->k; i++)
+//     {
+//         // Compute dot product in double precision for stability
+//         double func = 0.0;
+//         if (lsh->data_type == DATA_TYPE_FLOAT)
+//             func = dot_product_float(table_hash_params[i].v, (const float*)p, lsh->d);
+//         else
+//             func = dot_product_float_int(table_hash_params[i].v, (const int*)p, lsh->d);
+
+//         // Apply shift and bucket width
+//         double val = (func + (double)table_hash_params[i].t) / (double)lsh->w;
+
+//         // Use floor for double (handles negatives correctly)
+//         int64_t h_i = (int64_t)floor(val);
+
+//         // Linear combination with random coefficient
+//         int64_t r_i = lsh->linear_combinations[table_index][i];
+
+//         // Promote to 128-bit to avoid overflow
+//         __int128 prod = (__int128)r_i * (__int128)h_i;
+
+//         // Normalize modulo M (always non-negative)
+//         uint64_t modM = (uint64_t)((prod % (int64_t)M + (int64_t)M) % (int64_t)M);
+
+//         // Accumulate into ID
+//         id = (id + modM) % M;
+//     }
+
+//     if (outID)
+//         *outID = id; // bounded by M
+
+//     // Map to actual table bucket
+//     int bucket_idx = (int)(id % (uint64_t)lsh->table_size);
+//     return bucket_idx;
+// }
+
+
+// Compute both hash value (table index) and fingerprint (ID)
 int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, uint64_t* outID)
 {
-    // assert(lsh != nullptr);
-    // assert(lsh->num_of_buckets > 0);
+    // The prime modulus for universal hashing
+    const uint64_t M = lsh->num_of_buckets;  // should be 2^32 - 5
 
-    uint64_t M = lsh->num_of_buckets;
-    uint64_t id = 0;
+    uint64_t hash_val = 0;  // for h₁ → table index
+    uint64_t id_val   = 0;  // for h₂ → fingerprint
 
-    // Use the hash parameters corresponding to this table
     const LSH_hash_function* table_hash_params = lsh->hash_params[table_index];
 
     for (int i = 0; i < lsh->k; i++)
     {
-        // Compute dot product in double precision for stability
+        // ---- Compute LSH projection: h_i(v) = floor((a·v + b)/w)
         double func = 0.0;
         if (lsh->data_type == DATA_TYPE_FLOAT)
             func = dot_product_float(table_hash_params[i].v, (const float*)p, lsh->d);
         else
             func = dot_product_float_int(table_hash_params[i].v, (const int*)p, lsh->d);
 
-        // Apply shift and bucket width
         double val = (func + (double)table_hash_params[i].t) / (double)lsh->w;
+        int64_t h_i = (int64_t)floor(val);  // handle negatives properly
 
-        // Use floor for double (handles negatives correctly)
-        int64_t h_i = (int64_t)floor(val);
+        // ---- Universal hashing linear coefficients
+        int64_t r1_i = lsh->linear_combinations_1[table_index][i]; // for hash value
+        int64_t r2_i = lsh->linear_combinations_2[table_index][i]; // for ID
 
-        // Linear combination with random coefficient
-        int64_t r_i = lsh->linear_combinations[table_index][i];
+        // ---- Compute modular products safely in 128-bit space
+        __int128 prod1 = (__int128)r1_i * (__int128)h_i;
+        __int128 prod2 = (__int128)r2_i * (__int128)h_i;
 
-        // Promote to 128-bit to avoid overflow
-        __int128 prod = (__int128)r_i * (__int128)h_i;
+        // Reduce modulo prime (always non-negative)
+        uint64_t mod1 = (uint64_t)((prod1 % (int64_t)M + (int64_t)M) % (int64_t)M);
+        uint64_t mod2 = (uint64_t)((prod2 % (int64_t)M + (int64_t)M) % (int64_t)M);
 
-        // Normalize modulo M (always non-negative)
-        uint64_t modM = (uint64_t)((prod % (int64_t)M + (int64_t)M) % (int64_t)M);
-
-        // Accumulate into ID
-        id = (id + modM) % M;
+        // ---- Accumulate mod prime
+        hash_val = (hash_val + mod1) % M;
+        id_val   = (id_val   + mod2) % M;
     }
 
+    // ---- Output fingerprint (h₂)
     if (outID)
-        *outID = id; // bounded by M
+        *outID = id_val;  // this is the "h2" in the manual (fingerprint)
 
-    // Map to actual table bucket
-    int bucket_idx = (int)(id % (uint64_t)lsh->table_size);
+    // ---- Final hash table index (h₁)
+    int bucket_idx = (int)(hash_val % (uint64_t)lsh->table_size);
     return bucket_idx;
 }
+
 
 // Wrapper function
 int hash_function_lsh(HashTable ht, void* data, uint64_t* ID)
@@ -119,6 +170,34 @@ int hash_function_lsh(HashTable ht, void* data, uint64_t* ID)
 
     int t_idx = hash_table_get_index(ht);
     return hash_func_impl_lsh(data, lsh_ctx, t_idx, ID);
+}
+
+void init_linear_combinations(LSH* lsh)
+{
+    lsh->linear_combinations_1 = malloc(lsh->L * sizeof(int32_t*));
+    lsh->linear_combinations_2 = malloc(lsh->L * sizeof(int32_t*));
+    if (!lsh->linear_combinations_1 || !lsh->linear_combinations_2) {
+        fprintf(stderr, "Memory allocation failed for linear combinations.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < lsh->L; i++) {
+        lsh->linear_combinations_1[i] = malloc(lsh->k * sizeof(int32_t));
+        lsh->linear_combinations_2[i] = malloc(lsh->k * sizeof(int32_t));
+
+        if (!lsh->linear_combinations_1[i] || !lsh->linear_combinations_2[i]) {
+            fprintf(stderr, "Memory allocation failed for linear combinations row.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        for (int j = 0; j < lsh->k; j++) {
+            uint32_t r1 = (uint32_t)(rand() % (R_RANGE - 1)) + 1;
+            uint32_t r2 = (uint32_t)(rand() % (R_RANGE - 1)) + 1;
+
+            lsh->linear_combinations_1[i][j] = (int32_t)r1;
+            lsh->linear_combinations_2[i][j] = (int32_t)r2;
+        }
+    }
 }
 
 
@@ -182,28 +261,32 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         }
     }
 
-    //initialize linear combinations r[i][j]
-    lsh->linear_combinations = (int**)malloc(lsh->L * sizeof(int*));
-    for (int i = 0; i < lsh->L; i++)
-    {
-        lsh->linear_combinations[i] = (int*)malloc(lsh->k * sizeof(int));
-        if(!lsh->linear_combinations[i])
-        {
-            lsh_destroy(lsh);
-            exit(EXIT_FAILURE);
-        }
+    // //initialize linear combinations r[i][j]
+    // lsh->linear_combinations = (int**)malloc(lsh->L * sizeof(int*));
+    // for (int i = 0; i < lsh->L; i++)
+    // {
+    //     lsh->linear_combinations[i] = (int*)malloc(lsh->k * sizeof(int));
+    //     if(!lsh->linear_combinations[i])
+    //     {
+    //         lsh_destroy(lsh);
+    //         exit(EXIT_FAILURE);
+    //     }
 
-        for (int j = 0; j < lsh->k; j++)
-        {
-            int tmp = rand();
-            while (tmp == 0) {
-                tmp = rand(); // ensure non-zero
-            }
-            // bound them in range [1, 1000]
-            tmp = (tmp % 1000) + 1;
-            lsh->linear_combinations[i][j] = tmp; // random int for r[i][j]
-        }
-    }
+    //     for (int j = 0; j < lsh->k; j++)
+    //     {
+    //         int tmp = rand();
+    //         while (tmp == 0) {
+    //             tmp = rand(); // ensure non-zero
+    //         }
+    //         // bound them in range [1, 1000]
+    //         tmp = (tmp % 1000) + 1;
+    //         lsh->linear_combinations[i][j] = tmp; // random int for r[i][j]
+    //     }
+    // }
+
+    init_linear_combinations(lsh);
+
+
 
     // create a hash table for each hash table in LSH
     lsh->hash_tables = (HashTable*)malloc(lsh->L * sizeof(HashTable));
@@ -487,15 +570,36 @@ void lsh_destroy(struct LSH* lsh)
         free(lsh->hash_params);
     }
 
+    // // Free linear combinations
+    // if (lsh->linear_combinations)
+    // {
+    //     for (int i = 0; i < lsh->L; i++)
+    //     {
+    //         if (lsh->linear_combinations[i])
+    //             free(lsh->linear_combinations[i]);
+    //     }
+    //     free(lsh->linear_combinations);
+    // }
+
     // Free linear combinations
-    if (lsh->linear_combinations)
+    if (lsh->linear_combinations_1)
     {
         for (int i = 0; i < lsh->L; i++)
         {
-            if (lsh->linear_combinations[i])
-                free(lsh->linear_combinations[i]);
+            if (lsh->linear_combinations_1[i])
+                free(lsh->linear_combinations_1[i]);
         }
-        free(lsh->linear_combinations);
+        free(lsh->linear_combinations_1);
+    }
+
+    if (lsh->linear_combinations_2)
+    {
+        for (int i = 0; i < lsh->L; i++)
+        {
+            if (lsh->linear_combinations_2[i])
+                free(lsh->linear_combinations_2[i]);
+        }
+        free(lsh->linear_combinations_2);
     }
 
     // Destroy hash tables (guard duplicates) and free array

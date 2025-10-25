@@ -1,6 +1,28 @@
 #include "../include/main.h"
 
-int main(int argc, char **argv)
+
+int main()
+{
+
+    printf("hello to debugging!\n");
+    int probes = 16;
+    int kproj = 4;
+    uint64_t bucket = 4;
+    uint64_t* neighbors = (uint64_t*)malloc(probes * sizeof(uint64_t));
+
+    get_hamming_neighbors(bucket, probes, kproj, neighbors);
+
+    for(int idx = 0; idx < probes; idx++)
+    {
+        printf("Neighbor %d: %ld\n", idx, neighbors[idx]);
+    }
+
+    return 0;
+}
+
+
+
+int main2(int argc, char **argv)
 {
     SearchParams params;
     // Fixed seed for reproducible results in exercises
