@@ -1,47 +1,47 @@
 #include "../include/main.h"
 
+#include <math.h>   // for floorf
 
-static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID)
+// Compute the k-bit binary ID for a point in the hypercube
+static uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID)
 {
-    int id = 0;
-    // Compute each h_i and map to bit using f 
-    // Then combine bits into final ID i.e. concatenate bits
+    uint64_t id = 0ULL;   // use unsigned 64-bit to avoid overflow
+
     for (int i = 0; i < hyper->kproj; i++)
     {
-        // Use appropriate dot product based on data type
         float func;
         if (hyper->data_type == DATA_TYPE_FLOAT)
             func = dot_product_float(hyper->hash_params[i].v, (const float*)p, hyper->d);
         else
             func = dot_product_float_int(hyper->hash_params[i].v, (const int*)p, hyper->d);
-            
-        float val = (func + hyper->hash_params[i].t) / hyper->w;
-        
-        // Fast integer truncation instead of floor()
-        // For negative values, (int) truncates toward zero, but floor goes toward -infinity
-        // So we need to adjust: if val < 0 and val != integer, subtract 1
-        int h_i = (int)val;
-        if (val < 0.0f && val != (float)h_i)
-            h_i--;
 
-        // Use 2-universal hash for deterministic, balanced bit assignment
+        // Compute bucket index using floorf for correctness
+        float val = (func + hyper->hash_params[i].t) / hyper->w;
+        int h_i = (int)floorf(val);
+
+        // Apply 2-universal hash to map h_i -> {0,1}
         bool bit = f(hyper->f_a[i], hyper->f_b[i], h_i);
-        id = (id << 1) | bit; // Shift left and add the new bit
+
+        // Shift left and add the new bit
+        id = (id << 1) | (uint64_t)bit;
     }
 
-    if (ID)
-        *ID = (uint64_t)id;
-    return id;
+    if (ID) *ID = id;
+    return id;  // Return full uint64_t (safe for kproj up to 64 bits)
 }
 
-// Diagnostic: check per-bit balance of f_i outputs on the dataset
+
 static void hyper_check_f_balance(const Hypercube* hyper, const Dataset* dataset, int sample_size)
 {
     const int k = hyper->kproj;
-    long long* ones = (long long*)calloc(k, sizeof(long long));
+    if (k <= 0) {
+        fprintf(stderr, "[diag] No projections (k=0), skipping balance check\n");
+        return;
+    }
+
+    long long* ones  = (long long*)calloc(k, sizeof(long long));
     long long* zeros = (long long*)calloc(k, sizeof(long long));
-    if (!ones || !zeros)
-    {
+    if (!ones || !zeros) {
         free(ones); free(zeros);
         fprintf(stderr, "[diag] Failed to allocate counters for f_i balance\n");
         return;
@@ -53,6 +53,8 @@ static void hyper_check_f_balance(const Hypercube* hyper, const Dataset* dataset
     for (int i = 0; i < total; ++i)
     {
         const void* p = dataset->data[i];
+        if (!p) continue; // safety check
+
         for (int j = 0; j < k; ++j)
         {
             float func;
@@ -62,8 +64,7 @@ static void hyper_check_f_balance(const Hypercube* hyper, const Dataset* dataset
                 func = dot_product_float_int(hyper->hash_params[j].v, (const int*)p, hyper->d);
 
             float val = (func + hyper->hash_params[j].t) / hyper->w;
-            int h_i = (int)val;
-            if (val < 0.0f && val != (float)h_i) h_i--;
+            int h_i = (int)floorf(val);
 
             bool bit = f(hyper->f_a[j], hyper->f_b[j], h_i);
             if (bit) ones[j]++; else zeros[j]++;
@@ -79,11 +80,12 @@ static void hyper_check_f_balance(const Hypercube* hyper, const Dataset* dataset
         avg_ones += p1;
         fprintf(stderr, "  bit %2d: ones=%lld zeros=%lld p1=%.3f\n", j, ones[j], zeros[j], p1);
     }
-    if (k > 0) avg_ones /= (double)k; else avg_ones = 0.0;
+    avg_ones /= (double)k;
     fprintf(stderr, "  avg p1 across bits = %.3f (target ~0.5)\n", avg_ones);
 
     free(ones); free(zeros);
 }
+
 
 int hash_function_hyper(HashTable ht, void* data, uint64_t* ID)
 {
@@ -234,7 +236,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
 
     // Compute the bucket index for the query point
     uint64_t q_id;
-    int bucket_idx = hyper->binary_hash_function(q, hyper, &q_id);
+    uint64_t bucket_idx = hyper->binary_hash_function(q, hyper, &q_id);
 
     // Access the bucket corresponding to the computed index
     int bucket_count = 0;
@@ -246,7 +248,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     int* bucket_vector = (int*)malloc(hyper->kproj * sizeof(int));
     for (int i = 0; i < hyper->kproj; i++)
     {
-        bucket_vector[i] = (bucket_idx >> (hyper->kproj - 1 - i)) & 1;
+        bucket_vector[i] = (int)((bucket_idx >> (hyper->kproj - 1 - i)) & 1ULL);
     }
     
     int* neighbors = NULL;
@@ -259,12 +261,12 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     get_hamming_neighbors(bucket_vector, hyper->probes, hyper->kproj, &neighbors);
     for (int n = 0; n < neighbor_count; n++)
     {
-        int neighbor_idx = 0;
+        uint64_t neighbor_idx = 0ULL;
         // Access the n-th neighbor from the flat array
         int* current_neighbor = neighbors + (n * hyper->kproj);
         for (int b = 0; b < hyper->kproj; b++)
         {
-            neighbor_idx = (neighbor_idx << 1) | current_neighbor[b];
+            neighbor_idx = (neighbor_idx << 1) | (uint64_t)current_neighbor[b];
         }
         int neighbor_count_entries = 0;
         const HTEntry* neighbor_bucket = hash_table_get_bucket_entries(hyper->hash_table, neighbor_idx, &neighbor_count_entries);

@@ -7,7 +7,7 @@
 struct Hypercube;
 
 //define function pointer
-typedef int (*bin_hash)(const void* p, const struct Hypercube* hyper, uint64_t *ID);
+typedef uint64_t (*bin_hash)(const void* p, const struct Hypercube* hyper, uint64_t *ID);
 
 //structure for hypercube hash function parameters
 //namely the v normal vector and t offset
@@ -50,7 +50,7 @@ static inline bool f(uint32_t a, uint32_t b, int h_i)
 }
 
 //defines the hypercube hash function
-static int hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID);
+static uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID);
 
 //modifies the hash function to be used in the hash table
 int hash_function_hyper(HashTable ht, void* data, uint64_t* ID);

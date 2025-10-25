@@ -1,66 +1,123 @@
 #include "../include/main.h"
 
+// ------------------ Diagnostics: per-run candidate count stats ------------------
+// We accumulate the number of unique candidates examined per query and
+// print summary statistics at lsh_destroy if LSH_CAND_STATS=1 is set.
+static int* g_lsh_cand_counts = NULL;
+static int  g_lsh_cand_count  = 0;
+static int  g_lsh_cand_cap    = 0;
+
+static void lsh_diag_append_count(int val)
+{
+    // Only track when stats are enabled to minimize overhead
+    const char* stats = getenv("LSH_CAND_STATS");
+    if (!(stats && stats[0] == '1')) return;
+    if (g_lsh_cand_count >= g_lsh_cand_cap)
+    {
+        int new_cap = g_lsh_cand_cap > 0 ? g_lsh_cand_cap * 2 : 128;
+        int* tmp = (int*)realloc(g_lsh_cand_counts, new_cap * sizeof(int));
+        if (!tmp) return; // best-effort; skip if OOM
+        g_lsh_cand_counts = tmp;
+        g_lsh_cand_cap = new_cap;
+    }
+    g_lsh_cand_counts[g_lsh_cand_count++] = val;
+}
+
+static int cmp_int_asc(const void* a, const void* b)
+{
+    int ia = *(const int*)a;
+    int ib = *(const int*)b;
+    return (ia > ib) - (ia < ib);
+}
+
+static void lsh_diag_print_stats(int* arr, int n, int L)
+{
+    if (!arr || n <= 0) return;
+    long long sum = 0;
+    int mn = arr[0], mx = arr[0];
+    for (int i = 0; i < n; ++i) {
+        if (arr[i] < mn) mn = arr[i];
+        if (arr[i] > mx) mx = arr[i];
+        sum += arr[i];
+    }
+    double mean = (double)sum / (double)n;
+
+    // median: sort a copy
+    int* copy = (int*)malloc(n * sizeof(int));
+    if (!copy) {
+        printf("[LSH] Candidate stats: n=%d, min=%d, max=%d, mean=%.2f (L=%d)\n", n, mn, mx, mean, L);
+        return;
+    }
+    memcpy(copy, arr, n * sizeof(int));
+    qsort(copy, n, sizeof(int), cmp_int_asc);
+    double median = (n % 2) ? (double)copy[n/2] : 0.5 * ((double)copy[n/2 - 1] + (double)copy[n/2]);
+
+    printf("[LSH] Candidate stats: n=%d, min=%d, max=%d, mean=%.2f, median=%.2f (L=%d)\n",
+           n, mn, mx, mean, median, L);
+    free(copy);
+}
+
 // Calculates ID of a vector of the dataset
 // And also the hash value (g(p)) for that vector
+// Core implementation of LSH hash function
 int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_index, uint64_t* outID)
 {
-    // printf("LSH: table %d, id=%d, bucket=%d\n", table_index, *ID, (*ID) % lsh->table_size);
+    // assert(lsh != nullptr);
+    // assert(lsh->num_of_buckets > 0);
 
-    // Work modulo M using 64-bit unsigned where M may be up to 2^32-5
     uint64_t M = lsh->num_of_buckets;
     uint64_t id = 0;
+
     // Use the hash parameters corresponding to this table
     const LSH_hash_function* table_hash_params = lsh->hash_params[table_index];
+
     for (int i = 0; i < lsh->k; i++)
     {
-        // Use appropriate dot product based on data type
-        float func;
+        // Compute dot product in double precision for stability
+        double func = 0.0;
         if (lsh->data_type == DATA_TYPE_FLOAT)
             func = dot_product_float(table_hash_params[i].v, (const float*)p, lsh->d);
         else
             func = dot_product_float_int(table_hash_params[i].v, (const int*)p, lsh->d);
-        // printf("  LSH: dot product(%d) = %.2f\n", i, func);
-        
-        float val = (func + table_hash_params[i].t) / lsh->w;
-        
-        // Fast integer truncation instead of floor()
-        // For negative values, (int) truncates toward zero, but floor goes toward -infinity
-        int h_i = (int)val;
-        if (val < 0.0f && val != (float)h_i)
-            h_i--;
 
-        // Combine using linear combination: ID = sum(r_i * h_i) mod M
-        long long r_i = lsh->linear_combinations[table_index][i];
-        long long prod = (long long)r_i * (long long)h_i; // may be negative
-        long long modM = (M == 0) ? 0 : (prod % (long long)M);
-        if (modM < 0)
-            modM += (long long)M;
+        // Apply shift and bucket width
+        double val = (func + (double)table_hash_params[i].t) / (double)lsh->w;
 
-        id = (id + (uint64_t)modM) % M;
+        // Use floor for double (handles negatives correctly)
+        int64_t h_i = (int64_t)floor(val);
+
+        // Linear combination with random coefficient
+        int64_t r_i = lsh->linear_combinations[table_index][i];
+
+        // Promote to 128-bit to avoid overflow
+        __int128 prod = (__int128)r_i * (__int128)h_i;
+
+        // Normalize modulo M (always non-negative)
+        uint64_t modM = (uint64_t)((prod % (int64_t)M + (int64_t)M) % (int64_t)M);
+
+        // Accumulate into ID
+        id = (id + modM) % M;
     }
 
     if (outID)
-        *outID = id; // expose full 64-bit ID
-    int bucket_idx = (int)(id % (uint64_t)lsh->table_size);
-    // printf("LSH: table %d, id=%d, bucket=%d\n", table_index, *ID, bucket_idx);
+        *outID = id; // bounded by M
 
+    // Map to actual table bucket
+    int bucket_idx = (int)(id % (uint64_t)lsh->table_size);
     return bucket_idx;
 }
 
-
+// Wrapper function
 int hash_function_lsh(HashTable ht, void* data, uint64_t* ID)
 {
-    // Get LSH structure from hash table algorithm context
-    // also get the table index to know which amplified hash function to use
     LSH* lsh_ctx = (LSH*)hash_table_get_algorithm_context(ht);
-    if (!lsh_ctx)
+    if (!lsh_ctx || lsh_ctx->num_of_buckets == 0)
     {
-        *ID = -1;
+        if (ID) *ID = 0; // safer sentinel than -1 in uint64_t
         return 0;
     }
 
     int t_idx = hash_table_get_index(ht);
-
     return hash_func_impl_lsh(data, lsh_ctx, t_idx, ID);
 }
 
@@ -179,8 +236,51 @@ LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
         }
     }
 
-    // print the contents of each hash table -- debug only
-    //print_hashtables(lsh->L, lsh->table_size, lsh->hash_tables, dataset->dimension);
+    // Optional: dump per-point bucket assignments for each table to a file
+    // Set env var LSH_DUMP_BUCKETS to a filepath to enable
+    const char* dump_path = getenv("LSH_DUMP_BUCKETS");
+    if (dump_path && dump_path[0] != '\0')
+    {
+        FILE* df = fopen(dump_path, "w");
+        if (df)
+        {
+            fprintf(df, "LSH_DUMP\n");
+            fprintf(df, "L %d\nK %d\nW %.6f\nTABLE_SIZE %d\n", lsh->L, lsh->k, (double)lsh->w, lsh->table_size);
+            fprintf(df, "DATASET_SIZE %d\nDIM %d\nDATA_TYPE %s\n",
+                    lsh->dataset_size,
+                    lsh->d,
+                    (lsh->data_type == DATA_TYPE_FLOAT) ? "FLOAT" : "INT");
+
+            for (int tbl = 0; tbl < lsh->L; ++tbl)
+            {
+                fprintf(df, "TABLE %d\n", tbl);
+                for (int i = 0; i < lsh->dataset_size; ++i)
+                {
+                    uint64_t id = 0ULL;
+                    int bucket_idx = hash_func_impl_lsh((const void*)dataset->data[i], lsh, tbl, &id);
+                    fprintf(df, "IDX %d BUCKET %d ID %llu", i, bucket_idx, (unsigned long long)id);
+                    // Dump ALL coordinates for this vector (full dimensionality)
+                    fprintf(df, " COORD");
+                    if (lsh->data_type == DATA_TYPE_FLOAT)
+                    {
+                        float* v = (float*)dataset->data[i];
+                        for (int c = 0; c < lsh->d; ++c) fprintf(df, " %g", (double)v[c]);
+                    }
+                    else
+                    {
+                        int* v = (int*)dataset->data[i];
+                        for (int c = 0; c < lsh->d; ++c) fprintf(df, " %d", v[c]);
+                    }
+                    fprintf(df, "\n");
+                }
+            }
+            fclose(df);
+        }
+        else
+        {
+            fprintf(stderr, "Warning: failed to open dump path '%s' for writing.\n", dump_path);
+        }
+    }
 
     return lsh;
 }
@@ -199,6 +299,9 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
         return;
     }
 
+    // Diagnostic: count how many UNIQUE candidates we actually evaluated
+    int unique_candidates = 0;
+
     // Range neighbors dynamic capacity (grow in chunks instead of per-item realloc)
     const int RANGE_ALLOC_CHUNK = 128;
     int range_capacity = (*range_neighbors && *range_count > 0) ? *range_count : 0;
@@ -211,6 +314,7 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
     // Early stopping: prevent examining excessive candidates (protects against degenerate cases)
     // const int MAX_CANDIDATES = 25 * lsh->L;  // Configurable threshold (e.g., 10L-25L)
 
+    int flagged = 0;
     // For each hash table, compute the bucket index for the query point
     for (int tbl_idx = 0; tbl_idx < lsh->L; tbl_idx++)
     {
@@ -263,12 +367,15 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
             if (data_idx >= 0 && data_idx < lsh->dataset_size && visited[data_idx])
                 continue;
 
-            // Mark as visited now to avoid reprocessing
+            // Mark as visited now to avoid reprocessing and count as unique candidate
             if (data_idx >= 0 && data_idx < lsh->dataset_size)
+            {
                 visited[data_idx] = true;
+                unique_candidates++;
+            }
 
-            // Compute distance for this candidate
-            float dist = euclidean_distance_int(q, p, lsh->d);
+            // Compute distance for this candidate using type-aware function
+            float dist = lsh->distance(q, p, lsh->d);
 
             if (*approx_count < params->N || dist < approx_dists[*approx_count - 1])
             {
@@ -309,12 +416,26 @@ void lsh_index_lookup(const void* q, const struct SearchParams* params, int* app
                 // Append this neighbor
                 (*range_neighbors)[(*range_count)++] = data_idx;
             }
+            // if(unique_candidates >= 2500 * lsh->L)
+            // {
+            //     flagged = 1;
+            //     break;
+            // }
         }
+        // if(flagged)
+        //     break;
     }
 
-    // Print diagnostic: total unique candidates examined for this query
-    // Rule of thumb: if consistently < 10*L, not enough overlap/collisions
-    // printf("Candidates examined (unique): %d (L=%d, threshold ~%d)\n", seen_count, lsh->L, 10 * lsh->L);
+    // Diagnostic print (opt-in): total unique candidates examined for this query
+    // Enable by setting environment variable LSH_PRINT_CANDIDATES=1
+    const char* lsh_diag = getenv("LSH_PRINT_CANDIDATES");
+    if (lsh_diag && lsh_diag[0] == '1')
+    {
+        printf("[LSH] Unique candidates examined: %d (L=%d)\n", unique_candidates, lsh->L);
+    }
+
+    // Append to per-run stats (if enabled)
+    lsh_diag_append_count(unique_candidates);
 
     // Free diagnostic buffer
     // free(seen_candidates);
@@ -333,6 +454,20 @@ void lsh_destroy(struct LSH* lsh)
 {
     if (!lsh)
         return;
+
+    // Print aggregated candidate stats before freeing context
+    if (g_lsh_cand_count > 0)
+    {
+        const char* stats = getenv("LSH_CAND_STATS");
+        if (stats && stats[0] == '1')
+        {
+            lsh_diag_print_stats(g_lsh_cand_counts, g_lsh_cand_count, lsh->L);
+        }
+        free(g_lsh_cand_counts);
+        g_lsh_cand_counts = NULL;
+        g_lsh_cand_count = 0;
+        g_lsh_cand_cap = 0;
+    }
 
     // Free hash params and their vectors
     if (lsh->hash_params)

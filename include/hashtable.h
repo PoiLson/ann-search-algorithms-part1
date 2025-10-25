@@ -84,7 +84,7 @@ int hash_table_capacity(HashTable hash_table);
 
 // Returns a pointer to the contiguous entries array for a bucket and sets out_count
 // The returned pointer is owned by the table; do not free it.
-const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, int index, int* out_count);
+const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, uint64_t index, int* out_count);
 
 // Deprecated: linked-list API (returns NULL)
 Node hash_table_get_bucket(HashTable hash_table, int index);

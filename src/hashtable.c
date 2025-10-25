@@ -181,9 +181,9 @@ int hash_table_capacity(HashTable hash_table)
     return hash_table->capacity;
 }
 
-const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, int index, int* out_count)
+const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, uint64_t index, int* out_count)
 {
-    if (index < 0 || index >= hash_table->capacity)
+    if (index >= (uint64_t)hash_table->capacity)
     {
         if (out_count) *out_count = 0;
         return NULL;

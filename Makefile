@@ -44,16 +44,16 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = hypercube
+ALGO = lsh
 
 # DEBUGGING PURPOSES
 #---------------------
-# INPUT_FILE  = Data/EXPERIMENTS/random_3d_points.txt
-# QUERY_FILE  = Data/EXPERIMENTS/query.dat
-# TYPE = sift
-# K = 6
-# L = 10 
-# W = 4
+INPUT_FILE  = Data/EXPERIMENTS/random_3d_int_6000.txt
+QUERY_FILE  = Data/EXPERIMENTS/query_3d_int_10.txt
+TYPE = sift
+K = 4
+L = 10 
+W = 30
 
 # Common parameters
 # -------------------
@@ -61,23 +61,23 @@ ALGO = hypercube
 # INPUT_FILE  = Data/MNIST/train-images.idx3-ubyte
 # QUERY_FILE  = Data/MNIST/t10k-images-100-sample.idx3-ubyte
 
-INPUT_FILE  = Data/SIFT/sift_base.fvecs
-QUERY_FILE  = Data/SIFT/sift_query_100.fvecs
+# INPUT_FILE  = Data/SIFT/sift_base.fvecs
+# QUERY_FILE  = Data/SIFT/sift_query_100.fvecs
 
 OUTPUT_FILE = output.txt
 N           = 1
 R           = 500
 
-TYPE        = sift
+TYPE        = none
 RANGE       = false
 
 # LSH defaults
 # -------------------
 # For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
 # For MNIST (784D, pixel values 0-255): Tuned high-recall baseline comes from large W due to E2LSH projections on raw ints
-K = 4
-L = 20
-W = 2400
+# K = 4
+# L = 20
+# W = 2400
 
 # Hypercube defaults
 # -------------------
@@ -107,11 +107,11 @@ SEED      = 10
 
 # MNIST-optimized parameters
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_MNIST = -k 4 -L 20 -w 2400 -o $(OUTPUT_FILE) -N 5 -R 4 -type mnist -lsh -range false
+    ALGO_PARAMS_MNIST = -k 4 -L 25 -w 2000 -o $(OUTPUT_FILE) -N 5 -R 4 -type mnist -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)
-    ALGO_PARAMS_MNIST = -kproj 13 -w 800 -M 2000000 -probes 100 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
+    ALGO_PARAMS_MNIST = -kproj 13 -w 800 -M 200000 -probes 100 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
 endif
 
 
@@ -122,7 +122,7 @@ endif
 
 # SIFT-optimized parameters
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_SIFT = -k 4 -L 15 -w 1000 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -lsh -range false
+    ALGO_PARAMS_SIFT = -k 4 -L 15 -w 450 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)

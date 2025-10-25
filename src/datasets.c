@@ -87,7 +87,7 @@ static Dataset* read_mnist_idx3_file(FILE* file)
         for (int p = 0; p < dataset->dimension; p++)
         {
             img[p] = (int)buf[p]; // keep 0..255 range; normalization can be applied by caller if desired
-            // img[p] = ((int)buf[p]) / 255; // normalize 0..1
+            // img[p] = ((int)buf[p]) / 255    ; // normalize 0..1
         }
         dataset->data[i] = img;
     }
@@ -223,6 +223,17 @@ Dataset* read_data_sift(const char* fvecs_path)
             fclose(file);
             exit(EXIT_FAILURE);
         }
+        // //normilize the vector to unit length
+        // float norm = 0.0f;
+        // for (int d = 0; d < dimension; d++)
+        //     norm += vec[d] * vec[d];
+        // norm = sqrtf(norm);
+        // if (norm > 0.0f)
+        // {
+        //     for (int d = 0; d < dimension; d++)
+        //         vec[d] /= norm;
+        // }
+
         dataset->data[i] = vec;
     }
 
@@ -236,7 +247,8 @@ Dataset* read_data_sift(const char* fvecs_path)
 
 Dataset* read_data_experiment(const char* dataset_path)
 {
-    // Parse as text file with first line: <size> <dimension> then ints
+    // Parse as text file with first line: <size> <dimension> then coordinates
+    // Supports floating-point coordinates.
     FILE* file = fopen(dataset_path, "r");
     if (!file)
     {
@@ -260,9 +272,9 @@ Dataset* read_data_experiment(const char* dataset_path)
         exit(EXIT_FAILURE);
     }
 
-    dataset->data_type = DATA_TYPE_INT;  // Experimental data is int
+    dataset->data_type = DATA_TYPE_FLOAT;  // Experimental data can be float
 
-    dataset->data = (void**)malloc(dataset->size * sizeof(int*));
+    dataset->data = (void**)malloc(dataset->size * sizeof(void*));
     if (dataset->data == NULL)
     {
         fprintf(stderr, "Error allocating memory for dataset\n");
@@ -273,8 +285,8 @@ Dataset* read_data_experiment(const char* dataset_path)
     
     for (int i = 0; i < dataset->size; i++)
     {
-        dataset->data[i] = (void*)malloc(dataset->dimension * sizeof(int));
-        int* data = (int*)dataset->data[i];
+        dataset->data[i] = (void*)malloc(dataset->dimension * sizeof(float));
+        float* data = (float*)dataset->data[i];
         if (data == NULL)
         {
             fprintf(stderr, "Error allocating memory for point %d\n", i);
@@ -286,7 +298,7 @@ Dataset* read_data_experiment(const char* dataset_path)
         
         for (int j = 0; j < dataset->dimension; j++)
         {
-            if (fscanf(file, "%d", &(data[j])) != 1)
+            if (fscanf(file, "%f", &(data[j])) != 1)
             {
                 fprintf(stderr, "Error reading point %d, coordinate %d\n", i, j);
                 fclose(file);
