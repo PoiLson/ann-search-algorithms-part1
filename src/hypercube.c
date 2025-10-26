@@ -224,11 +224,11 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
 
     // Allocate visited array for O(1) duplicate detection (instead of O(N) linear scan)
     // This dramatically speeds up queries when examining many candidates
-    bool* visited = (bool*)calloc(hyper->dataset_size, sizeof(bool));
-    if (!visited) {
-        fprintf(stderr, "Failed to allocate visited array\n");
-        return;
-    }
+    // bool* visited = (bool*)calloc(hyper->dataset_size, sizeof(bool));
+    // if (!visited) {
+    //     fprintf(stderr, "Failed to allocate visited array\n");
+    //     return;
+    // }
 
     // Range search optimization: allocate in chunks to avoid repeated realloc
     int range_capacity = 0;
@@ -252,13 +252,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     get_hamming_neighbors(bucket_idx, hyper->probes, hyper->kproj, neighbors);
     for (int n = 0; n < neighbor_count; n++)
     {
-        uint64_t neighbor_idx = 0ULL;
-        // Access the n-th neighbor from the flat array
-        int* current_neighbor = neighbors + (n * hyper->kproj);
-        for (int b = 0; b < hyper->kproj; b++)
-        {
-            neighbor_idx = (neighbor_idx << 1) | (uint64_t)current_neighbor[b];
-        }
+        uint64_t neighbor_idx = neighbors[n];
         int neighbor_count_entries = 0;
         const HTEntry* neighbor_bucket = hash_table_get_bucket_entries(hyper->hash_table, neighbor_idx, &neighbor_count_entries);
 
@@ -269,9 +263,9 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             void* p = neighbor_bucket[bi].data;
 
             // O(1) duplicate check using visited array instead of O(N) linear scan
-            if (visited[data_idx])
-                continue;
-            visited[data_idx] = true;
+            // if (visited[data_idx])
+            //     continue;
+            // visited[data_idx] = true;
 
             // Count examined points and enforce M threshold
             checked++;
@@ -315,7 +309,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
                         free(*range_neighbors);
                         *range_neighbors = NULL;
                         *range_count = 0;
-                        free(visited);
+                        // free(visited);
                         free(neighbors);
                         return;
                     }
@@ -329,7 +323,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             break; // exit probing further buckets
     }
     // Clean up allocations
-    free(visited);
+    // free(visited);
     free(neighbors);
 }
 

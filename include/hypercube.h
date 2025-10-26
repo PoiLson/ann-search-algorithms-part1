@@ -41,12 +41,23 @@ typedef struct Hypercube
 // f function to map h_i to {0,1} using 2-universal hashing for balanced bits
 static inline bool f(uint32_t a, uint32_t b, int h_i)
 {
-    // 2-universal hash: ((a * h + b) mod prime) & 1
-    // Use a large prime (2^31 - 1) for modulo
-    const uint32_t PRIME = 2147483647U; // 2^31 - 1 (Mersenne prime)
-    uint32_t h_unsigned = (uint32_t)h_i;
-    uint64_t temp = ((uint64_t)a * h_unsigned + b) % PRIME;
-    return (bool)(temp & 1U);
+    /*
+     * Improved per-bit hashing: use a small, fast 64-bit mixing/hash (SplitMix-style)
+     * to map the integer h_i (bucket index) together with per-bit salts (a,b)
+     * to a well-distributed 64-bit value and return its least-significant bit.
+     * This gives much better diffusion and avoids bias observed with the simple
+     * ((a*h+b) mod P) & 1 approach when h_i is small or correlated.
+     */
+    uint64_t x = (uint32_t)h_i;
+    x += ((uint64_t)a << 32) | (uint64_t)b; // combine salts into 64-bit tweak
+
+    // splitmix64-style mix
+    x += 0x9e3779b97f4a7c15ULL;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+    x = x ^ (x >> 31);
+
+    return (bool)(x & 1ULL);
 }
 
 //defines the hypercube hash function

@@ -44,7 +44,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = lsh
+ALGO = hypercube
 
 # DEBUGGING PURPOSES
 #---------------------
@@ -111,7 +111,7 @@ ifeq ($(ALGO), lsh)
 endif
 
 ifeq ($(ALGO), hypercube)
-    ALGO_PARAMS_MNIST = -kproj 13 -w 800 -M 200000 -probes 100 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
+    ALGO_PARAMS_MNIST = -kproj 13 -w 2000 -M 2000 -probes 100 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
 endif
 
 
