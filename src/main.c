@@ -3,33 +3,39 @@
 
 int main()
 {
-
     printf("hello to debugging!\n");
 
-    float** arrayExp = (float**)malloc(sizeof(float*) * 5);
-    for(int idx = 0; idx < 5; idx++)
+    Dataset* dataset = (Dataset*)malloc(sizeof(Dataset));
+    if (!dataset)
     {
-        arrayExp[idx] = (float*)malloc(sizeof(float) * 3);
-
-        arrayExp[idx][0] = ((float)idx * 2) / 3;
-        arrayExp[idx][1] = ((float)idx * 3) / 5;
-        arrayExp[idx][2] = ((float)idx * 4) / 7;
+        fprintf(stderr, "Memory allocation failed for subset dataset struct in Kmeans++\n");
+        exit(EXIT_FAILURE);
     }
 
-    for(int idx = 0; idx < 5; idx++)
+    dataset->size = 10;
+    dataset->dimension = 2;
+    dataset->data_type = DATA_TYPE_FLOAT;
+    
+    float** arrayExp = (float**)malloc(sizeof(float*) * 10);
+    for(int idx = 0; idx < 10; idx++)
     {
-        printf("array[%d] = (%f, %f)\n",  idx, arrayExp[idx][0], arrayExp[idx][1]);
+        arrayExp[idx] = (float*)malloc(sizeof(float) * 2);
+
+        arrayExp[idx][0] = rand() %10;
+        arrayExp[idx][1] = rand() %10;
     }
+    dataset->data = (void**)arrayExp;
 
-    fisher_yates_shuffle((void**) arrayExp, 5);
-
-    printf("AFTER FISHER\n");
-    for(int idx = 0; idx < 5; idx++)
+    for(int idx = 0; idx < 10; idx++)
     {
-        printf("array[%d] = (%f, %f)\n",  idx, arrayExp[idx][0], arrayExp[idx][1]);
+        printf("(%f, %f)\n",  arrayExp[idx][0], arrayExp[idx][1]);
     }
+    
+    printPartialDataset(10, dataset);
 
-    printf("%ld, %ld, %ld\n", sizeof(arrayExp), sizeof(arrayExp[0]), sizeof(float));
+    ivfflat_init(dataset, 2);
+
+
 
     return 0;
 }

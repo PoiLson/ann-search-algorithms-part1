@@ -318,12 +318,12 @@ void printPartialDataset(int size, const Dataset* dataset)
     //for the first 'size' points of the dataset, print the coordinates
     for (int i = 0; i < size && i < dataset->size; i++)
     {
-        int* row = (int*) dataset->data[i];
+        float* row = (float*) dataset->data[i];
 
         printf("Point %d: ", i);
         for (int j = 0; j < dataset->dimension; j++)
         {
-            printf("%d ", row[j]);
+            printf("%f ", row[j]);
         }
         printf("\n");
     }

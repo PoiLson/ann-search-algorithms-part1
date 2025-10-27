@@ -3,7 +3,7 @@
 void run_lsh(SearchParams* params, Dataset* dataset)
 {
     struct LSH* lsh = lsh_init(params, dataset);
-    printf("exiting...\n");
+
     if (!lsh) return;
     
     Dataset* query_set = NULL;
@@ -62,9 +62,7 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
     // Placeholder for IVFFlat algorithm implementation
     printf("Running IVFFlat with dataset: %s\n", params->dataset_path);
 
-    int subsetSize = findSubsetSize(dataset->size);
-    createSubset(dataset, subsetSize);
-    // lloydAlgorithm();
+    ivfflat_init(dataset, params->kclusters);
 
     return;
 }

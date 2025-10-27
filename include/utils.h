@@ -50,6 +50,32 @@ static inline float euclidean_distance_int(const void* a, const void* b, const i
     return sqrtf(sum);
 }
 
+// TODO, TAKE INTS AND FLOATS FIXED EVENTUALLY
+static inline double euclidean_distance_int_ivfflat(const int* a, const int* b, const int dimension)
+{
+    double sum = 0.0;
+
+    for(int i = 0; i < dimension; i++)
+    {
+        double diff = (float)a[i] - (float)b[i];
+        sum += diff * diff;
+    }
+    return sqrt(sum);
+}
+
+static inline double euclidean_distance_float_ivfflat(const float* a, const float* b, const int dimension)
+{
+    double sum = 0.0;
+
+    for(int i = 0; i < dimension; i++)
+    {
+        double diff = a[i] - b[i];
+        sum += diff * diff;
+    }
+
+    return sqrt(sum);
+}
+
 //computes the Hamming distance between two binary vectors a and b of dimension d
 int hamming_distance(const int *a, const int *b, int d);
 
