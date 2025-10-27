@@ -5,6 +5,8 @@
 
 // Forward declaration
 struct Hypercube;
+// Forward declare Hashmap type (defined in include/hashmap.h)
+typedef struct Hashmap Hashmap;
 
 //define function pointer
 typedef uint64_t (*bin_hash)(const void* p, const struct Hypercube* hyper, uint64_t *ID);
@@ -31,6 +33,7 @@ typedef struct Hypercube
     Hypercube_hash_function *hash_params; // array of hash parameters
     uint32_t* f_a; // array of a_i coefficients for 2-universal hash (one per bit)
     uint32_t* f_b; // array of b_i offsets for 2-universal hash (one per bit)
+    Hashmap** map; // per-projection hashmap mapping bucket index -> bit
     bin_hash binary_hash_function; // single hash function that computes all k bits
     
     HashTable hash_table; // hash table
@@ -39,26 +42,10 @@ typedef struct Hypercube
 //-----------------------Helper functions for hashing----------------------------
 
 // f function to map h_i to {0,1} using 2-universal hashing for balanced bits
-static inline bool f(uint32_t a, uint32_t b, int h_i)
-{
-    /*
-     * Improved per-bit hashing: use a small, fast 64-bit mixing/hash (SplitMix-style)
-     * to map the integer h_i (bucket index) together with per-bit salts (a,b)
-     * to a well-distributed 64-bit value and return its least-significant bit.
-     * This gives much better diffusion and avoids bias observed with the simple
-     * ((a*h+b) mod P) & 1 approach when h_i is small or correlated.
-     */
-    uint64_t x = (uint32_t)h_i;
-    x += ((uint64_t)a << 32) | (uint64_t)b; // combine salts into 64-bit tweak
-
-    // splitmix64-style mix
-    x += 0x9e3779b97f4a7c15ULL;
-    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
-    x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
-    x = x ^ (x >> 31);
-
-    return (bool)(x & 1ULL);
-}
+// static inline bool f(uint32_t a, uint32_t b, int h_i)
+// {
+//     return h_i & 1;
+// }
 
 //defines the hypercube hash function
 static uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID);
