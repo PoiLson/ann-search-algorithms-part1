@@ -61,6 +61,11 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
 {
     // Placeholder for IVFFlat algorithm implementation
     printf("Running IVFFlat with dataset: %s\n", params->dataset_path);
+
+    int subsetSize = findSubsetSize(dataset->size);
+    createSubset(dataset, subsetSize);
+    // lloydAlgorithm();
+
     return;
 }
 

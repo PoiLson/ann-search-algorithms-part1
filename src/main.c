@@ -1,28 +1,55 @@
 #include "../include/main.h"
 
 
-int main2()
+int main()
 {
 
     printf("hello to debugging!\n");
-    int probes = 6;
-    int kproj = 14;
-    uint64_t bucket = 1027;
-    uint64_t* neighbors = (uint64_t*)malloc(probes * sizeof(uint64_t));
 
-    get_hamming_neighbors(bucket, probes, kproj, neighbors);
+    float array[5][2] = {{11.5555, 2.3}, {3.78, 4.43}, {5.001, 6.1234}, {7.00008, 8.8000}, {9.0, 10.4}};
+    
+    fisher_yates_shuffle(array, 5, sizeof(array[0]));
+    printf("%ld, %ld, %ld\n", sizeof(array), sizeof(array[0]), sizeof(float));
 
-    for(int idx = 0; idx < probes; idx++)
+
+    for(int idx = 0; idx < 5; idx++)
     {
-        printf("Neighbor %d: %ld\n", idx, neighbors[idx]);
+        printf("array[%d] = (%f, %f)\n",  idx, array[idx][0], array[idx][1]);
     }
+
+    printf("------------------------------\n");
+
+    float** arrayExp = (float**)malloc(sizeof(float*) * 5);
+    for(int idx = 0; idx < 5; idx++)
+    {
+        arrayExp[idx] = (float*)malloc(sizeof(float) * 3);
+
+        arrayExp[idx][0] = ((float)idx * 2) / 3;
+        arrayExp[idx][1] = ((float)idx * 3) / 5;
+        arrayExp[idx][2] = ((float)idx * 4) / 7;
+    }
+
+    for(int idx = 0; idx < 5; idx++)
+    {
+        printf("array[%d] = (%f, %f)\n",  idx, arrayExp[idx][0], arrayExp[idx][1]);
+    }
+
+    fisher_yates_shuffle(*arrayExp, 5, 3*sizeof(float));
+
+    printf("AFTER FISHER\n");
+    for(int idx = 0; idx < 5; idx++)
+    {
+        printf("array[%d] = (%f, %f)\n",  idx, arrayExp[idx][0], arrayExp[idx][1]);
+    }
+
+    printf("%ld, %ld, %ld\n", sizeof(arrayExp), sizeof(arrayExp[0]), sizeof(float));
 
     return 0;
 }
 
 
 
-int main(int argc, char **argv)
+int main2(int argc, char **argv)
 {
     SearchParams params;
     // Seed RNG: allow override via HYPER_SEED env var for experiments

@@ -27,5 +27,6 @@
 
 
 #include "hypercube.h"
+#include "ivfflat.h"
 
 #endif

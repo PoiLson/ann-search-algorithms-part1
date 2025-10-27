@@ -44,7 +44,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = hypercube
+ALGO = ivfflat
 
 # DEBUGGING PURPOSES
 #---------------------
