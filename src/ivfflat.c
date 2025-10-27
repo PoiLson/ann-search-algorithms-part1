@@ -1,20 +1,16 @@
 #include "../include/main.h"
 
 // Generic Fisher–Yates shuffle
-void fisher_yates_shuffle(void *array, size_t n)
-{
-    unsigned char *arr = (unsigned char *)array;
-
+// Generic Fisher–Yates shuffle for arrays of pointers
+void fisher_yates_shuffle(void **array, size_t n) {
     srand((unsigned int) time(NULL));
 
-    for (size_t i = n - 1; i > 0; i--)
-    {
+    for (size_t i = n - 1; i > 0; i--) {
         size_t j = rand() % (i + 1);
-
-        // Swap arr[i] and arr[j]
-        float tmp = arr[i]; // tmp is a single float
-        arr[i] = arr[j];
-        arr[j] = tmp;
+        // Swap the pointers
+        void *tmp = array[i];
+        array[i] = array[j];
+        array[j] = tmp;
     }
 }
 

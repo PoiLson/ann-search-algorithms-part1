@@ -6,19 +6,6 @@ int main()
 
     printf("hello to debugging!\n");
 
-    float array[5][2] = {{11.5555, 2.3}, {3.78, 4.43}, {5.001, 6.1234}, {7.00008, 8.8000}, {9.0, 10.4}};
-    
-    fisher_yates_shuffle(array, 5, sizeof(array[0]));
-    printf("%ld, %ld, %ld\n", sizeof(array), sizeof(array[0]), sizeof(float));
-
-
-    for(int idx = 0; idx < 5; idx++)
-    {
-        printf("array[%d] = (%f, %f)\n",  idx, array[idx][0], array[idx][1]);
-    }
-
-    printf("------------------------------\n");
-
     float** arrayExp = (float**)malloc(sizeof(float*) * 5);
     for(int idx = 0; idx < 5; idx++)
     {
@@ -34,7 +21,7 @@ int main()
         printf("array[%d] = (%f, %f)\n",  idx, arrayExp[idx][0], arrayExp[idx][1]);
     }
 
-    fisher_yates_shuffle(*arrayExp, 5, 3*sizeof(float));
+    fisher_yates_shuffle((void**) arrayExp, 5);
 
     printf("AFTER FISHER\n");
     for(int idx = 0; idx < 5; idx++)
