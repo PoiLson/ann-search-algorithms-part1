@@ -1,5 +1,78 @@
 #include "../include/main.h"
 
+
+void add_point_to_list(InvertedList *list, float *point, int cluster_id)
+{
+    if (list->count == list->capacity)
+    {
+        list->capacity = (list->capacity == 0) ? 16 : list->capacity * 2;
+        list->points = realloc(list->points, list->capacity * sizeof(float *));
+    }
+
+    list->points[list->count++] = point;
+    list->cluster_id = cluster_id; 
+}
+
+void clear_lists(IVFFlatIndex *index)
+{
+    for (int t = 0; t < index->k; t++)
+    {
+        index->lists[t].count = 0;  // keep memory, just reset counts
+    }
+}
+
+void assign_points_to_clusters(IVFFlatIndex *index, float **dataset, int n, int *assignments) {
+    clear_lists(index);
+    for (int i = 0; i < n; i++) {
+        float *vec = dataset[i];
+        double best_dist = DBL_MAX;
+        int best_cluster = -1;
+
+        for (int t = 0; t < index->k; t++) {
+            double dist = euclidean_distance_float_ivfflat(vec, index->centroids[t], index->d);
+            if (dist < best_dist) {
+                best_dist = dist;
+                best_cluster = t;
+            }
+        }
+
+        assignments[i] = best_cluster;
+        add_point_to_list(&index->lists[best_cluster], vec, best_cluster);
+    }
+}
+
+
+
+bool recompute_centroids(IVFFlatIndex *index, int d, double epsilon)
+{
+    bool changed = false;
+
+    for (int t = 0; t < index->k; t++) {
+        InvertedList *list = &index->lists[t];
+        if (list->count == 0) continue; // empty cluster
+
+        float *new_centroid = calloc(d, sizeof(float));
+        for (int i = 0; i < list->count; i++) {
+            float *vec = list->points[i];
+            for (int j = 0; j < d; j++)
+                new_centroid[j] += vec[j];
+        }
+        for (int j = 0; j < d; j++)
+            new_centroid[j] /= list->count;
+
+        // Check how much the centroid moved
+        double shift = euclidean_distance_float_ivfflat(index->centroids[t], new_centroid, d);
+        if (shift > epsilon)
+            changed = true;
+
+        // Replace old centroid
+        free(index->centroids[t]);
+        index->centroids[t] = new_centroid;
+    }
+
+    return changed;
+}
+
 // Generic Fisher–Yates shuffle
 int findSubsetSize(int subsetSize)
 {
@@ -45,7 +118,7 @@ Dataset* createSubset(Dataset* dataset, int subsetSize)
     return subset;
 }
 
-void runKmeans(Dataset* subset, int kclusters)
+centroidInfo* runKmeans(Dataset* subset, int kclusters)
 {
     int n = subset->size;
     int d = subset->dimension;
@@ -56,6 +129,13 @@ void runKmeans(Dataset* subset, int kclusters)
     double sumDistances = 0.0;
     double chooseRandomNumber = 0.0;
     double density = 0.0;
+
+    centroidInfo* info = (centroidInfo*)malloc(sizeof(centroidInfo));
+    if (!info)
+    {
+        fprintf(stderr, "Memory allocation failed for centroid info\n");
+        exit(EXIT_FAILURE);
+    }
 
     bool* is_centroid = (bool*)calloc(n, sizeof(bool));
     if (!is_centroid)
@@ -95,7 +175,7 @@ void runKmeans(Dataset* subset, int kclusters)
         is_centroid[idx] = 1;
         t++;
 
-        for(t; t <= kclusters; t++)
+        for(t; t < kclusters; t++)
         {
             // initialize best_distances_square array with -1
             for(int b = 0; b < n; b++)
@@ -169,7 +249,10 @@ void runKmeans(Dataset* subset, int kclusters)
             printf("centroid[%d] = {%f,%f}\n", dx, centroids[dx][0], centroids[dx][1]);
         }
 
+        // free our data
 
+        info->centroids = centroids;
+        info->is_centroid = is_centroid;
     }
     else if(subset->data_type == DATA_TYPE_INT)
     {
@@ -185,12 +268,44 @@ void runKmeans(Dataset* subset, int kclusters)
         exit(EXIT_FAILURE);
     }
 
-    return;
+    return is_centroid;
 }
 
-void lloydAlgorithm(void** subset)
+void lloydAlgorithm(Dataset* subset, int kclusters)
 {
-    //choose a random element to start as a centroid
+    // ERROR TO DO, FLOATS AND INTS, NOW IT IS RUNNING WITH FLOAT
+    centroidInfo *info = runKmeans(subset, kclusters);
+    int max_iters = 50;
+    double epsilon = 1e-4;
+
+    // Create IVFFlat index structure
+    IVFFlatIndex index;
+    index.k = kclusters;
+    index.d = subset->dimension;
+    index.centroids = info->centroids;
+    index.lists = calloc(kclusters, sizeof(InvertedList));
+
+    int *assignments = calloc(subset->size, sizeof(int));
+
+    for (int iter = 0; iter < max_iters; iter++)
+    {
+        assign_points_to_clusters(&index, (float **)subset->data, subset->size, assignments);
+        bool changed = recompute_centroids(&index, subset->dimension, epsilon);
+
+        printf("Iteration %d done.\n", iter + 1);
+        for (int t = 0; t < index.k; t++) {
+            printf("  Cluster %d -> %d points\n", t, index.lists[t].count);
+        }
+
+        if (!changed) {
+            printf("Converged after %d iterations.\n", iter + 1);
+            break;
+        }
+    }
+
+    free(assignments);
+
+
 }
 
 void ivfflat_init(Dataset* dataset, int kclusters)
@@ -198,10 +313,7 @@ void ivfflat_init(Dataset* dataset, int kclusters)
     // int subsetSize = findSubsetSize(dataset->size);
     Dataset* subset = createSubset(dataset, 10); //produces the X'
 
-    // we have to initialize the k centroids
-    runKmeans(subset, kclusters);
-
-    // lloydAlgorithm();
+    lloydAlgorithm(subset, kclusters);
 
     return;
 }
