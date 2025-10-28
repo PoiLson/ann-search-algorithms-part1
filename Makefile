@@ -9,7 +9,7 @@ CC = gcc
 # CFLAGS = -Wall -Wextra -std=c11 -g -Iinclude
 
 # Compiler flags without warnings
-CFLAGS = -std=c11 -g -Iinclude 
+CFLAGS = -std=c11 -g -Iinclude  -O3
 LDFLAGS = -lm
 
 # Optional LSH optimization flags:
@@ -115,11 +115,11 @@ ifeq ($(ALGO), hypercube)
 endif
 
 ifeq ($(ALGO), ivfflat)
-    ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -range false -ivfflat -seed 10
+	ALGO_PARAMS_MNIST = -kclusters 70 -nprobe 4 -o $(OUTPUT_FILE) -N 1 -R 50000 -type mnist -range false -ivfflat -seed 10
 endif
 
 ifeq ($(ALGO), ivfpq)
-    ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 5 -M 10 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -nbits 8 -range false -ivfpq -seed 10
+	ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 5 -M 10 -o $(OUTPUT_FILE) -N 5 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
 endif
 
 
@@ -131,7 +131,7 @@ NBITS     = 8
 
 # SIFT-optimized parameters
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_SIFT = -k 4 -L 15 -w 450 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -lsh -range false
+    ALGO_PARAMS_SIFT = -k 4 -L 10 -w 45 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)
@@ -139,7 +139,7 @@ ifeq ($(ALGO), hypercube)
 endif
 
 ifeq ($(ALGO), ivfflat)
-    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 1 -R 2 -type sift -range false -ivfflat -seed 1
+    ALGO_PARAMS_SIFT = -kclusters 70 -nprobe 5 -o $(OUTPUT_FILE) -N 1 -R 2 -type sift -range false -ivfflat -seed 1
 endif
 
 ifeq ($(ALGO), ivfpq)

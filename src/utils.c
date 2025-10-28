@@ -181,3 +181,29 @@ int compare_vectors(const void* a, const void* b, const void* metricContext)
     float dist = euclidean_distance(a, b, dimension);
     return (dist == 0.0) ? 0 : (dist < 0.0) ? -1 : 1;
 }
+
+inline float* cast_vector_to_float(void* vec, int data_type, int dimension)
+{
+    float* result = (float*)malloc(dimension * sizeof(float));
+    if (!result)
+        return NULL;
+
+    if (data_type == DATA_TYPE_FLOAT)
+    {
+        float* fvec = (float*)vec;
+        for (int i = 0; i < dimension; i++)
+            result[i] = fvec[i];
+    }
+    else if (data_type == DATA_TYPE_INT)
+    {
+        int* ivec = (int*)vec;
+        for (int i = 0; i < dimension; i++)
+            result[i] = (float)ivec[i];
+    }
+    else
+    {
+        free(result);
+        return NULL; // unknown data type
+    }
+    return result;
+}

@@ -33,6 +33,7 @@ static inline float dot_product_float_int(const float* a, const int* b, int d)
     return sum;
 }
 
+
 //computes the Euclidean distance between two points a and b
 float euclidean_distance(const void* a, const void* b, const int dimension);
 
@@ -50,14 +51,12 @@ static inline float euclidean_distance_int(const void* a, const void* b, const i
     return sqrtf(sum);
 }
 
-// TODO, TAKE INTS AND FLOATS FIXED EVENTUALLY
-static inline double euclidean_distance_int_ivfflat(const int* a, const int* b, const int dimension)
+// helper: compute Euclidean distance between an int vector and a float vector
+static inline double euclidean_distance_int_to_float(const int* a, const float* b, const int dimension)
 {
     double sum = 0.0;
-
-    for(int i = 0; i < dimension; i++)
-    {
-        double diff = (float)a[i] - (float)b[i];
+    for (int i = 0; i < dimension; i++) {
+        double diff = (double)a[i] - (double)b[i];
         sum += diff * diff;
     }
     return sqrt(sum);
@@ -84,5 +83,8 @@ void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* nei
 
 //comparison function for two vectors a and b
 int compare_vectors(const void* a, const void* b, const void* metricContext);
+
+//casts a vector of given data type to float array
+float* cast_vector_to_float(void* vec, int data_type, int dimension);
 
 #endif
