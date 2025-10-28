@@ -91,18 +91,34 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         total_true_time += true_time;
 
 
-        double af = (true_dists[0] > 0.0) ? approx_dists[0] / true_dists[0] : 1.0;
-        int recall_count = 0;
-
-        for (int i = 0; i < params->N; i++)
+        /* Compute approximation factor (AF) robustly. If we don't have a true or approx
+         * nearest neighbor, set AF to INFINITY to indicate no valid approximation.
+         */
+        double af = INFINITY;
+        if (true_count > 0 && approx_count > 0 && true_dists[0] > 0.0)
         {
+            af = approx_dists[0] / true_dists[0];
+        }
+
+        /* Compute Recall@N: fraction of the top-true (up to N) neighbors that appear
+         * in the approximate result. Iterate over top-true neighbors and check if
+         * each one appears at least once in the approx list (prevents double-counting).
+         */
+        int recall_count = 0;
+        int denom = (true_count < params->N) ? true_count : params->N;
+        for (int i = 0; i < denom; i++)
+        {
+            int t_idx = true_neighbors[i];
             for (int j = 0; j < approx_count; j++)
             {
-                if (true_neighbors[i] == approx_neighbors[j])
+                if (t_idx == approx_neighbors[j])
+                {
                     recall_count++;
+                    break; /* don't double-count this true neighbor */
+                }
             }
         }
-        double recall = (double)recall_count / params->N;
+        double recall = (denom > 0) ? ((double)recall_count / (double)denom) : 0.0;
 
         total_af += af;
         total_recall += recall;
@@ -129,14 +145,6 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
                 fprintf(output_file, "%d\n", range_neighbors[i]);
             }
         }
-
-        fprintf(output_file, "-------METRICS---------\n");
-        fprintf(output_file, "Average AF: %f\n", af);
-        fprintf(output_file, "Recall@N: %f\n", recall);
-        fprintf(output_file, "QPS: %f\n", 1.0 / approx_time);
-        fprintf(output_file, "tApproximateAverage: %f\n", approx_time);
-        fprintf(output_file, "tTrueAverage: %f\n", true_time);
-        fprintf(output_file, "\n");
 
         free(approx_neighbors);
         free(approx_dists);

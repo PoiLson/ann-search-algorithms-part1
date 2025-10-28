@@ -25,8 +25,8 @@ typedef struct
 } IVFFlatIndex;
 
 
-void add_point_to_list(InvertedList *list, float *point);
-void assign_points_to_clusters(IVFFlatIndex *index, float **dataset, int n);
+void add_point_to_list(InvertedList *list, float *point, int cluster_id);
+void assign_points_to_clusters(IVFFlatIndex *index, float **dataset, int n, int *assignments);
 
 
 

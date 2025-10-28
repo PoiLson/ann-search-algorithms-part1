@@ -4,7 +4,7 @@
 int main()
 {
     printf("hello to debugging!\n");
-
+    srand(time(NULL));
     Dataset* dataset = (Dataset*)malloc(sizeof(Dataset));
     if (!dataset)
     {

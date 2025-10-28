@@ -82,7 +82,7 @@ int findSubsetSize(int subsetSize)
 
 void fisher_yates_shuffle(void **array, size_t n)
 {
-    srand((unsigned int) time(NULL));
+    // srand((unsigned int) time(NULL));
 
     for (size_t i = n - 1; i > 0; i--)
     {
@@ -169,19 +169,28 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
         }
 
 
-        // We find the first cluster randomly from our dataset
-        idx = rand() % n;
-        centroids[t] = (float*)subset->data[idx];
-        is_centroid[idx] = 1;
-        t++;
+    // We find the first cluster randomly from our dataset
+    idx = rand() % n;
+    /* Allocate and copy the chosen centroid vector instead of pointing directly
+     * into the dataset memory. If we keep pointers into the original dataset,
+     * later recompute_centroids() will free() centroid pointers and thus free
+     * dataset memory, causing use-after-free when the algorithm later reads
+     * dataset points. Copying gives centroids ownership of their memory.
+     */
+    centroids[t] = (float*)malloc(d * sizeof(float));
+    if (!centroids[t]) { fprintf(stderr, "Memory allocation failed for centroid copy\n"); exit(EXIT_FAILURE); }
+    for (int _j = 0; _j < d; ++_j) centroids[t][_j] = ((float*)subset->data[idx])[_j];
+    is_centroid[idx] = 1;
+    t++;
 
         for(t; t < kclusters; t++)
         {
-            // initialize best_distances_square array with -1
+            // initialize best_distances_square array with -1 and reset sumDistances
             for(int b = 0; b < n; b++)
             {
                 best_distances_square[b] = -1.0;
             }
+            sumDistances = 0.0;
 
             for (int i = 0; i < n; i++)
             {
@@ -202,10 +211,8 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
                 }
 
                 // We have found the best distance for i non-centroid
-                sumDistances += best_dist * best_dist;
-
-                // We want to save the best_dist for this point
                 best_distances_square[i] = best_dist * best_dist;
+                sumDistances += best_distances_square[i];
             }
 
             // choose the next cluster vector
@@ -216,13 +223,13 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
                 // skip if this vector is one of the centroids
                 if (is_centroid[i])
                     continue;
-
-                probabilities[i] = best_distances_square[i] / sumDistances;
+                probabilities[i] = (sumDistances > 0.0) ? (best_distances_square[i] / sumDistances) : 0.0;
             }
 
             // Now we have found all of the probabilities
             // Next step is to choose a random number between [0,1]
             chooseRandomNumber = (double)rand() / (double)RAND_MAX;
+            density = 0.0;
 
             for (int i = 0; i < n; i++)
             {
@@ -234,7 +241,10 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
 
                 if(density >= chooseRandomNumber)
                 {
-                    centroids[t] = (float*)subset->data[i];
+                    /* Copy the chosen centroid instead of pointing into dataset memory */
+                    centroids[t] = (float*)malloc(d * sizeof(float));
+                    if (!centroids[t]) { fprintf(stderr, "Memory allocation failed for centroid copy\n"); exit(EXIT_FAILURE); }
+                    for (int _j = 0; _j < d; ++_j) centroids[t][_j] = ((float*)subset->data[i])[_j];
                     is_centroid[i] = 1;
 
                     break;
@@ -268,7 +278,7 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
         exit(EXIT_FAILURE);
     }
 
-    return is_centroid;
+    return info;
 }
 
 void lloydAlgorithm(Dataset* subset, int kclusters)
@@ -293,8 +303,22 @@ void lloydAlgorithm(Dataset* subset, int kclusters)
         bool changed = recompute_centroids(&index, subset->dimension, epsilon);
 
         printf("Iteration %d done.\n", iter + 1);
+        /* Print centroids for this iteration for debugging */
+        for (int ct = 0; ct < index.k; ++ct) {
+            float *c = index.centroids[ct];
+            if (c)
+                printf("  centroid[%d] = {%.6f, %.6f}\n", ct, c[0], c[1]);
+        }
         for (int t = 0; t < index.k; t++) {
             printf("  Cluster %d -> %d points\n", t, index.lists[t].count);
+            for (int p = 0; p < index.lists[t].count; p++) {
+                printf("    Point %d: ", p);
+                float *vec = index.lists[t].points[p];
+                for (int dim = 0; dim < index.d; dim++) {
+                    printf("%f ", vec[dim]);
+                }
+                printf("\n");
+            }
         }
 
         if (!changed) {
@@ -303,8 +327,63 @@ void lloydAlgorithm(Dataset* subset, int kclusters)
         }
     }
 
+    /* After convergence, export centroids and assignments to CSV files so Python visualizers
+     * can read them. Files are written under Python_Scripts/ for convenience.
+     */
+    FILE *fc = fopen("Python_Scripts/ivfflat_centroids.csv", "w");
+    if (fc) {
+        fprintf(fc, "cluster,x,y\n");
+        for (int t = 0; t < index.k; ++t) {
+            float *c = index.centroids[t];
+            if (c)
+                fprintf(fc, "%d,%.6f,%.6f\n", t, c[0], c[1]);
+        }
+        fclose(fc);
+    }
+
+    FILE *fa = fopen("Python_Scripts/ivfflat_assignments.csv", "w");
+    if (fa) {
+        fprintf(fa, "index,x,y,cluster\n");
+        for (int i = 0; i < subset->size; ++i) {
+            float *v = (float*)subset->data[i];
+            int cl = assignments[i];
+            fprintf(fa, "%d,%.6f,%.6f,%d\n", i, v[0], v[1], cl);
+        }
+        fclose(fa);
+    }
+
+    /* Print final centroids for clarity before cleanup */
+    printf("Final centroids:\n");
+    for (int t = 0; t < index.k; ++t) {
+        float *c = index.centroids[t];
+        if (c)
+            printf("  centroid[%d] = {%.6f, %.6f}\n", t, c[0], c[1]);
+    }
+
+    /* Cleanup allocations created for this run */
+    // free the assignments buffer after we've exported it
     free(assignments);
 
+    // free lists' internal arrays (they point to dataset vectors, which we don't free)
+    for (int t = 0; t < index.k; ++t) {
+        if (index.lists[t].points)
+            free(index.lists[t].points);
+    }
+    free(index.lists);
+
+    // free centroid memory and centroidInfo structure returned by runKmeans
+    if (index.centroids) {
+        for (int t = 0; t < index.k; ++t) {
+            if (index.centroids[t]) free(index.centroids[t]);
+        }
+        free(index.centroids);
+    }
+    if (info) {
+        if (info->is_centroid) free(info->is_centroid);
+        free(info);
+    }
+    
+    
 
 }
 
