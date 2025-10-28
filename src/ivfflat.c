@@ -28,28 +28,7 @@ void clear_lists(IVFFlatIndex *index)
     }
 }
 
-void assign_points_to_clusters(IVFFlatIndex *index, float **dataset, int n, int *assignments) {
-    clear_lists(index);
-    for (int i = 0; i < n; i++) {
-        float *vec = dataset[i];
-        double best_dist = DBL_MAX;
-        int best_cluster = -1;
-
-        for (int t = 0; t < index->k; t++) {
-            double dist = euclidean_distance_float_ivfflat(vec, index->centroids[t], index->d);
-            if (dist < best_dist) {
-                best_dist = dist;
-                best_cluster = t;
-            }
-        }
-
-        // if (best_cluster < 0) best_cluster = 0; /* fallback */
-        assignments[i] = best_cluster;
-        add_point_to_list(&index->lists[best_cluster], vec, i, best_cluster);
-    }
-}
-
-void assign_ALL_points_to_clusters(IVFFlatIndex *index, float **dataset, int start, int end, int *assignments) {
+void assign_points_to_clusters(IVFFlatIndex *index, float **dataset, int start, int end) {
     clear_lists(index);
     for (int i = start; i < end; i++) {
         float *vec = dataset[i];
@@ -63,9 +42,6 @@ void assign_ALL_points_to_clusters(IVFFlatIndex *index, float **dataset, int sta
                 best_cluster = t;
             }
         }
-
-        // if (best_cluster < 0) best_cluster = 0; /* fallback */
-        assignments[i] = best_cluster;
         add_point_to_list(&index->lists[best_cluster], vec, i, best_cluster);
     }
 }
@@ -109,6 +85,7 @@ bool recompute_centroids(IVFFlatIndex *index, int d, double epsilon)
 int findSubsetSize(int subsetSize)
 {
     int size = sqrt(subsetSize);
+    // printf("Kmeans++ will use subset size of: %d\n", size);
     // if (size <= 0) size = 1;
     return size;
 }
@@ -236,9 +213,9 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
 
             }
 
-            printf("the clusters are all of the subset dataset!\n");
+            // printf("the clusters are all of the subset dataset!\n");
             // print them to see if we are correct!
-            printClusters(centroids, n, d);
+            // printClusters(centroids, n, d);
 
             // free our data
 
@@ -348,7 +325,7 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
 
         // We have our clusters!
         // print them to see if we are correct!
-        printClusters(centroids, kclusters, d);
+        // printClusters(centroids, kclusters, d);
         // printf("out of print\n");
         // free our data
 
@@ -398,76 +375,40 @@ IVFFlatIndex* lloydAlgorithm(Dataset* subset, int kclusters)
         index->lists[t].cluster_id = t;
     }
 
-    int *assignments = calloc(subset->size, sizeof(int));
-    if (!assignments) { perror("calloc assignments"); exit(EXIT_FAILURE); }
-
     for (int iter = 0; iter < max_iters; iter++)
     {
-        assign_points_to_clusters(index, (float **)subset->data, subset->size, assignments);
+        assign_points_to_clusters(index, (float **)subset->data, 0, subset->size);
         bool changed = recompute_centroids(index, subset->dimension, epsilon);
 
-        printf("Iteration %d done.\n", iter + 1);
+        // printf("Iteration %d done.\n", iter + 1);
 
-        /* Print centroids for this iteration for debugging */
-        for (int ct = 0; ct < index->k; ++ct) {
-            float *c = index->centroids[ct];
-            if (c)
-                printf("  centroid[%d] = {%.6f, %.6f}\n", ct, c[0], c[1]);
-        }
+        // /* Print centroids for this iteration for debugging */
+        // for (int ct = 0; ct < index->k; ++ct) {
+        //     float *c = index->centroids[ct];
+        //     if (c)
+        //         printf("  centroid[%d] = {%.6f, %.6f}\n", ct, c[0], c[1]);
+        // }
 
-        for (int t = 0; t < index->k; t++) {
-            printf("  Cluster %d -> %d points\n", t, index->lists[t].count);
-            for (int p = 0; p < index->lists[t].count; p++) {
-                printf("    Point %d: ", p);
-                float *vec = index->lists[t].points[p];
-                for (int dim = 0; dim < index->d; dim++) {
-                    printf("%f ", vec[dim]);
-                }
-                printf("\n");
-            }
-        }
+        // for (int t = 0; t < index->k; t++) {
+        //     printf("  Cluster %d -> %d points\n", t, index->lists[t].count);
+        //     for (int p = 0; p < index->lists[t].count; p++) {
+        //         printf("    Point %d: ", p);
+        //         float *vec = index->lists[t].points[p];
+        //         for (int dim = 0; dim < index->d; dim++) {
+        //             printf("%f ", vec[dim]);
+        //         }
+        //         printf("\n");
+        //     }
+        // }
 
-        if (!changed) {
-            printf("Converged after %d iterations.\n", iter + 1);
-            break;
-        }
-    }
-
-    /* After convergence, export centroids and assignments to CSV files so Python visualizers
-     * can read them. Files are written under Python_Scripts/ for convenience.
-     */
-    FILE *fc = fopen("Python_Scripts/ivfflat_centroids.csv", "w");
-    if (fc) {
-        fprintf(fc, "cluster,x,y\n");
-        for (int t = 0; t < index->k; ++t) {
-            float *c = index->centroids[t];
-            if (c)
-                fprintf(fc, "%d,%.6f,%.6f\n", t, c[0], c[1]);
-        }
-        fclose(fc);
-    }
-
-    FILE *fa = fopen("Python_Scripts/ivfflat_assignments.csv", "w");
-    if (fa) {
-        fprintf(fa, "index,x,y,cluster\n");
-        for (int i = 0; i < subset->size; ++i) {
-            float *v = (float*)subset->data[i];
-            int cl = assignments[i];
-            fprintf(fa, "%d,%.6f,%.6f,%d\n", i, v[0], v[1], cl);
-        }
-        fclose(fa);
-    }
-
-    /* Print final centroids for clarity before cleanup */
-    printf("Final centroids:\n");
-    for (int t = 0; t < index->k; ++t) {
-        float *c = index->centroids[t];
-        if (c)
-            printf("  centroid[%d] = {%.6f, %.6f}\n", t, c[0], c[1]);
+        // if (!changed) {
+        //     printf("Converged after %d iterations.\n", iter + 1);
+        //     break;
+        // }
     }
 
     // clean up temporary memory we no longer need
-    free(assignments);
+
     free(info->is_centroid);
     free(info);
 
@@ -480,17 +421,12 @@ IVFFlatIndex* ivfflat_init(Dataset* dataset, int kclusters)
     int subsetSize = findSubsetSize(dataset->size);
     Dataset* subset = createSubset(dataset, subsetSize); //produces the X'
 
-    printf("OUR SUBSET IS:\n");
-    printPartialDataset(subset->size, subset);
+    // printPartialDataset(subset->size, subset);
 
     IVFFlatIndex* ivfflat_index =  lloydAlgorithm(subset, kclusters);
 
     // Now assign the rest of the dataset to the corresponding centroids!
-    int *assignments = calloc(dataset->size, sizeof(int));
-    if (!assignments) { perror("calloc assignments in ivfflat_init"); exit(EXIT_FAILURE); }
-    assign_ALL_points_to_clusters(ivfflat_index, (float **)dataset->data, subset->size, dataset->size, assignments);
-    free(assignments);
-
+    assign_points_to_clusters(ivfflat_index, (float **)dataset->data, subset->size, dataset->size);
     free(subset);
 
     return ivfflat_index;
@@ -504,47 +440,48 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
     int d = index->d;
     int k = index->k;
     int nprobe = params->nprobe;
-    int R = params->N;  // number of neighbors to return
+    int N = params->N;  // number of neighbors to return
+    int R = params->R;  // range distance for range search
 
     // --- Step 1: Compute distances from query to all centroids ---
-    double* centroid_dists = malloc(k * sizeof(double));
-    int* centroid_ids = malloc(k * sizeof(int));
+    if (nprobe > k) nprobe = k;  // cap nprobe to k
+    double* centroid_dists = malloc(nprobe * sizeof(double));
+    int* centroid_ids = malloc(nprobe * sizeof(int));
+    int selected = 0;
+    
 
     for (int i = 0; i < k; i++) {
-        centroid_dists[i] = euclidean_distance_float_ivfflat(q, index->centroids[i], d);
-        centroid_ids[i] = i;
-    }
-
-    // --- Step 2: Partial sort to find nprobe closest centroids ---
-    // Edge case: k < nprobe
-    // So even if someone sets params->nprobe larger than the number of clusters k,
-    // the loop automatically limits itself to p < k — no invalid access, no segfault.
-    for (int i = 0; i < nprobe && i < k; i++)
-    {
-        int min_idx = i;
-        for (int j = i + 1; j < k; j++)
+        double cent = euclidean_distance_float_ivfflat(q, index->centroids[i], d);
+        int j = 0;
+        if(selected < nprobe)
         {
-            if (centroid_dists[j] < centroid_dists[min_idx])
-                min_idx = j;
+            j = selected;
+            selected++;
         }
-        // Swap centroid_dists
-        double tmpd = centroid_dists[i];
-        centroid_dists[i] = centroid_dists[min_idx];
-        centroid_dists[min_idx] = tmpd;
-        // Swap centroid_ids
-        int tmpid = centroid_ids[i];
-        centroid_ids[i] = centroid_ids[min_idx];
-        centroid_ids[min_idx] = tmpid;
+        else 
+        {
+            if(cent >= centroid_dists[nprobe-1])
+                continue;
+            j = nprobe -1;
+        }
+
+        for(j; j>0 && cent < centroid_dists[j-1]; j--)
+        {
+            centroid_dists[j] = centroid_dists[j-1];
+            centroid_ids[j] = centroid_ids[j-1];
+        }
+        centroid_dists[j] = cent;
+        centroid_ids[j] = i;
     }
 
-    // --- Step 3: Initialize result arrays ---
+    // --- Step 2: Initialize result arrays ---
     *approx_count = 0;
-    for (int i = 0; i < R; i++) {
+    for (int i = 0; i < N; i++) {
         approx_neighbors[i] = -1;
         approx_dists[i] = INFINITY;
     }
 
-    // --- Step 4: Search within selected (nprobe) clusters ---
+    // --- Step 3: Search within selected (nprobe) clusters ---
     int total_candidates = 0;
     for (int p = 0; p < nprobe && p < k; p++) {
         int cid = centroid_ids[p];
@@ -555,9 +492,9 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
             double dist = euclidean_distance_float_ivfflat(q, vec, d);
             total_candidates++;
 
-            // Insert into top-R sorted list (like insertion sort)
-            if (*approx_count < R || dist < approx_dists[*approx_count - 1]) {
-                if (*approx_count < R)
+            // Insert into top-N sorted list (like insertion sort)
+            if (*approx_count < N || dist < approx_dists[*approx_count - 1]) {
+                if (*approx_count < N)
                     (*approx_count)++;
 
                 int j = *approx_count - 1;
@@ -571,16 +508,12 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
             }
 
             // --- Optional: Range search support ---
-            if (params->range_search && dist <= params->R) {
+            if (params->range_search && dist <= R) {
                 *range_neighbors = realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
                 (*range_neighbors)[(*range_count)++] = list->point_ids[i];
             }
         }
     }
-
-    // --- Step 5: Print candidate diagnostics (for debugging) ---
-    printf("IVFFlat lookup: nprobe=%d, total_candidates=%d, returned=%d\n",
-           nprobe, total_candidates, *approx_count);
 
     // --- Cleanup ---
     free(centroid_dists);

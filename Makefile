@@ -88,13 +88,13 @@ PROBES      = 35
 
 # IVFFLAT defaults
 # -------------------
-KCLUSTERS = 10
+KCLUSTERS = 9
 NPROBE    = 5
 SEED      = 10
 
 # IVFPQ defaults
 # -------------------
-KCLUSTERS = 50
+KCLUSTERS = 9
 NPROBE    = 5
 M         = 10
 NBITS     = 8
@@ -139,7 +139,7 @@ ifeq ($(ALGO), hypercube)
 endif
 
 ifeq ($(ALGO), ivfflat)
-    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 3 -R 3 -type sift -range false -ivfflat -seed 10
+    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 1 -R 2 -type sift -range false -ivfflat -seed 1
 endif
 
 ifeq ($(ALGO), ivfpq)

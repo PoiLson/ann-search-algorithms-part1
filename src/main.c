@@ -55,8 +55,8 @@ int main(int argc, char **argv)
     //     srand(42);
     // }
 
-    unsigned int seed = 42;
-    srand(42);
+    unsigned int seed = 1;
+    srand(seed);
 
     if (parse_arguments(argc, argv, &params) != 0)
         exit(EXIT_FAILURE);
