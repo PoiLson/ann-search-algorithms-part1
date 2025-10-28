@@ -33,6 +33,7 @@ void run_lsh(SearchParams* params, Dataset* dataset)
 void run_hypercube(SearchParams* params, Dataset* dataset)
 {
     struct Hypercube* hyper = hyper_init(params, dataset);
+    if (!hyper) return;
 
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)
@@ -62,7 +63,34 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
     // Placeholder for IVFFlat algorithm implementation
     printf("Running IVFFlat with dataset: %s\n", params->dataset_path);
 
-    ivfflat_init(dataset, params->kclusters);
+    // Build the index
+    IVFFlatIndex* ivf_index = ivfflat_init(dataset, params->kclusters);
+    if (!ivf_index)
+    {
+        fprintf(stderr, "Failed to build IVFFlat index.\n");
+        return;
+    }
+
+    Dataset* query_set = NULL;
+    if (params->dataset_type == DATA_MNIST)
+        query_set = read_data_mnist(params->query_path);
+    else if (params->dataset_type == DATA_SIFT)
+        query_set = read_data_sift(params->query_path);
+    else
+        query_set = read_data_experiment(params->query_path);
+
+    if (query_set)
+    {
+        perform_query(params, dataset, query_set, ivfflat_index_lookup, ivf_index);
+
+        for (int i = 0; i < query_set->size; i++)
+            free(query_set->data[i]);
+
+        free(query_set->data);
+        free(query_set);
+    }
+
+    ivfflat_destroy(ivf_index);
 
     return;
 }

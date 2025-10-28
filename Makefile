@@ -48,12 +48,12 @@ ALGO = ivfflat
 
 # DEBUGGING PURPOSES
 #---------------------
-INPUT_FILE  = Data/EXPERIMENTS/random_3d_int_6000.txt
-QUERY_FILE  = Data/EXPERIMENTS/query_3d_int_10.txt
-TYPE = sift
-K = 4
-L = 10 
-W = 30
+INPUT_FILE  = Data/EXPERIMENTS/random_2d_points.txt
+QUERY_FILE  = Data/EXPERIMENTS/query.dat
+# TYPE = sift
+# K = 4
+# L = 10 
+# W = 30
 
 # Common parameters
 # -------------------
@@ -65,8 +65,8 @@ W = 30
 # QUERY_FILE  = Data/SIFT/sift_query_100.fvecs
 
 OUTPUT_FILE = output.txt
-N           = 1
-R           = 500
+N           = 5
+R           = 5
 
 TYPE        = none
 RANGE       = false
@@ -88,7 +88,7 @@ PROBES      = 35
 
 # IVFFLAT defaults
 # -------------------
-KCLUSTERS = 50
+KCLUSTERS = 10
 NPROBE    = 5
 SEED      = 10
 
@@ -114,8 +114,17 @@ ifeq ($(ALGO), hypercube)
     ALGO_PARAMS_MNIST = -kproj 30 -w 4 -M 200000 -probes 10000 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
 endif
 
+ifeq ($(ALGO), ivfflat)
+    ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -range false -ivfflat -seed 10
+endif
+
+ifeq ($(ALGO), ivfpq)
+    ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 5 -M 10 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -nbits 8 -range false -ivfpq -seed 10
+endif
 
 
+M         = 10
+NBITS     = 8
 
 
 
@@ -129,9 +138,13 @@ ifeq ($(ALGO), hypercube)
     ALGO_PARAMS_SIFT = -kproj 14 -w 4000 -M 1000 -probes 35 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -range false -hypercube
 endif
 
+ifeq ($(ALGO), ivfflat)
+    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 3 -R 3 -type sift -range false -ivfflat -seed 10
+endif
 
-
-
+ifeq ($(ALGO), ivfpq)
+    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -M 10 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -nbits 8 -range false -ivfpq -seed 10
+endif
 
 
 

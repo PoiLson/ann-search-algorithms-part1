@@ -1,7 +1,7 @@
 #include "../include/main.h"
 
 
-int main()
+int main2()
 {
     printf("hello to debugging!\n");
     srand(time(NULL));
@@ -42,7 +42,7 @@ int main()
 
 
 
-int main2(int argc, char **argv)
+int main(int argc, char **argv)
 {
     SearchParams params;
     // Seed RNG: allow override via HYPER_SEED env var for experiments
