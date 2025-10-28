@@ -46,14 +46,17 @@ int main(int argc, char **argv)
 {
     SearchParams params;
     // Seed RNG: allow override via HYPER_SEED env var for experiments
-    const char *seed_env = getenv("HYPER_SEED");
-    if (seed_env && seed_env[0] != '\0') {
-        unsigned int seed = (unsigned int)atoi(seed_env);
-        srand(seed);
-    } else {
-        // default fixed seed for reproducibility
-        srand(42);
-    }
+    // const char *seed_env = getenv("HYPER_SEED");
+    // if (seed_env && seed_env[0] != '\0') {
+    //     unsigned int seed = (unsigned int)atoi(seed_env);
+    //     srand(seed);
+    // } else {
+    //     // default fixed seed for reproducibility
+    //     srand(42);
+    // }
+
+    unsigned int seed = 42;
+    srand(42);
 
     if (parse_arguments(argc, argv, &params) != 0)
         exit(EXIT_FAILURE);

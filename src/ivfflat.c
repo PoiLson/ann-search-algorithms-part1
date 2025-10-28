@@ -152,9 +152,23 @@ Dataset* createSubset(Dataset* dataset, int subsetSize)
     return subset;
 }
 
+void printClusters(float** centroids, int kclusters, int d)
+{
+    for(int dx = 0; dx < kclusters; dx++)
+    {
+        printf("centroid[%d] = { ", dx);
+        for(int x = 0; x < d; x++)
+        {
+            printf("%f, ", centroids[dx][x]);
+        }
+        printf("}\n");
+    }
+}
+
 centroidInfo* runKmeans(Dataset* subset, int kclusters)
 {
     int n = subset->size;
+    printf("From the subset size: %d we want to find %d centroids!\n", n, kclusters);
     int d = subset->dimension;
     int t = 0;  //count of centroids
     int i = 0;  //count of non-centroids
@@ -194,6 +208,46 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
 
     if(subset->data_type == DATA_TYPE_FLOAT)
     {
+        //FIRST OF ALL, EDGE CASE
+        // IF kclusters > n (subset->size), then all of the points
+        //inside of the subset->size are clusters so let's do that and then return
+        if(kclusters > n)
+        {
+            float **centroids = malloc(n * sizeof(float*));
+            if (!centroids)
+            {
+                fprintf(stderr, "Memory allocation failed for centroids\n");
+                exit(EXIT_FAILURE);
+            }
+
+            for(int l = 0; l < n; l++)
+            {
+                centroids[l] = (float*)malloc(d * sizeof(float));
+                if (!centroids[l])
+                {
+                    fprintf(stderr, "Memory allocation failed for centroid copy\n");
+                    exit(EXIT_FAILURE);
+                }
+                    
+                for (int _j = 0; _j < d; ++_j)
+                    centroids[l][_j] = ((float*)subset->data[l])[_j];
+        
+                is_centroid[l] = 1;
+
+            }
+
+            printf("the clusters are all of the subset dataset!\n");
+            // print them to see if we are correct!
+            printClusters(centroids, n, d);
+
+            // free our data
+
+            info->centroids = centroids;
+            info->is_centroid = is_centroid;
+
+            return info;
+        }
+
         // Allocate centroid pointers
         float **centroids = malloc(kclusters * sizeof(float*));
         if (!centroids)
@@ -214,6 +268,12 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
         centroids[t] = (float*)malloc(d * sizeof(float));
         if (!centroids[t]) { fprintf(stderr, "Memory allocation failed for centroid copy\n"); exit(EXIT_FAILURE); }
         for (int _j = 0; _j < d; ++_j) centroids[t][_j] = ((float*)subset->data[idx])[_j];
+        
+        // printf("THE FIRST CENTROID\n");
+        // printClusters(centroids, 1, d);
+        // printf("THE ABOVE\n");
+
+        
         is_centroid[idx] = 1;
         t++;
 
@@ -288,12 +348,8 @@ centroidInfo* runKmeans(Dataset* subset, int kclusters)
 
         // We have our clusters!
         // print them to see if we are correct!
-        for(int dx = 0; dx < kclusters; dx++)
-        {
-            printf("!!!!!!centroid[%d] = {%f,%f}\n", dx, centroids[dx][0], centroids[dx][1]);
-            printf("inside of print\n");
-        }
-        printf("out of print\n");
+        printClusters(centroids, kclusters, d);
+        // printf("out of print\n");
         // free our data
 
         info->centroids = centroids;
@@ -322,6 +378,10 @@ IVFFlatIndex* lloydAlgorithm(Dataset* subset, int kclusters)
     centroidInfo *info = runKmeans(subset, kclusters);
     int max_iters = 50;
     double epsilon = 1e-4;
+
+    //take care of the edge case
+    if(kclusters > subset->size)
+        kclusters = subset->size;
 
     // Create IVFFlat index structure
     IVFFlatIndex* index = malloc(sizeof(IVFFlatIndex));
@@ -419,6 +479,9 @@ IVFFlatIndex* ivfflat_init(Dataset* dataset, int kclusters)
 {
     int subsetSize = findSubsetSize(dataset->size);
     Dataset* subset = createSubset(dataset, subsetSize); //produces the X'
+
+    printf("OUR SUBSET IS:\n");
+    printPartialDataset(subset->size, subset);
 
     IVFFlatIndex* ivfflat_index =  lloydAlgorithm(subset, kclusters);
 
