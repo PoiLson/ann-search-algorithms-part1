@@ -9,8 +9,13 @@ CC = gcc
 # CFLAGS = -Wall -Wextra -std=c11 -g -Iinclude
 
 # Compiler flags without warnings
-CFLAGS = -std=c11 -g -Iinclude  -O3
+CFLAGS = -std=c11 -g -Iinclude  -fopenmp #-O3
 LDFLAGS = -lm
+# PRFLAGS = -fopenmp
+
+# Default number of OpenMP threads (can be overridden with `make THREADS=8`)
+THREADS ?= 8
+export OMP_NUM_THREADS=$(THREADS)
 
 # Optional LSH optimization flags:
 # Enable exact ID matching for faster queries (13% speedup, no recall loss with W=2000)
@@ -107,7 +112,7 @@ SEED      = 10
 
 # MNIST-optimized parameters
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_MNIST = -k 4 -L 25 -w 2000 -o $(OUTPUT_FILE) -N 5 -R 4 -type mnist -lsh -range false
+    ALGO_PARAMS_MNIST = -k 10 -L 30 -w 50 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)
@@ -115,23 +120,16 @@ ifeq ($(ALGO), hypercube)
 endif
 
 ifeq ($(ALGO), ivfflat)
-	ALGO_PARAMS_MNIST = -kclusters 70 -nprobe 4 -o $(OUTPUT_FILE) -N 1 -R 50000 -type mnist -range false -ivfflat -seed 10
+	ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 1 -o $(OUTPUT_FILE) -N 1 -R 2000 -type mnist -range false -ivfflat -seed 10
 endif
 
 ifeq ($(ALGO), ivfpq)
 	ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 5 -M 10 -o $(OUTPUT_FILE) -N 5 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
 endif
 
-
-M         = 10
-NBITS     = 8
-
-
-
-
 # SIFT-optimized parameters
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_SIFT = -k 4 -L 10 -w 45 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -lsh -range false
+    ALGO_PARAMS_SIFT = -k 10 -L 30 -w 2000 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)
@@ -139,14 +137,12 @@ ifeq ($(ALGO), hypercube)
 endif
 
 ifeq ($(ALGO), ivfflat)
-    ALGO_PARAMS_SIFT = -kclusters 70 -nprobe 5 -o $(OUTPUT_FILE) -N 1 -R 2 -type sift -range false -ivfflat -seed 1
+    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 1 -R 2 -type sift -range false -ivfflat -seed 1
 endif
 
 ifeq ($(ALGO), ivfpq)
     ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -M 10 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -nbits 8 -range false -ivfpq -seed 10
 endif
-
-
 
 
 # Generic parameters (for backward compatibility with 'make all')
@@ -219,10 +215,14 @@ clean:
 
 mnist: $(OBJDIR) $(TARGET)
 	@echo "Running $(ALGO) on MNIST dataset..."
+	OMP_NUM_THREADS=8,4 \
+	OMP_NESTED=TRUE \
+	OMP_MAX_ACTIVE_LEVELS=2 \
 	./$(TARGET) \
 		-d Data/MNIST/train-images.idx3-ubyte \
 		-q Data/MNIST/t10k-images-100-sample.idx3-ubyte \
 		$(ALGO_PARAMS_MNIST)
+	@$(MAKE) clean
 
 sift: $(OBJDIR) $(TARGET)
 	@echo "Running $(ALGO) on SIFT dataset..."
@@ -230,6 +230,7 @@ sift: $(OBJDIR) $(TARGET)
 		-d Data/SIFT/sift_base.fvecs \
 		-q Data/SIFT/sift_query_100.fvecs \
 		$(ALGO_PARAMS_SIFT)
+	@$(MAKE) clean
 
 # ==============================================================
 # Phony targets

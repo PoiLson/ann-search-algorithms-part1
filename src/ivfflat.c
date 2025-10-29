@@ -1,18 +1,5 @@
 #include "../include/main.h"
 
-// unified helper: distance between a dataset point (float or int) and a float centroid
-static inline double distance_point_to_centroid(const void *point, int data_type, const float *centroid, int d)
-{
-    if (data_type == DATA_TYPE_FLOAT)
-    {
-        return euclidean_distance_float_ivfflat((const float *)point, centroid, d);
-    }
-    else
-    {
-        return euclidean_distance_int_to_float((const int *)point, centroid, d);
-    }
-}
-
 static inline void add_point_to_list(InvertedList *list, void *point, int point_id, int cluster_id)
 {
     if (list->count == list->capacity)
@@ -78,24 +65,23 @@ static inline bool recompute_centroids(IVFFlatIndex *index, int d, double epsilo
             perror("calloc failed in recompute_centroids");
             exit(EXIT_FAILURE);
         }
-        if (index->data_type == DATA_TYPE_FLOAT)
+
+        for(int i = 0; i < list->count; i++)
         {
-            for (int i = 0; i < list->count; i++)
+            if (index->data_type == DATA_TYPE_FLOAT)
             {
                 float *vec = (float *)list->points[i];
                 for (int j = 0; j < d; j++)
                     new_centroid[j] += vec[j];
             }
-        }
-        else
-        {
-            for (int i = 0; i < list->count; i++)
+            else
             {
                 int *ivec = (int *)list->points[i];
                 for (int j = 0; j < d; j++)
                     new_centroid[j] += (float)ivec[j];
             }
         }
+
         for (int j = 0; j < d; j++)
             new_centroid[j] /= list->count;
 
@@ -502,12 +488,13 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
                 approx_neighbors[j] = list->point_ids[i];
                 approx_dists[j] = dist;
             }
+
             // --- Optional: Range search support ---
-            if (params->range_search && dist <= R)
-            {
-                *range_neighbors = realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
-                (*range_neighbors)[(*range_count)++] = list->point_ids[i];
-            }
+            // if (params->range_search && dist <= R)
+            // {
+            //     *range_neighbors = realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
+            //     (*range_neighbors)[(*range_count)++] = list->point_ids[i];
+            // }
         }
     }
 

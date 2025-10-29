@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         dataset = read_data_sift(params.dataset_path);
     else if(params.dataset_type == DATA_EXP)
         dataset = read_data_experiment(params.dataset_path);
-
+        
     if (dataset == NULL)
     {
         perror("Dataset not correct\n");

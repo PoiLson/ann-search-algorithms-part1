@@ -33,7 +33,6 @@ static inline float dot_product_float_int(const float* a, const int* b, int d)
     return sum;
 }
 
-
 //computes the Euclidean distance between two points a and b
 float euclidean_distance(const void* a, const void* b, const int dimension);
 
@@ -73,6 +72,19 @@ static inline double euclidean_distance_float_ivfflat(const float* a, const floa
     }
 
     return sqrt(sum);
+}
+
+// unified helper: distance between a dataset point (float or int) and a float centroid
+static inline double distance_point_to_centroid(const void *point, int data_type, const float *centroid, int d)
+{
+    if (data_type == DATA_TYPE_FLOAT)
+    {
+        return euclidean_distance_float_ivfflat((const float *)point, centroid, d);
+    }
+    else
+    {
+        return euclidean_distance_int_to_float((const int *)point, centroid, d);
+    }
 }
 
 //computes the Hamming distance between two binary vectors a and b of dimension d

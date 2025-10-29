@@ -260,12 +260,7 @@ LSH *lsh_init(const struct SearchParams *params, const struct Dataset *dataset)
                 exit(EXIT_FAILURE);
             }
             generate_random_vector(lsh->hash_params[tbl][i].v, lsh->d);
-            // normalize_vector(lsh->hash_params[tbl][i].v, lsh->d);
-            // Normalize projection vector so that its components sum to 1 —
-            // this makes the projection vector scale-invariant in a different way
-            // than the usual L2 normalization. Use case: when you want the
-            // projection to represent a weighted average of coordinates.
-            // normalize_vector_sum(lsh->hash_params[tbl][i].v, lsh->d);
+            normalize_vector(lsh->hash_params[tbl][i].v, lsh->d);
 
             // Calculate t uniformly in [0, w)
             float zero = 0.0f;

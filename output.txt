@@ -20,8 +20,8 @@ distanceApproximate: 1221.582520
 distanceTrue: 1221.582520
 IVFFlat
 Query: 4
-Nearest neighbor-1: 42325
-distanceApproximate: 1096.045654
+Nearest neighbor-1: 23070
+distanceApproximate: 1092.534668
 distanceTrue: 1092.534668
 IVFFlat
 Query: 5
@@ -40,28 +40,28 @@ distanceApproximate: 1289.698853
 distanceTrue: 1289.698853
 IVFFlat
 Query: 8
-Nearest neighbor-1: 49615
-distanceApproximate: 1930.092529
+Nearest neighbor-1: 52417
+distanceApproximate: 2004.937622
 distanceTrue: 1735.343750
 IVFFlat
 Query: 9
-Nearest neighbor-1: 4782
-distanceApproximate: 991.597717
+Nearest neighbor-1: 16237
+distanceApproximate: 1146.709229
 distanceTrue: 991.597717
 IVFFlat
 Query: 10
-Nearest neighbor-1: 27090
-distanceApproximate: 1100.886475
+Nearest neighbor-1: 26797
+distanceApproximate: 1143.415527
 distanceTrue: 1100.886475
 IVFFlat
 Query: 11
-Nearest neighbor-1: 40373
-distanceApproximate: 1464.381104
+Nearest neighbor-1: 40992
+distanceApproximate: 1466.574585
 distanceTrue: 1464.381104
 IVFFlat
 Query: 12
-Nearest neighbor-1: 15315
-distanceApproximate: 828.291016
+Nearest neighbor-1: 40573
+distanceApproximate: 976.551575
 distanceTrue: 828.291016
 IVFFlat
 Query: 13
@@ -70,8 +70,8 @@ distanceApproximate: 896.576294
 distanceTrue: 896.576294
 IVFFlat
 Query: 14
-Nearest neighbor-1: 36890
-distanceApproximate: 621.282532
+Nearest neighbor-1: 41629
+distanceApproximate: 634.438354
 distanceTrue: 621.282532
 IVFFlat
 Query: 15
@@ -110,8 +110,8 @@ distanceApproximate: 951.667480
 distanceTrue: 951.667480
 IVFFlat
 Query: 22
-Nearest neighbor-1: 816
-distanceApproximate: 1211.477661
+Nearest neighbor-1: 27248
+distanceApproximate: 1281.788574
 distanceTrue: 1211.477661
 IVFFlat
 Query: 23
@@ -120,8 +120,8 @@ distanceApproximate: 1212.806274
 distanceTrue: 1212.806274
 IVFFlat
 Query: 24
-Nearest neighbor-1: 7371
-distanceApproximate: 1114.457764
+Nearest neighbor-1: 20669
+distanceApproximate: 1144.255249
 distanceTrue: 1114.457764
 IVFFlat
 Query: 25
@@ -130,13 +130,13 @@ distanceApproximate: 1388.341431
 distanceTrue: 1388.341431
 IVFFlat
 Query: 26
-Nearest neighbor-1: 48712
-distanceApproximate: 1045.758545
+Nearest neighbor-1: 41156
+distanceApproximate: 1065.294312
 distanceTrue: 1045.758545
 IVFFlat
 Query: 27
-Nearest neighbor-1: 13910
-distanceApproximate: 1039.882202
+Nearest neighbor-1: 34615
+distanceApproximate: 1057.541504
 distanceTrue: 1039.882202
 IVFFlat
 Query: 28
@@ -205,8 +205,8 @@ distanceApproximate: 439.771545
 distanceTrue: 439.771545
 IVFFlat
 Query: 41
-Nearest neighbor-1: 19446
-distanceApproximate: 1031.144043
+Nearest neighbor-1: 30000
+distanceApproximate: 1032.004395
 distanceTrue: 1031.144043
 IVFFlat
 Query: 42
@@ -215,8 +215,8 @@ distanceApproximate: 1040.682007
 distanceTrue: 1040.682007
 IVFFlat
 Query: 43
-Nearest neighbor-1: 32345
-distanceApproximate: 1566.083618
+Nearest neighbor-1: 17610
+distanceApproximate: 1500.391235
 distanceTrue: 1500.391235
 IVFFlat
 Query: 44
@@ -235,13 +235,13 @@ distanceApproximate: 635.800293
 distanceTrue: 635.800293
 IVFFlat
 Query: 47
-Nearest neighbor-1: 31866
-distanceApproximate: 1312.137207
+Nearest neighbor-1: 14520
+distanceApproximate: 1520.528198
 distanceTrue: 1312.137207
 IVFFlat
 Query: 48
-Nearest neighbor-1: 29895
-distanceApproximate: 1272.270752
+Nearest neighbor-1: 10125
+distanceApproximate: 1275.070557
 distanceTrue: 1272.270752
 IVFFlat
 Query: 49
@@ -250,8 +250,8 @@ distanceApproximate: 1054.420654
 distanceTrue: 1054.420654
 IVFFlat
 Query: 50
-Nearest neighbor-1: 9492
-distanceApproximate: 953.655090
+Nearest neighbor-1: 14190
+distanceApproximate: 1059.197754
 distanceTrue: 953.655090
 IVFFlat
 Query: 51
@@ -260,8 +260,8 @@ distanceApproximate: 1285.616211
 distanceTrue: 1285.616211
 IVFFlat
 Query: 52
-Nearest neighbor-1: 20195
-distanceApproximate: 1219.925415
+Nearest neighbor-1: 49093
+distanceApproximate: 1296.529541
 distanceTrue: 1219.925415
 IVFFlat
 Query: 53
@@ -315,8 +315,8 @@ distanceApproximate: 1042.900269
 distanceTrue: 1042.900269
 IVFFlat
 Query: 63
-Nearest neighbor-1: 31476
-distanceApproximate: 1326.836060
+Nearest neighbor-1: 43979
+distanceApproximate: 1663.553711
 distanceTrue: 1326.836060
 IVFFlat
 Query: 64
@@ -335,8 +335,8 @@ distanceApproximate: 1254.900391
 distanceTrue: 1254.900391
 IVFFlat
 Query: 67
-Nearest neighbor-1: 15051
-distanceApproximate: 1198.496582
+Nearest neighbor-1: 59314
+distanceApproximate: 1324.287720
 distanceTrue: 1198.496582
 IVFFlat
 Query: 68
@@ -385,13 +385,13 @@ distanceApproximate: 932.156128
 distanceTrue: 932.156128
 IVFFlat
 Query: 77
-Nearest neighbor-1: 44994
-distanceApproximate: 1366.157349
+Nearest neighbor-1: 11281
+distanceApproximate: 1583.030273
 distanceTrue: 1366.157349
 IVFFlat
 Query: 78
-Nearest neighbor-1: 14771
-distanceApproximate: 981.830444
+Nearest neighbor-1: 58526
+distanceApproximate: 1042.187134
 distanceTrue: 981.830444
 IVFFlat
 Query: 79
@@ -410,8 +410,8 @@ distanceApproximate: 1081.650635
 distanceTrue: 1081.650635
 IVFFlat
 Query: 82
-Nearest neighbor-1: 55029
-distanceApproximate: 1252.056763
+Nearest neighbor-1: 45030
+distanceApproximate: 1266.322998
 distanceTrue: 1252.056763
 IVFFlat
 Query: 83
@@ -465,8 +465,8 @@ distanceApproximate: 1045.245850
 distanceTrue: 1045.245850
 IVFFlat
 Query: 93
-Nearest neighbor-1: 16731
-distanceApproximate: 1173.254395
+Nearest neighbor-1: 58357
+distanceApproximate: 1319.684814
 distanceTrue: 1173.254395
 IVFFlat
 Query: 94
@@ -499,8 +499,8 @@ Nearest neighbor-1: 50177
 distanceApproximate: 990.711853
 distanceTrue: 990.711853
 ===== OVERALL METRICS =====
-Average AF (mean over queries): 1.001592
-Average Recall@N: 0.970000
-Average tApproximate: 0.007234
-Average tTrue: 0.058273
-QPS_overall: 138.244898
+Average AF (mean over queries): 1.017230
+Average Recall@N: 0.790000
+Average tApproximate: 0.005813
+Average tTrue: 0.142114
+QPS_overall: 172.030284

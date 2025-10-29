@@ -242,6 +242,7 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     {
         hyper->hash_params[i].v = (float*)malloc(hyper->d * sizeof(float));
         generate_random_vector(hyper->hash_params[i].v, hyper->d);
+        normalize_vector(hyper->hash_params[i].v, hyper->d);
 
         if(!hyper->hash_params[i].v)
         {

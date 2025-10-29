@@ -11,13 +11,14 @@
 
 #include <math.h>
 #include <float.h>
+#include <omp.h>
 
 // ------------------------User - Defined Libraries --------------------------
 #include "parseInput.h"
+#include "datasets.h"
 #include "utils.h"
 
 #include "hashmap.h"
-#include "datasets.h"  // Must come before lsh.h and hypercube.h (defines DataType)
 
 #include "hashtable.h"
 #include "lsh.h"
@@ -28,5 +29,8 @@
 
 #include "hypercube.h"
 #include "ivfflat.h"
+#include "ivfpq.h"
+
+#include "silhouette.h"
 
 #endif
