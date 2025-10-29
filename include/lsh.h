@@ -46,9 +46,6 @@ typedef struct LSH
 
 #define R_RANGE (1U << 29)  // values in [1, 2^29]
 
-void init_linear_combinations(LSH* lsh);
-
-
 
 // ------------------- Helper functions for hashing -----------------------------
 
@@ -59,10 +56,74 @@ void init_linear_combinations(LSH* lsh);
 // M is the number of buckets also saved in the LSH struct
 // h_i are the hash functions saved in the LSH struct
 // g() needs to be a function stored in the LSH struct so it needs to return hash_func type
-int hash_func_impl_lsh(const void* p ,const LSH* lsh, int table_index, uint64_t* ID);
+// inline int hash_func_impl_lsh(const void* p ,const LSH* lsh, int table_index, uint64_t* ID);
 
-int hash_function_lsh(HashTable ht, void* data, uint64_t* ID);
+// inline int hash_function_lsh(HashTable ht, void* data, uint64_t* ID);
 
+
+// Compute both hash value (table index) and fingerprint (ID)
+static inline int hash_func_impl_lsh(const void *p, const LSH *lsh, int table_index, uint64_t *outID)
+{
+    // The prime modulus for universal hashing
+    const uint64_t M = lsh->num_of_buckets; // should be 2^32 - 5
+
+    uint64_t hash_val = 0; // for h₁ → table index
+    uint64_t id_val = 0;   // for h₂ → fingerprint
+
+    const LSH_hash_function *table_hash_params = lsh->hash_params[table_index];
+
+    for (int i = 0; i < lsh->k; i++)
+    {
+        // ---- Compute LSH projection: h_i(v) = floor((a·v + b)/w)
+        double func = 0.0;
+        if (lsh->data_type == DATA_TYPE_FLOAT)
+            func = dot_product_float(table_hash_params[i].v, (const float *)p, lsh->d);
+        else
+            func = dot_product_float_uint8(table_hash_params[i].v, (const uint8_t *)p, lsh->d);
+
+        double val = (func + (double)table_hash_params[i].t) / (double)lsh->w;
+        int64_t h_i = (int64_t)floor(val); // handle negatives properly
+
+        // ---- Universal hashing linear coefficients
+        int64_t r1_i = lsh->linear_combinations_1[table_index][i]; // for hash value
+        int64_t r2_i = lsh->linear_combinations_2[table_index][i]; // for ID
+
+        // ---- Compute modular products safely in 128-bit space
+        __int128 prod1 = (__int128)r1_i * (__int128)h_i;
+        __int128 prod2 = (__int128)r2_i * (__int128)h_i;
+
+        // Reduce modulo prime (always non-negative)
+        uint64_t mod1 = (uint64_t)((prod1 % (int64_t)M + (int64_t)M) % (int64_t)M);
+        uint64_t mod2 = (uint64_t)((prod2 % (int64_t)M + (int64_t)M) % (int64_t)M);
+
+        // ---- Accumulate mod prime
+        hash_val = (hash_val + mod1) % M;
+        id_val = (id_val + mod2) % M;
+    }
+
+    // ---- Output fingerprint (h₂)
+    if (outID)
+        *outID = id_val; // this is the "h2" in the manual (fingerprint)
+
+    // ---- Final hash table index (h₁)
+    int bucket_idx = (int)(hash_val % (uint64_t)lsh->table_size);
+    return bucket_idx;
+}
+
+// Wrapper function
+static inline int hash_function_lsh(HashTable ht, void *data, uint64_t *ID)
+{
+    LSH *lsh_ctx = (LSH *)hash_table_get_algorithm_context(ht);
+    if (!lsh_ctx || lsh_ctx->num_of_buckets == 0)
+    {
+        if (ID)
+            *ID = 0; // safer sentinel than -1 in uint64_t
+        return 0;
+    }
+
+    int t_idx = hash_table_get_index(ht);
+    return hash_func_impl_lsh(data, lsh_ctx, t_idx, ID);
+}
 
 // ------------------------- LSH main functions ---------------------------------
 

@@ -76,25 +76,8 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
         return;
     }
 
-    double *per_cluster = (double *)malloc(ivf_index->k * sizeof(double));
-    omp_set_nested(1);
-    omp_set_max_active_levels(2);
-    omp_set_dynamic(0);
-
-    if(compute_silhouette_parallel(ivf_index, dataset, per_cluster))
-    {
-        for(int idx = 0; idx < ivf_index->k; idx++)
-        {
-            printf("per_cluster[%d] = %f\n", idx, per_cluster[idx]);
-        }
-    }
-    else
-    {
-        printf("silhouette score finding gone wrong\n");
-        exit(EXIT_FAILURE);
-    }
-
-    free(per_cluster);
+    // Compute silhouette (prints results internally)
+    // computeSilhouette(ivf_index, dataset);
 
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)

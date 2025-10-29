@@ -112,20 +112,24 @@ SEED      = 10
 
 # MNIST-optimized parameters
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_MNIST = -k 10 -L 30 -w 50 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -lsh -range false
+    ALGO_PARAMS_MNIST = -k 4 -L 15 -w 100 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)
-    ALGO_PARAMS_MNIST = -kproj 30 -w 4 -M 200000 -probes 10000 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
+    ALGO_PARAMS_MNIST = -kproj 14 -w 100 -M 7000 -probes 700 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
 endif
 
 ifeq ($(ALGO), ivfflat)
-	ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 1 -o $(OUTPUT_FILE) -N 1 -R 2000 -type mnist -range false -ivfflat -seed 10
+	ALGO_PARAMS_MNIST = -kclusters 65 -nprobe 4 -o $(OUTPUT_FILE) -N 1 -R 2000 -type mnist -range false -ivfflat -seed 10
 endif
 
 ifeq ($(ALGO), ivfpq)
 	ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 5 -M 10 -o $(OUTPUT_FILE) -N 5 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
 endif
+
+
+
+
 
 # SIFT-optimized parameters
 ifeq ($(ALGO), lsh)

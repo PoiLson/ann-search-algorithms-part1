@@ -1,9 +1,0 @@
-Running lsh on SIFT dataset...
-./search \
-	-d Data/SIFT/sift_base.fvecs \
-	-q Data/SIFT/sift_query_100.fvecs \
-	-k 4 -L 15 -w 450 -o output.txt -N 5 -R 50000 -type sift -lsh -range false
-Algorithm selected: SIFT Dataset loaded: 1000000 points of dimension 128
-LSH
-exiting...
-[LSH] Candidate stats: n=100, min=81785, max=313063, mean=186404.09, median=183065.00 (L=15)

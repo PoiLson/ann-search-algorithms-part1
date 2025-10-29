@@ -23,7 +23,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         exit(EXIT_FAILURE);
     }
     //choose distance function based on data type
-    float (*distance_func)(const void*, const void*, const int) = (dataset->data_type == DATA_TYPE_FLOAT) ? euclidean_distance : euclidean_distance_int;
+    float (*distance_func)(const void*, const void*, const int) = (dataset->data_type == DATA_TYPE_FLOAT) ? euclidean_distance : euclidean_distance_uint8;
 
     // Main query loop
     // Iterate over each query in the query set

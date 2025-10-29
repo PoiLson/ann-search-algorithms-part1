@@ -3,7 +3,7 @@
 
 // Data type enum to distinguish between int and float datasets
 typedef enum {
-    DATA_TYPE_INT,    // MNIST: integer values 0-255
+    DATA_TYPE_UINT8,  // MNIST: uint8_t values 0-255
     DATA_TYPE_FLOAT   // SIFT: float32 values
 } DataType;
 

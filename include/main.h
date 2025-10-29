@@ -17,6 +17,7 @@
 #include "parseInput.h"
 #include "datasets.h"
 #include "utils.h"
+#include "minheap.h"
 
 #include "hashmap.h"
 
@@ -31,6 +32,6 @@
 #include "ivfflat.h"
 #include "ivfpq.h"
 
-#include "silhouette.h"
+// #include "silhouette.h"
 
 #endif

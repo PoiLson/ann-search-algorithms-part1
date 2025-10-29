@@ -24,7 +24,7 @@ typedef int (*Hash_fun)(HashTable, void*, uint64_t*);
 typedef struct HTEntry {
     void* key;      // key (e.g., dataset index)
     void* data;     // pointer to vector
-    uint64_t ID;    // full 64-bit amplified ID (optional filter)
+    uint64_t ID;    // full 64-bit amplified ID 
 } HTEntry;
 
 // Internal bucket representation: dynamic array of entries

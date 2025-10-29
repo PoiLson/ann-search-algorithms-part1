@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     // }
 
     unsigned int seed = 1;
-    srand(seed);
+    // srand(seed);
 
     if (parse_arguments(argc, argv, &params) != 0)
         exit(EXIT_FAILURE);
@@ -86,7 +86,11 @@ int main(int argc, char **argv)
 
     // print some points
     // printPartialDataset(2, dataset);
-
+    if (params.seed)
+    {
+        seed = params.seed;
+    }
+    srand(seed);
     switch (params.algorithm)
     {
         case ALG_LSH:

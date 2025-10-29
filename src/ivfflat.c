@@ -1,101 +1,158 @@
 #include "../include/main.h"
+#include "../include/minheap.h"
 
-static inline void add_point_to_list(InvertedList *list, void *point, int point_id, int cluster_id)
+// ===== IVFFlat Implementation =====
+void assign_points_to_clusters(IVFFlatIndex *index, Dataset *dataset, int start, int end)
 {
-    if (list->count == list->capacity)
-    {
-        list->capacity = (list->capacity == 0) ? 128 : list->capacity * 2;
-        list->points = realloc(list->points, list->capacity * sizeof(void *));
-        list->point_ids = realloc(list->point_ids, list->capacity * sizeof(int));
-        if (!list->points || !list->point_ids)
-        {
-            perror("realloc failed in add_point_to_list");
-            exit(EXIT_FAILURE);
-        }
-    }
-    list->points[list->count] = point;
-    list->point_ids[list->count] = point_id;
-    list->count++;
-    list->cluster_id = cluster_id;
-}
+    // Two-pass parallel assignment to avoid contention on list growth
+    // Pass 1: compute best cluster per point in parallel
+    int n = end - start;
+    if (n <= 0) { clear_lists(index); return; }
 
-static inline void clear_lists(IVFFlatIndex *index)
-{
-    for (int t = 0; t < index->k; t++)
-    {
-        index->lists[t].count = 0; // keep memory, just reset counts
-    }
-}
+    int k = index->k;
+    int d = index->d;
+    DataType data_type = dataset->data_type;
 
-static inline void assign_points_to_clusters(IVFFlatIndex *index, Dataset *dataset, int start, int end)
-{
+    int *assign = (int *)malloc(n * sizeof(int));
+    if (!assign) { perror("malloc assign"); exit(EXIT_FAILURE); }
+
+    // We don't need list contents during assignment; ensure counts reset only once before fill
     clear_lists(index);
-    for (int i = start; i < end; i++)
+
+    #pragma omp parallel for schedule(static)
+    for (int ii = 0; ii < n; ii++)
     {
+        int i = start + ii;
         void *vec = dataset->data[i];
         double best_dist = DBL_MAX;
         int best_cluster = -1;
 
-        for (int t = 0; t < index->k; t++)
+        // Find nearest centroid
+        for (int t = 0; t < k; t++)
         {
-            double dist = distance_point_to_centroid(vec, dataset->data_type, index->centroids[t], index->d);
+            double dist = distance_point_to_centroid(vec, data_type, index->centroids[t], d);
             if (dist < best_dist)
             {
                 best_dist = dist;
                 best_cluster = t;
             }
         }
-        add_point_to_list(&index->lists[best_cluster], vec, i, best_cluster);
+        assign[ii] = best_cluster;
     }
+
+    // Pass 2: count per cluster (single-thread; cheap compared to distance work)
+    int *counts = (int *)calloc(k, sizeof(int));
+    if (!counts) { perror("calloc counts"); exit(EXIT_FAILURE); }
+    for (int ii = 0; ii < n; ii++)
+    {
+        int c = assign[ii];
+        if (c >= 0) counts[c]++;
+    }
+
+    // Ensure capacity and prepare write positions
+    int *write_pos = (int *)malloc(k * sizeof(int));
+    if (!write_pos) { perror("malloc write_pos"); exit(EXIT_FAILURE); }
+
+    for (int t = 0; t < k; t++)
+    {
+        InvertedList *list = &index->lists[t];
+        if (list->capacity < counts[t])
+        {
+            list->capacity = counts[t];
+            list->points = (void **)realloc(list->points, list->capacity * sizeof(void *));
+            list->point_ids = (int *)realloc(list->point_ids, list->capacity * sizeof(int));
+            if (!list->points || !list->point_ids)
+            {
+                perror("realloc in ensure capacity");
+                exit(EXIT_FAILURE);
+            }
+        }
+        list->count = 0; // will be set after fill
+        write_pos[t] = 0;
+    }
+
+    // Pass 3: fill lists in parallel using atomic capture to get slot index
+    #pragma omp parallel for schedule(static)
+    for (int ii = 0; ii < n; ii++)
+    {
+        int c = assign[ii];
+        int i = start + ii;
+        if (c < 0) continue;
+
+        int pos;
+        #pragma omp atomic capture
+        { pos = write_pos[c]; write_pos[c]++; }
+
+        InvertedList *list = &index->lists[c];
+        list->points[pos] = dataset->data[i];
+        list->point_ids[pos] = i;
+    }
+
+    // Finalize counts
+    for (int t = 0; t < k; t++)
+    {
+        index->lists[t].count = write_pos[t];
+        index->lists[t].cluster_id = t;
+    }
+
+    free(assign);
+    free(counts);
+    free(write_pos);
 }
 
-static inline bool recompute_centroids(IVFFlatIndex *index, int d, double epsilon)
-{
-    bool changed = false;
 
-    for (int t = 0; t < index->k; t++)
+bool recompute_centroids(IVFFlatIndex *index, int d, double epsilon)
+{
+    int k = index->k;
+    int changed_any = 0;
+
+    #pragma omp parallel for schedule(dynamic)
+    for (int t = 0; t < k; t++)
     {
         InvertedList *list = &index->lists[t];
         if (list->count == 0)
             continue; // empty cluster
 
-        float *new_centroid = calloc(d, sizeof(float));
+        float *new_centroid = (float *)calloc(d, sizeof(float));
         if (!new_centroid)
         {
             perror("calloc failed in recompute_centroids");
             exit(EXIT_FAILURE);
         }
 
-        for(int i = 0; i < list->count; i++)
+        // Sum points for this cluster
+        for (int i = 0; i < list->count; i++)
         {
             if (index->data_type == DATA_TYPE_FLOAT)
             {
                 float *vec = (float *)list->points[i];
-                for (int j = 0; j < d; j++)
-                    new_centroid[j] += vec[j];
+                for (int j = 0; j < d; j++) new_centroid[j] += vec[j];
             }
             else
             {
-                int *ivec = (int *)list->points[i];
-                for (int j = 0; j < d; j++)
-                    new_centroid[j] += (float)ivec[j];
+                uint8_t *u8vec = (uint8_t *)list->points[i];
+                for (int j = 0; j < d; j++) new_centroid[j] += (float)u8vec[j];
             }
         }
 
-        for (int j = 0; j < d; j++)
-            new_centroid[j] /= list->count;
+        // Average
+        for (int j = 0; j < d; j++) new_centroid[j] /= (list->count > 0 ? list->count : 1);
 
-        // Check how much the centroid moved
+        // Check centroid shift
         double shift = euclidean_distance_float_ivfflat(index->centroids[t], new_centroid, d);
         if (shift > epsilon)
-            changed = true;
+        {
+            #pragma omp atomic write
+            changed_any = 1;
+        }
 
         // Replace old centroid
-        free(index->centroids[t]);
+        float *old = index->centroids[t];
         index->centroids[t] = new_centroid;
+        free(old);
     }
 
-    return changed;
+    return changed_any != 0;
 }
 
 // Generic Fisher–Yates shuffle
@@ -219,7 +276,7 @@ centroidInfo *runKmeans(Dataset *subset, int kclusters)
             }
             else
             {
-                int *src = (int *)subset->data[l];
+                uint8_t *src = (uint8_t *)subset->data[l];
                 for (int _j = 0; _j < d; ++_j)
                     centroids[l][_j] = (float)src[_j];
             }
@@ -250,7 +307,7 @@ centroidInfo *runKmeans(Dataset *subset, int kclusters)
     }
     else
     {
-        int *src = (int *)subset->data[idx];
+        uint8_t *src = (uint8_t *)subset->data[idx];
         for (int _j = 0; _j < d; ++_j)
             centroids[t][_j] = (float)src[_j];
     }
@@ -307,7 +364,7 @@ centroidInfo *runKmeans(Dataset *subset, int kclusters)
                 }
                 else
                 {
-                    int *src = (int *)subset->data[ii];
+                    uint8_t *src = (uint8_t *)subset->data[ii];
                     for (int _j = 0; _j < d; ++_j)
                         centroids[t][_j] = (float)src[_j];
                 }
@@ -359,6 +416,7 @@ IVFFlatIndex *lloydAlgorithm(Dataset *subset, int kclusters)
     {
         assign_points_to_clusters(index, subset, 0, subset->size);
         bool changed = recompute_centroids(index, subset->dimension, epsilon);
+        if (!changed) break;
     }
 
     // clean up temporary memory we no longer need
@@ -378,8 +436,8 @@ IVFFlatIndex *ivfflat_init(Dataset *dataset, int kclusters)
 
     IVFFlatIndex *ivfflat_index = lloydAlgorithm(subset, kclusters);
 
-    // Now assign the rest of the dataset to the corresponding centroids!
-    assign_points_to_clusters(ivfflat_index, dataset, subset->size, dataset->size);
+    // Now assign ALL points from the full dataset to the corresponding centroids
+    assign_points_to_clusters(ivfflat_index, dataset, 0, dataset->size);
     free(subset);
 
     return ivfflat_index;
@@ -403,11 +461,11 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
 
   
     const float *qf = NULL;
-    const int *qi = NULL;
+    const uint8_t *qi = NULL;
     if (index->data_type == DATA_TYPE_FLOAT)
         qf = (const float *)q_void;
     else
-        qi = (const int *)q_void;
+        qi = (const uint8_t *)q_void;
 
     for (int i = 0; i < k; i++)
     {
@@ -415,7 +473,7 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
         if (qf)
             cent = euclidean_distance_float_ivfflat(qf, index->centroids[i], d);
         else
-            cent = euclidean_distance_int_to_float(qi, index->centroids[i], d);
+            cent = euclidean_distance_uint8_to_float(qi, index->centroids[i], d);
 
         int j = 0;
         if (selected < nprobe)
@@ -439,13 +497,8 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
         centroid_ids[j] = i;
     }
 
-    // --- Step 2: Initialize result arrays ---
-    *approx_count = 0;
-    for (int i = 0; i < N; i++)
-    {
-        approx_neighbors[i] = -1;
-        approx_dists[i] = INFINITY;
-    }
+    // --- Step 2: Create min-heap for top-N candidates ---
+    MinHeap *topN = heap_create(N);
 
     // --- Step 3: Search within selected (nprobe) clusters ---
     int total_candidates = 0;
@@ -466,28 +519,14 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
             }
             else
             {
-                const int *p = (const int *)vec;
-                dist = (double)euclidean_distance_int((const void *)qi, (const void *)p, d);
+                const uint8_t *p = (const uint8_t *)vec;
+                dist = (double)euclidean_distance_uint8((const void *)qi, (const void *)p, d);
             }
 
             total_candidates++;
 
-            // Insert into top-N sorted list (like insertion sort)
-            if (*approx_count < N || dist < approx_dists[*approx_count - 1])
-            {
-                if (*approx_count < N)
-                    (*approx_count)++;
-
-                int j = *approx_count - 1;
-                while (j > 0 && dist < approx_dists[j - 1])
-                {
-                    approx_neighbors[j] = approx_neighbors[j - 1];
-                    approx_dists[j] = approx_dists[j - 1];
-                    j--;
-                }
-                approx_neighbors[j] = list->point_ids[i];
-                approx_dists[j] = dist;
-            }
+            // Insert into min-heap (O(log N) instead of O(N) insertion sort)
+            heap_insert(topN, list->point_ids[i], dist);
 
             // --- Optional: Range search support ---
             // if (params->range_search && dist <= R)
@@ -497,6 +536,11 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
             // }
         }
     }
+
+    // --- Step 4: Extract results from heap in sorted order ---
+    *approx_count = topN->size;
+    heap_extract_sorted(topN, approx_neighbors, approx_dists);
+    heap_destroy(topN);
 
     // --- Cleanup ---
     free(centroid_dists);

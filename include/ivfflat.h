@@ -1,6 +1,10 @@
 #ifndef IVFFLAT_H
 #define IVFFLAT_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include "datasets.h"
+
 typedef struct CentroidInfo
 {
     bool *is_centroid;
@@ -27,7 +31,34 @@ typedef struct
 
 // void add_point_to_list(InvertedList *list, void *point, int point_id, int cluster_id);
 
-// void assign_points_to_clusters(IVFFlatIndex *index, Dataset *dataset, int start, int end);
+void assign_points_to_clusters(IVFFlatIndex *index, Dataset *dataset, int start, int end);
+
+static inline void add_point_to_list(InvertedList *list, void *point, int point_id, int cluster_id)
+{
+    if (list->count == list->capacity)
+    {
+        list->capacity = (list->capacity == 0) ? 128 : list->capacity * 2;
+        list->points = realloc(list->points, list->capacity * sizeof(void *));
+        list->point_ids = realloc(list->point_ids, list->capacity * sizeof(int));
+        if (!list->points || !list->point_ids)
+        {
+            perror("realloc failed in add_point_to_list");
+            exit(EXIT_FAILURE);
+        }
+    }
+    list->points[list->count] = point;
+    list->point_ids[list->count] = point_id;
+    list->count++;
+    list->cluster_id = cluster_id;
+}
+
+static inline void clear_lists(IVFFlatIndex *index)
+{
+    for (int t = 0; t < index->k; t++)
+    {
+        index->lists[t].count = 0; // keep memory, just reset counts
+    }
+}
 
 int findSubsetSize(int subsetSize);
 

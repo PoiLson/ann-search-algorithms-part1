@@ -1,8 +1,6 @@
 #ifndef HYPERCUBE_H
 #define HYPERCUBE_H
 
-#include <stdint.h>
-
 // Forward declaration
 struct Hypercube;
 // Forward declare Hashmap type (defined in include/hashmap.h)
@@ -31,27 +29,73 @@ typedef struct Hypercube
     DataType data_type; // type of data (int or float)
     metric_func distance; // distance function
     Hypercube_hash_function *hash_params; // array of hash parameters
-    uint32_t* f_a; // array of a_i coefficients for 2-universal hash (one per bit)
-    uint32_t* f_b; // array of b_i offsets for 2-universal hash (one per bit)
     Hashmap** map; // per-projection hashmap mapping bucket index -> bit
     bin_hash binary_hash_function; // single hash function that computes all k bits
     
     HashTable hash_table; // hash table
 } Hypercube;
 
-//-----------------------Helper functions for hashing----------------------------
+//-----------------------Helper functions for hashing-----------------------------
 
-// f function to map h_i to {0,1} using 2-universal hashing for balanced bits
-// static inline bool f(uint32_t a, uint32_t b, int h_i)
-// {
-//     return h_i & 1;
-// }
+static inline bool f(Hashmap** map, int h_ip)
+{
+    bool* value = hashmap_getValue(*map, h_ip);
+    if (value != NULL)
+    {
+        return *value;
+    }
+    else
+    {
+        bool bit = rand() % 2;
+        hashmap_insert(*map, h_ip, bit);
+        return bit;
+    }
+}
 
-//defines the hypercube hash function
-static uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID);
+// Compute the k-bit binary ID for a point in the hypercube
+static inline uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID)
+{
+    uint64_t id = 0ULL;   // use unsigned 64-bit to avoid overflow
+
+    for (int i = 0; i < hyper->kproj; i++)
+    {
+        float func;
+        if (hyper->data_type == DATA_TYPE_FLOAT)
+            func = dot_product_float(hyper->hash_params[i].v, (const float*)p, hyper->d);
+        else
+            func = dot_product_float_uint8(hyper->hash_params[i].v, (const uint8_t*)p, hyper->d);
+
+        // Compute bucket index using floorf for correctness
+        float val = (func + hyper->hash_params[i].t) / hyper->w;
+        int h_i = (int)floorf(val);
+
+        // Apply 2-universal hash to map h_i -> {0,1}
+        bool bit = f(&(hyper->map[i]), h_i);
+
+        // Shift left and add the new bit
+        id = (id << 1) | (uint64_t)bit;
+    }
+
+    if (ID) *ID = id;
+    return id;  // Return full uint64_t (safe for kproj up to 64 bits)
+}
+
 
 //modifies the hash function to be used in the hash table
-int hash_function_hyper(HashTable ht, void* data, uint64_t* ID);
+static inline int hash_function_hyper(HashTable ht, void* data, uint64_t* ID)
+{
+    //get the hypercube structure the particular hash function belongs to
+    Hypercube* hyper_ctx = (Hypercube*)hash_table_get_algorithm_context(ht);
+
+    if (!hyper_ctx) 
+    { 
+        if (ID) *ID = 0ULL; 
+        return 0; 
+    }
+
+    // Use the single hash function that computes all k bits
+    return hyper_ctx->binary_hash_function(data, hyper_ctx, ID);
+}
 
 //--------------------------Hypercube main functions-----------------------------
 

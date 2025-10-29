@@ -43,7 +43,7 @@ static Dataset* read_mnist_idx3_file(FILE* file)
     }
     dataset->size = (int)num_images;
     dataset->dimension = (int)(rows * cols);
-    dataset->data_type = DATA_TYPE_INT;
+    dataset->data_type = DATA_TYPE_UINT8;
 
     dataset->data = (void**)malloc(dataset->size * sizeof(void*));
     if (!dataset->data)
@@ -75,7 +75,7 @@ static Dataset* read_mnist_idx3_file(FILE* file)
             exit(EXIT_FAILURE);
         }
 
-        int* img = (int*)malloc(dataset->dimension * sizeof(int));
+        uint8_t* img = (uint8_t*)malloc(dataset->dimension * sizeof(uint8_t));
         if (!img)
         {
             fprintf(stderr, "Memory allocation failed for MNIST image %d\n", i);
@@ -86,8 +86,7 @@ static Dataset* read_mnist_idx3_file(FILE* file)
         }
         for (int p = 0; p < dataset->dimension; p++)
         {
-            img[p] = (int)buf[p]; // keep 0..255 range; normalization can be applied by caller if desired
-            // img[p] = ((int)buf[p]) / 255    ; // normalize 0..1
+            img[p] = buf[p]; // keep 0..255 range as uint8_t
         }
         dataset->data[i] = img;
     }

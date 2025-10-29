@@ -1,207 +1,8 @@
 #include "../include/main.h"
+#include "../include/minheap.h"
 
 #include <math.h>   // for floorf
 #include <limits.h>
-
-
-static bool f(Hashmap** map, int h_ip)
-{
-    bool* value = hashmap_getValue(*map, h_ip);
-    if (value != NULL)
-    {
-        return *value;
-    }
-    else
-    {
-        bool bit = rand() % 2;
-        hashmap_insert(*map, h_ip, bit);
-        return bit;
-    }
-}
-
-// Compute the k-bit binary ID for a point in the hypercube
-static uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID)
-{
-    uint64_t id = 0ULL;   // use unsigned 64-bit to avoid overflow
-
-    for (int i = 0; i < hyper->kproj; i++)
-    {
-        float func;
-        if (hyper->data_type == DATA_TYPE_FLOAT)
-            func = dot_product_float(hyper->hash_params[i].v, (const float*)p, hyper->d);
-        else
-            func = dot_product_float_int(hyper->hash_params[i].v, (const int*)p, hyper->d);
-
-        // Compute bucket index using floorf for correctness
-        float val = (func + hyper->hash_params[i].t) / hyper->w;
-        int h_i = (int)floorf(val);
-
-        // Apply 2-universal hash to map h_i -> {0,1}
-        bool bit = f(&(hyper->map[i]), h_i);
-
-        // Shift left and add the new bit
-        id = (id << 1) | (uint64_t)bit;
-    }
-
-    if (ID) *ID = id;
-    return id;  // Return full uint64_t (safe for kproj up to 64 bits)
-}
-
-
-static void hyper_check_f_balance(const Hypercube* hyper, const Dataset* dataset, int sample_size)
-{
-    const int k = hyper->kproj;
-    if (k <= 0) {
-        fprintf(stderr, "[diag] No projections (k=0), skipping balance check\n");
-        return;
-    }
-
-    long long* ones  = (long long*)calloc(k, sizeof(long long));
-    long long* zeros = (long long*)calloc(k, sizeof(long long));
-    if (!ones || !zeros) {
-        free(ones); free(zeros);
-        fprintf(stderr, "[diag] Failed to allocate counters for f_i balance\n");
-        return;
-    }
-
-    /* We'll also collect min/max of the raw h_i (bucket indices) per projection
-     * and a small histogram (HIST_BINS) to inspect whether h_i values are concentrated.
-     * Approach: first pass gathers min/max while counting ones/zeros; second pass fills histograms.
-     */
-    const int HIST_BINS = 16;
-    int *min_h = (int*)malloc(k * sizeof(int));
-    int *max_h = (int*)malloc(k * sizeof(int));
-    if (!min_h || !max_h) {
-        free(ones); free(zeros);
-        free(min_h); free(max_h);
-        fprintf(stderr, "[diag] Failed to allocate min/max arrays\n");
-        return;
-    }
-    for (int j = 0; j < k; ++j) { min_h[j] = INT_MAX; max_h[j] = INT_MIN; }
-
-    int total = dataset->size;
-    if (sample_size > 0 && sample_size < total) total = sample_size;
-
-    for (int i = 0; i < total; ++i)
-    {
-        const void* p = dataset->data[i];
-        if (!p) continue; // safety check
-
-        for (int j = 0; j < k; ++j)
-        {
-            float func;
-            if (hyper->data_type == DATA_TYPE_FLOAT)
-                func = dot_product_float(hyper->hash_params[j].v, (const float*)p, hyper->d);
-            else
-                func = dot_product_float_int(hyper->hash_params[j].v, (const int*)p, hyper->d);
-
-            float val = (func + hyper->hash_params[j].t) / hyper->w;
-            int h_i = (int)floorf(val);
-
-            /* Use the per-projection hashmap stored in hyper->map to map h_i -> {0,1}
-             * f() expects a pointer to the Hashmap* for that projection.
-             */
-            bool bit = f(&(hyper->map[j]), h_i);
-            if (bit) ones[j]++; else zeros[j]++;
-            if (h_i < min_h[j]) min_h[j] = h_i;
-            if (h_i > max_h[j]) max_h[j] = h_i;
-        }
-    }
-
-    fprintf(stderr, "[diag] Hypercube f_i balance over %d/%d points (k=%d):\n", total, dataset->size, k);
-
-    double avg_ones = 0.0;
-    for (int j = 0; j < k; ++j)
-    {
-        long long tot = ones[j] + zeros[j];
-        double p1 = (tot > 0) ? ((double)ones[j] / (double)tot) : 0.0;
-        avg_ones += p1;
-        fprintf(stderr, "  bit %2d: ones=%lld zeros=%lld p1=%.3f  h_i_range=[%d,%d]\n", j, ones[j], zeros[j], p1, min_h[j], max_h[j]);
-    }
-    avg_ones /= (double)k;
-    fprintf(stderr, "  avg p1 across bits = %.3f (target ~0.5)\n", avg_ones);
-
-    /* allocate histograms and fill by re-scanning the (possibly sampled) dataset */
-    int **hist = (int**)malloc(k * sizeof(int*));
-    if (!hist) {
-        free(ones); free(zeros); free(min_h); free(max_h);
-        fprintf(stderr, "[diag] Failed to allocate histogram pointers\n");
-        return;
-    }
-    for (int j = 0; j < k; ++j) {
-        hist[j] = (int*)calloc(HIST_BINS, sizeof(int));
-        if (!hist[j]) {
-            for (int t = 0; t < j; ++t) free(hist[t]);
-            free(hist);
-            free(ones); free(zeros); free(min_h); free(max_h);
-            fprintf(stderr, "[diag] Failed to allocate histogram bins\n");
-            return;
-        }
-    }
-
-    /* second pass to populate histograms */
-    for (int i = 0; i < total; ++i)
-    {
-        const void* p = dataset->data[i];
-        if (!p) continue;
-        for (int j = 0; j < k; ++j)
-        {
-            float func;
-            if (hyper->data_type == DATA_TYPE_FLOAT)
-                func = dot_product_float(hyper->hash_params[j].v, (const float*)p, hyper->d);
-            else
-                func = dot_product_float_int(hyper->hash_params[j].v, (const int*)p, hyper->d);
-
-            float val = (func + hyper->hash_params[j].t) / hyper->w;
-            int h_i = (int)floorf(val);
-
-            int minh = min_h[j];
-            int maxh = max_h[j];
-            int bin = 0;
-            if (maxh > minh) {
-                long long span = (long long)maxh - (long long)minh + 1LL;
-                long long rel = (long long)h_i - (long long)minh;
-                bin = (int)((rel * HIST_BINS) / span);
-                if (bin < 0) bin = 0;
-                if (bin >= HIST_BINS) bin = HIST_BINS - 1;
-            } else {
-                bin = 0;
-            }
-            hist[j][bin]++;
-        }
-    }
-
-    /* print compact histograms as counts per bin */
-    fprintf(stderr, "[diag] Per-bit h_i histograms (each has %d bins):\n", HIST_BINS);
-    for (int j = 0; j < k; ++j) {
-        fprintf(stderr, "  bit %2d bins:", j);
-        for (int b = 0; b < HIST_BINS; ++b)
-            fprintf(stderr, " %d", hist[j][b]);
-        fprintf(stderr, "\n");
-    }
-
-    /* cleanup */
-    for (int j = 0; j < k; ++j) free(hist[j]);
-    free(hist);
-    free(ones); free(zeros); free(min_h); free(max_h);
-}
-
-
-int hash_function_hyper(HashTable ht, void* data, uint64_t* ID)
-{
-    //get the hypercube structure the particular hash function belongs to
-    Hypercube* hyper_ctx = (Hypercube*)hash_table_get_algorithm_context(ht);
-
-    if (!hyper_ctx) 
-    { 
-        if (ID) *ID = 0ULL; 
-        return 0; 
-    }
-
-    // Use the single hash function that computes all k bits
-    return hyper_ctx->binary_hash_function(data, hyper_ctx, ID);
-}
-
 
 
 Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* dataset)
@@ -227,7 +28,7 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     if (dataset->data_type == DATA_TYPE_FLOAT)
         hyper->distance = euclidean_distance;  // float-based distance
     else
-        hyper->distance = euclidean_distance_int;  // int-based distance
+        hyper->distance = euclidean_distance_uint8;  // uint8-based distance
 
     // Initialize hash parameters
     hyper->hash_params = (Hypercube_hash_function*)malloc(hyper->kproj * sizeof(Hypercube_hash_function));
@@ -252,15 +53,6 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
 
         int tmp = 0;
         hyper->hash_params[i].t = uniform_distribution(&tmp, &(hyper->w));
-    }
-
-    // Initialize 2-universal hash parameters for f functions (one a,b pair per bit)
-    hyper->f_a = (uint32_t*)malloc(hyper->kproj * sizeof(uint32_t));
-    hyper->f_b = (uint32_t*)malloc(hyper->kproj * sizeof(uint32_t));
-    if (!hyper->f_a || !hyper->f_b)
-    {
-        hyper_destroy(hyper);
-        exit(EXIT_FAILURE);
     }
 
    // Initialize hashmaps for f functions
@@ -306,19 +98,6 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
         // Insert the valid data point into the hash table
         hash_table_insert(hyper->hash_table, &i, dataset->data[i]);
     }
-    
-    // Optional diagnostic: check f_i balance if requested via env var
-    const char* chk = getenv("HYPER_BALANCE");
-    if (chk && chk[0] != '\0' && chk[0] != '0')
-    {
-        int sample = 0;
-        const char* s = getenv("HYPER_BALANCE_SAMPLE");
-        if (s) sample = atoi(s);
-        hyper_check_f_balance(hyper, dataset, sample);
-    }
-
-    // print the contents of the hash table -- debug only
-    //print_hashtable(hyper->hash_table, 1 << hyper->kproj, dataset->dimension);
 
     return hyper;
 }
@@ -331,13 +110,22 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     // Retrieve hypercube structure from context
     struct Hypercube* hyper = (struct Hypercube*)index_data;
 
+    // Create min-heap for top-N neighbors
+    MinHeap *topN = heap_create(params->N);
+    if (!topN)
+    {
+        fprintf(stderr, "Failed to allocate min-heap.\n");
+        return;
+    }
+
     // Allocate visited array for O(1) duplicate detection (instead of O(N) linear scan)
     // This dramatically speeds up queries when examining many candidates
-    // bool* visited = (bool*)calloc(hyper->dataset_size, sizeof(bool));
-    // if (!visited) {
-    //     fprintf(stderr, "Failed to allocate visited array\n");
-    //     return;
-    // }
+    bool* visited = (bool*)calloc(hyper->dataset_size, sizeof(bool));
+    if (!visited) {
+        fprintf(stderr, "Failed to allocate visited array\n");
+        heap_destroy(topN);
+        return;
+    }
 
     // Range search optimization: allocate in chunks to avoid repeated realloc
     int range_capacity = 0;
@@ -372,9 +160,9 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             void* p = neighbor_bucket[bi].data;
 
             // O(1) duplicate check using visited array instead of O(N) linear scan
-            // if (visited[data_idx])
-            //     continue;
-            // visited[data_idx] = true;
+            if (visited[data_idx])
+                continue;
+            visited[data_idx] = true;
 
             // Count examined points and enforce M threshold
             checked++;
@@ -387,22 +175,8 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             // Use int-based distance computation for MNIST integer data
             float dist = hyper->distance(q, p, hyper->d);
 
-            // Insert into approx neighbors if appropriate
-            if (*approx_count < params->N || dist < approx_dists[*approx_count - 1])
-            {
-                if (*approx_count < params->N)
-                    (*approx_count)++;
-                int i = 0;
-                // Insert in sorted order
-                for (i = *approx_count - 1; i > 0 && (i
-                    == 0 || dist < approx_dists[i - 1]); i--)
-                {
-                    approx_dists[i] = approx_dists[i - 1];
-                    approx_neighbors[i] = approx_neighbors[i - 1];
-                }
-                approx_dists[i] = dist;
-                approx_neighbors[i] = data_idx;
-            }
+            // Insert into min-heap (O(log N) instead of O(N) insertion sort)
+            heap_insert(topN, data_idx, dist);
 
             // Range search (visited array already handles deduplication)
             if (params->range_search && dist <= params->R)
@@ -431,8 +205,14 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
         if (reached_m)
             break; // exit probing further buckets
     }
+
+    // Extract results from heap in sorted order
+    *approx_count = topN->size;
+    heap_extract_sorted(topN, approx_neighbors, approx_dists);
+    heap_destroy(topN);
+
     // Clean up allocations
-    // free(visited);
+    free(visited);
     free(neighbors);
 }
 
@@ -455,12 +235,6 @@ void hyper_destroy(struct Hypercube* hyper)
         }
         free(hyper->hash_params);
     }
-
-    // Free 2-universal hash coefficient arrays
-    if (hyper->f_a)
-        free(hyper->f_a);
-    if (hyper->f_b)
-        free(hyper->f_b);
 
     // Free per-projection hashmaps (if any)
     if (hyper->map)
