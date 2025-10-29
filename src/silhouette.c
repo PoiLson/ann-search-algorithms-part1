@@ -87,9 +87,12 @@ int compute_silhouette_parallel(const IVFFlatIndex *index, const Dataset *datase
                         continue;
 
                     // now  i am running with mnist so it is integer
-                    int* pointForDistance = (int*)point;
-                    distance = euclidean_distance_int_to_float(pointForDistance, index->centroids[c2], dataset->dimension);
-
+                    //compute avg distance to centroid
+                    for (int k = 0; k < index->lists[c2].count; ++k)
+                    {
+                        // now i am runnning it iwht time make mnist so it is ints we will see
+                        distance += euclidean_distance_int((int*)point, index->lists[c2].points[k], dataset->dimension);
+                    }
                     if(distance < best_distance)
                     {
                         best_distance = distance;
@@ -106,12 +109,7 @@ int compute_silhouette_parallel(const IVFFlatIndex *index, const Dataset *datase
                 // Now that we have found the nearest cluster to that point we find the b(i)
                 const InvertedList *nearestCentroidList = &index->lists[nearest_centroid];
 
-                double b = 0.0;
-                for (int k = 0; k < nearestCentroidList->count; ++k)
-                {
-                    // now i am runnning it iwht time make mnist so it is ints we will see
-                    b += euclidean_distance_int(point, nearestCentroidList->points[k], dataset->dimension);
-                }
+                double b = distance;
                 b /= nearestCentroidList->count;
 
                 // now we calculate the s(i)
