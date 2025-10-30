@@ -22,9 +22,6 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         fprintf(stderr, "dataset dimension (%d) != query dimension (%d). Using min dimension for distance.\n", dataset->dimension, query_set->dimension);
         exit(EXIT_FAILURE);
     }
-    //choose distance function based on data type
-    float (*distance_func)(const void*, const void*, const int) = (dataset->data_type == DATA_TYPE_FLOAT) ? euclidean_distance : euclidean_distance_uint8;
-
     // Main query loop
     // Iterate over each query in the query set
     for (int q_idx = 0; q_idx < query_set->size; q_idx++)
@@ -67,7 +64,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         {
             void* p = dataset->data[i];
 
-            float dist = distance_func(q, p, dataset->dimension);
+            double dist = euclidean_distance(q, p, dataset->dimension, dataset->data_type, dataset->data_type);
 
             if (true_count < params->N || dist < true_dists[true_count - 1])
             {

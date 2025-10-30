@@ -25,10 +25,7 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     
     // Store data type and select distance function
     hyper->data_type = dataset->data_type;
-    if (dataset->data_type == DATA_TYPE_FLOAT)
-        hyper->distance = euclidean_distance;  // float-based distance
-    else
-        hyper->distance = euclidean_distance_uint8;  // uint8-based distance
+    hyper->distance = euclidean_distance;  // uint8-based distance
 
     // Initialize hash parameters
     hyper->hash_params = (Hypercube_hash_function*)malloc(hyper->kproj * sizeof(Hypercube_hash_function));
@@ -173,7 +170,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             }
 
             // Use int-based distance computation for MNIST integer data
-            float dist = hyper->distance(q, p, hyper->d);
+            double dist = hyper->distance(q, p, hyper->d, hyper->data_type, hyper->data_type);
 
             // Insert into min-heap (O(log N) instead of O(N) insertion sort)
             heap_insert(topN, data_idx, dist);

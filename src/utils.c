@@ -68,56 +68,10 @@ void normalize_vector(float* v, int d)
     float sumsq = 0.0f;
     for (int i = 0; i < d; i++)
         sumsq += v[i] * v[i];
-    if (sumsq <= 0.0f)
-    {
-        // fallback to unit basis vector if random vector degenerates (extremely unlikely)
-        for (int i = 0; i < d; i++) v[i] = 0.0f;
-        v[0] = 1.0f;
-        return;
-    }
     float inv = 1.0f / sqrtf(sumsq);
     for (int i = 0; i < d; i++)
         v[i] *= inv;
 }
-
-int dot_product_int(const int* a, const int* b, int d)
-{
-    int sum = 0;
-    for(int i = 0; i < d; i++)
-        sum += a[i] * b[i];
-
-    return sum;
-}
-
-float dot_product_float(const float* a, const float* b, int d)
-{
-    float sum = 0.0;
-    for(int i = 0; i < d; i++)
-    {
-        sum += a[i] * b[i];
-    }
-
-    return sum;
-}
-
-// dot_product_float_int moved to utils.h as static inline for performance
-
-float euclidean_distance(const void* a, const void* b, const int dimension)
-{
-    float sum = 0.0;
-    float* a_p = (float*)a;
-    float* b_p = (float*)b;
-
-    for(int i = 0; i < dimension; i++)
-    {
-        float diff = a_p[i] - b_p[i];
-        sum += diff * diff;
-    }
-
-    return sqrt(sum);
-}
-
-// euclidean_distance_int moved to utils.h as static inline for performance
 
 int hamming_distance(const int* a, const int* b, int d)
 {
@@ -130,7 +84,6 @@ int hamming_distance(const int* a, const int* b, int d)
     }
     return count;
 }
-
 
 // returns the first 'probes' neighbors from point 'a' sorted by hamming distance
 void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* neighbors)
@@ -173,37 +126,4 @@ void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* nei
             if (element == 0) exit(EXIT_FAILURE);
         }
     }
-}
-
-int compare_vectors(const void* a, const void* b, const void* metricContext)
-{
-    int dimension = *(const int*)metricContext;
-    float dist = euclidean_distance(a, b, dimension);
-    return (dist == 0.0) ? 0 : (dist < 0.0) ? -1 : 1;
-}
-
-inline float* cast_vector_to_float(void* vec, int data_type, int dimension)
-{
-    float* result = (float*)malloc(dimension * sizeof(float));
-    if (!result)
-        return NULL;
-
-    if (data_type == DATA_TYPE_FLOAT)
-    {
-        float* fvec = (float*)vec;
-        for (int i = 0; i < dimension; i++)
-            result[i] = fvec[i];
-    }
-    else if (data_type == DATA_TYPE_INT)
-    {
-        int* ivec = (int*)vec;
-        for (int i = 0; i < dimension; i++)
-            result[i] = (float)ivec[i];
-    }
-    else
-    {
-        free(result);
-        return NULL; // unknown data type
-    }
-    return result;
 }

@@ -30,7 +30,7 @@ void assign_points_to_clusters(IVFFlatIndex *index, Dataset *dataset, int start,
         // Find nearest centroid
         for (int t = 0; t < k; t++)
         {
-            double dist = distance_point_to_centroid(vec, data_type, index->centroids[t], d);
+            double dist = euclidean_distance(vec, index->centroids[t], d, data_type, DATA_TYPE_FLOAT);
             if (dist < best_dist)
             {
                 best_dist = dist;
@@ -139,7 +139,7 @@ bool recompute_centroids(IVFFlatIndex *index, int d, double epsilon)
         for (int j = 0; j < d; j++) new_centroid[j] /= (list->count > 0 ? list->count : 1);
 
         // Check centroid shift
-        double shift = euclidean_distance_float_ivfflat(index->centroids[t], new_centroid, d);
+        double shift = euclidean_distance(index->centroids[t], new_centroid, d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
         if (shift > epsilon)
         {
             #pragma omp atomic write
@@ -251,7 +251,7 @@ centroidInfo *runKmeans(Dataset *subset, int kclusters)
     }
 
     /* Unified initialization: handle kclusters > n, then KMeans++ selection using
-     * distance_point_to_centroid for both float and int subset types. */
+     * distance point to centroid for both float and int subset types. */
     if (kclusters > n)
     {
         float **centroids = malloc(n * sizeof(float *));
@@ -326,7 +326,7 @@ centroidInfo *runKmeans(Dataset *subset, int kclusters)
             double best_dist = DBL_MAX;
             for (int l = 0; l < t; l++)
             {
-                double dist = distance_point_to_centroid(vec, subset->data_type, centroids[l], d);
+                double dist = euclidean_distance(vec, centroids[l], d, subset->data_type, DATA_TYPE_FLOAT);
                 if (dist < best_dist)
                     best_dist = dist;
             }
@@ -471,9 +471,9 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
     {
         double cent;
         if (qf)
-            cent = euclidean_distance_float_ivfflat(qf, index->centroids[i], d);
+            cent = euclidean_distance(qf, index->centroids[i], d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
         else
-            cent = euclidean_distance_uint8_to_float(qi, index->centroids[i], d);
+            cent = euclidean_distance(qi, index->centroids[i], d, DATA_TYPE_UINT8, DATA_TYPE_FLOAT);
 
         int j = 0;
         if (selected < nprobe)
@@ -513,15 +513,9 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
             double dist;
 
             if (index->data_type == DATA_TYPE_FLOAT)
-            {
-                const float *p = (const float *)vec;
-                dist = euclidean_distance_float_ivfflat(qf, p, d);
-            }
+                dist = euclidean_distance(qf, vec, d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
             else
-            {
-                const uint8_t *p = (const uint8_t *)vec;
-                dist = (double)euclidean_distance_uint8((const void *)qi, (const void *)p, d);
-            }
+                dist = euclidean_distance(qi, vec, d, DATA_TYPE_UINT8, DATA_TYPE_UINT8);
 
             total_candidates++;
 

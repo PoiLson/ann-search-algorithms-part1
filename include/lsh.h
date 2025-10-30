@@ -17,7 +17,7 @@ typedef struct
 
 // Define function pointer types
 typedef int (*hash_func)(const void* p, const struct LSH* lsh, int table_index, uint64_t* ID);
-typedef float (*metric_func)(const void* a, const void* b, const int dimension);
+typedef double (*metric_func)(const void* a, const void* b, const int dimension, DataType data_typea , DataType data_typeb);
 
 // Data Structure for the full LSH
 typedef struct LSH
@@ -76,10 +76,9 @@ static inline int hash_func_impl_lsh(const void *p, const LSH *lsh, int table_in
     {
         // ---- Compute LSH projection: h_i(v) = floor((a·v + b)/w)
         double func = 0.0;
-        if (lsh->data_type == DATA_TYPE_FLOAT)
-            func = dot_product_float(table_hash_params[i].v, (const float *)p, lsh->d);
-        else
-            func = dot_product_float_uint8(table_hash_params[i].v, (const uint8_t *)p, lsh->d);
+
+        func = dot_product(table_hash_params[i].v, (const float *)p, lsh->d, lsh->data_type);
+    
 
         double val = (func + (double)table_hash_params[i].t) / (double)lsh->w;
         int64_t h_i = (int64_t)floor(val); // handle negatives properly

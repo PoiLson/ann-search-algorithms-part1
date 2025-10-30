@@ -60,10 +60,7 @@ static inline uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hype
     for (int i = 0; i < hyper->kproj; i++)
     {
         float func;
-        if (hyper->data_type == DATA_TYPE_FLOAT)
-            func = dot_product_float(hyper->hash_params[i].v, (const float*)p, hyper->d);
-        else
-            func = dot_product_float_uint8(hyper->hash_params[i].v, (const uint8_t*)p, hyper->d);
+        func = dot_product(hyper->hash_params[i].v, p, hyper->d, hyper->data_type);
 
         // Compute bucket index using floorf for correctness
         float val = (func + hyper->hash_params[i].t) / hyper->w;

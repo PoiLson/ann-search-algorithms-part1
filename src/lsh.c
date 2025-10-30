@@ -48,10 +48,7 @@ LSH *lsh_init(const struct SearchParams *params, const struct Dataset *dataset)
 
     // Store data type and select distance function
     lsh->data_type = dataset->data_type;
-    if (dataset->data_type == DATA_TYPE_FLOAT)
-        lsh->distance = euclidean_distance; // float-based distance
-    else
-        lsh->distance = euclidean_distance_uint8; // uint8-based distance
+    lsh->distance = euclidean_distance; // uint8-based distance
 
     // Allocate memory for per-table hash parameters (L x k)
     lsh->hash_params = (LSH_hash_function **)malloc(lsh->L * sizeof(LSH_hash_function *));
@@ -96,7 +93,7 @@ LSH *lsh_init(const struct SearchParams *params, const struct Dataset *dataset)
 
     for (int i = 0; i < lsh->L; i++)
     {
-        lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, compare_vectors, hash_function_lsh, lsh, i, &(dataset->dimension));
+        lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, NULL, hash_function_lsh, lsh, i, &(dataset->dimension));
 
         if (!lsh->hash_tables[i])
         {
@@ -183,7 +180,7 @@ void lsh_index_lookup(const void *q, const struct SearchParams *params, int *app
             }
 
             // Compute distance for this candidate using type-aware function
-            float dist = lsh->distance(q, p, lsh->d);
+            double dist = lsh->distance(q, p, lsh->d, lsh->data_type, lsh->data_type);
 
             // Insert into min-heap (O(log N) instead of O(N) insertion sort)
             heap_insert(topN, data_idx, dist);

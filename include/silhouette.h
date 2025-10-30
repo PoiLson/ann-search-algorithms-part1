@@ -1,6 +1,8 @@
 #ifndef SILHOUETTE_H
 #define SILHOUETTE_H
 
-int compute_silhouette_parallel(const IVFFlatIndex *index, const Dataset *dataset, double *per_cluster);
+#include "ivfflat.h"
+
+void computeSilhouette(IVFFlatIndex* index, Dataset* dataset);
 
 #endif

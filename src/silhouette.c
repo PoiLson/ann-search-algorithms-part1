@@ -1,16 +1,16 @@
 #include "../include/main.h"
 
-int compute_silhouette_parallel(const IVFFlatIndex *index, const Dataset *dataset, double *per_cluster)
-{
-    if (!index || !dataset)
-    {
-        perror("The needed structs are not intialized\n");
-        exit(EXIT_FAILURE);
+
+// Fast silhouette computation with parallelization and optional sampling
+void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
+    if (!index || !dataset || index->k == 0) {
+        return;
     }
 
-    const int k = index->k;
-    const int d = index->d;
-    const int n = dataset->size;
+    int k = index->k;
+    int dim = dataset->dimension;
+    int n = dataset->size;
+    DataType data_type = dataset->data_type;
     if (k <= 0 || n <= 0)
     {
         perror("kclusters or the dataset size is 0\n");
@@ -18,11 +18,19 @@ int compute_silhouette_parallel(const IVFFlatIndex *index, const Dataset *datase
     }
 
     /* ---------- 1. Build cluster_of[point] = cluster index ---------- */
+    double *per_cluster = (double *)malloc(index->k * sizeof(double));
+    if (!per_cluster)
+    {
+        printf("Error in allocating per_cluster!\n");
+        exit(EXIT_FAILURE);
+    }
+
     // Finds from all the points of the dataset the cluster they have
     int *cluster_of = (int *)calloc((size_t)n, sizeof(int));
     if (!cluster_of)
     {
         printf("Error in allocating cluster_of!\n");
+        free(per_cluster);
         exit(EXIT_FAILURE);
     }
 
@@ -41,109 +49,91 @@ int compute_silhouette_parallel(const IVFFlatIndex *index, const Dataset *datase
     {
         printf("Error allocating space for silhouette arrays\n");
         free(cluster_of);
-        return -1;
+        free(per_cluster);
+        exit(EXIT_FAILURE);
     }
     
     printf("reached the nested parallization\n");
-    /* ---------- 3. Parallel per-point computation ---------- */
-    // Another method of parallization, 
-    // === NESTED PARALLELISM ===
-    #pragma omp parallel
+
+    // ===== INTRA-CLUSTER: Compute a(i) using symmetric pairwise distances =====
+    // Single-level parallelization over clusters
+    #pragma omp parallel for schedule(dynamic)
+    for (int c = 0; c < k; c++)
     {
-        // Level 1: Distribute clusters across outer threads
-        #pragma omp for schedule(dynamic, 1)
-        for (int c = 0; c < k; ++c)
+        double sum = 0.0;
+        const InvertedList *list = &index->lists[c];
+        int cluster_size = list->count;
+        // printf("Thread %d starting cluster %d\n", omp_get_thread_num(), c);
+        fflush(stdout);
+        
+
+        for (int j = 0; j < list->count; ++j)
         {
-            const InvertedList *list = &index->lists[c];
+            int pid = list->point_ids[j];
+            void *point = dataset->data[pid];
 
-            // Level 2: Parallelize points INSIDE this cluster
-            printf("calculating a(i) and b(i)\n");
-            #pragma omp parallel for schedule(static)
-            for (int j = 0; j < list->count; ++j)
+            // a(i): avg dist in same cluster (skip self)
+            double a = 0.0;
+            for (int k = 0; k < list->count; ++k)
             {
-                int pid = list->point_ids[j];
-                void *point = dataset->data[pid];
+                if (k == j)
+                    continue;
 
-                // a(i): avg dist in same cluster (skip self)
-                double a = 0.0;
-                for (int k = 0; k < list->count; ++k)
-                {
-                    if (k == j)
-                        continue;
+                // now i am runnning it iwht time make mnist so it is ints we will see
+                a += euclidean_distance(point, list->points[k], dataset->dimension, dataset->data_type, dataset->data_type);
+                // printf("a for cluster %d is %f\n", c, a);
+            }
+            a /= (list->count - 1);
 
-                    // now i am runnning it iwht time make mnist so it is ints we will see
-                    a += euclidean_distance_int(point, list->points[k], dataset->dimension);
-                }
-                a /= (list->count - 1);
+            // b(i): min avg dist to other clusters
+            double best_distance = DBL_MAX;
+            int nearest_centroid = -1;
 
-                // b(i): min avg dist to other clusters
-                double best_distance = DBL_MAX;
+            #pragma omp parallel for reduction(min:best_distance)
+            for (int c2 = 0; c2 < k; ++c2)
+            {
+                // printf("Thread %d starting cluster %d\n", omp_get_thread_num(), c);
+                if (c2 == c || index->lists[c2].count == 0)
+                    continue;
+
                 double distance = 0.0;
-                int nearest_centroid = -1;
+                for (int kk = 0; kk < index->lists[c2].count; ++kk)
+                    distance += euclidean_distance(point, index->lists[c2].points[kk], dataset->dimension, dataset->data_type, dataset->data_type);
 
-                for (int c2 = 0; c2 < k; ++c2)
+                distance /= index->lists[c2].count;
+
+                if (distance < best_distance)
                 {
-                    if (c2 == c || index->lists[c2].count == 0)
-                        continue;
-
-                    // now  i am running with mnist so it is integer
-                    //compute avg distance to centroid
-                    for (int k = 0; k < index->lists[c2].count; ++k)
-                    {
-                        // now i am runnning it iwht time make mnist so it is ints we will see
-                        distance += euclidean_distance_int((int*)point, index->lists[c2].points[k], dataset->dimension);
-                    }
-                    if(distance < best_distance)
-                    {
-                        best_distance = distance;
-                        nearest_centroid = c2;
-                    }
+                    best_distance = distance;
+                    nearest_centroid = c2;
                 }
-                
-                if(nearest_centroid == -1)
-                {
-                    printf("Cannot find any nearest centroid\n");
-                    exit(EXIT_FAILURE);
-                }
-
-                // Now that we have found the nearest cluster to that point we find the b(i)
-                const InvertedList *nearestCentroidList = &index->lists[nearest_centroid];
-
-                double b = distance;
-                b /= nearestCentroidList->count;
-
-                // now we calculate the s(i)
-                double si = (a == 0.0 && b == 0.0) ? -2 : (b - a) / fmax(a, b);
-                s[pid] = si;
             }
-        }
-    }
-    
-    printf("end of parallilzation\n");
 
-    /* ---------- 4. Optional per-cluster averages (parallel) ---------- */
-    if (per_cluster)
-    {
-        #pragma omp parallel for
-        for (int c = 0; c < k; ++c)
-        {
-            const InvertedList *L = &index->lists[c];
-            // if this cluster does not have any points assigned ot it it is fundamentally wrong right?
-            // so exit if we have this situation?
-
-            double sum = 0.0;
-            for (int j = 0; j < L->count; ++j)
+            if(nearest_centroid == -1)
             {
-                const int pid = L->point_ids[j];
-                sum += s[pid];
+                printf("Cannot find any nearest centroid\n");
+                exit(EXIT_FAILURE);
             }
 
-            per_cluster[c] = sum / L->count;
+            
+            double b = best_distance;
+
+            // now we calculate the s(i)
+            double si = (a == 0.0 && b == 0.0) ? -2 : (b - a) / fmax(a, b);
+            s[pid] = si;
+            sum += si;
         }
+
+        per_cluster[c] = sum / list->count;
+        printf("Thread %d end of cluster %d, per cluster: %f\n", omp_get_thread_num(), c, per_cluster[c]);
+
+    
     }
+
+    printf("end of parallilzation\n");
 
     free(cluster_of);
     free(s);
 
-    return 1;
+    return;
 }

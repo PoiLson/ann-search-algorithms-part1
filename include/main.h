@@ -31,7 +31,6 @@
 #include "hypercube.h"
 #include "ivfflat.h"
 #include "ivfpq.h"
-
-// #include "silhouette.h"
+#include "silhouette.h"
 
 #endif
