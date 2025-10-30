@@ -328,6 +328,14 @@ IVFPQIndex* ivfpq_init(Dataset *dataset, int k_clusters, int M, int nbits) {
         // Train Lloyd's on this subspace (use fewer iterations for speed)
         index->pq.subspace_centroids[m] = run_lloyd_on_subspace(
             subspace_data, actual_samples, index->pq.d_sub, index->pq.s, 100);
+        //print subspace centroids for debugging
+        // for (int c = 0; c < index->pq.s; c++) {
+        //     printf("    Centroid %d: ", c);
+        //     for (int j = 0; j < index->pq.d_sub; j++) {
+        //         printf("%.2f ", index->pq.subspace_centroids[m][c][j]);
+        //     }
+        //     printf("\n");
+        // }
         
         // Free subspace data
         for (int i = 0; i < actual_samples; i++) {
@@ -394,10 +402,9 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
     
     if (nprobe > k) nprobe = k;
     
-    // Step 1: Find nearest coarse centroids
-    double *centroid_dists = (double *)malloc(k * sizeof(double));
-    int *centroid_ids = (int *)malloc(k * sizeof(int));
-    int selected = 0;
+    // Step 1: Find nearest coarse centroids using a heap to keep top-nprobe
+    double *centroid_dists = (double *)malloc(nprobe * sizeof(double));
+    int *centroid_ids = (int *)malloc(nprobe * sizeof(int));
     
     // Convert query to float
     float *q_float = (float *)malloc(d * sizeof(float));
@@ -410,30 +417,16 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
         }
     }
     
-    // Find nprobe nearest centroids
+    // Build a heap of size nprobe with the smallest centroid distances
+    MinHeap *centroid_heap = heap_create(nprobe);
     for (int i = 0; i < k; i++) {
-        double dist = euclidean_distance(q_void, index->centroids[i], d, 
-                                        index->data_type, DATA_TYPE_FLOAT);
-        
-        if (selected < nprobe) {
-            int j = selected;
-            for (; j > 0 && dist < centroid_dists[j - 1]; j--) {
-                centroid_dists[j] = centroid_dists[j - 1];
-                centroid_ids[j] = centroid_ids[j - 1];
-            }
-            centroid_dists[j] = dist;
-            centroid_ids[j] = i;
-            selected++;
-        } else if (dist < centroid_dists[nprobe - 1]) {
-            int j = nprobe - 1;
-            for (; j > 0 && dist < centroid_dists[j - 1]; j--) {
-                centroid_dists[j] = centroid_dists[j - 1];
-                centroid_ids[j] = centroid_ids[j - 1];
-            }
-            centroid_dists[j] = dist;
-            centroid_ids[j] = i;
-        }
+        double dist = euclidean_distance(q_void, index->centroids[i], d,
+                                         index->data_type, DATA_TYPE_FLOAT);
+        heap_insert(centroid_heap, i, dist);
     }
+    // Extract in ascending order of distance (nearest first)
+    heap_extract_sorted(centroid_heap, centroid_ids, centroid_dists);
+    heap_destroy(centroid_heap);
     
     // Step 2: Create min-heap for top-N
     MinHeap *topN = heap_create(N);

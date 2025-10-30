@@ -178,20 +178,57 @@ void fisher_yates_shuffle(void **array, size_t n)
 
 Dataset *createSubset(Dataset *dataset, int subsetSize)
 {
-    // we randomly sort the given dataset
-    fisher_yates_shuffle(dataset->data, dataset->size);
+    // Create a copy of the data pointers to shuffle without modifying the original dataset
+    void **data_copy = (void **)malloc(dataset->size * sizeof(void *));
+    if (!data_copy)
+    {
+        fprintf(stderr, "Memory allocation failed for data_copy in createSubset\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    // Copy the pointers (not the data itself)
+    for (size_t i = 0; i < dataset->size; i++)
+    {
+        data_copy[i] = (void *)malloc(dataset->dimension * sizeof(float));
+        if (!data_copy[i])
+        {
+            fprintf(stderr, "Memory allocation failed for data_copy[%zu] in createSubset\n", i);
+            // Free previously allocated pointers
+            for (size_t m = 0; m < i; m++)
+                free(data_copy[m]);
+            free(data_copy);
+            exit(EXIT_FAILURE);
+        }
+        if (dataset->data_type == DATA_TYPE_FLOAT)
+        {
+            float *src = (float *)dataset->data[i];
+            float *dst = (float *)data_copy[i];
+            memcpy(dst, src, dataset->dimension * sizeof(float));
+        }
+        else
+        {
+            uint8_t *src = (uint8_t *)dataset->data[i];
+            float *dst = (float *)data_copy[i];
+            for (int j = 0; j < dataset->dimension; j++)
+                dst[j] = (float)src[j];
+        }
+    }
+    
+    // Shuffle the copy, not the original
+    fisher_yates_shuffle(data_copy, dataset->size);
 
     Dataset *subset = (Dataset *)malloc(sizeof(Dataset));
     if (!subset)
     {
         fprintf(stderr, "Memory allocation failed for subset dataset struct in Kmeans++\n");
+        free(data_copy);
         exit(EXIT_FAILURE);
     }
 
     subset->size = subsetSize;
     subset->dimension = dataset->dimension;
     subset->data_type = dataset->data_type;
-    subset->data = dataset->data;
+    subset->data = data_copy;  // Use the shuffled copy
 
     return subset;
 }
@@ -435,9 +472,22 @@ IVFFlatIndex *ivfflat_init(Dataset *dataset, int kclusters)
     // printPartialDataset(subset->size, subset);
 
     IVFFlatIndex *ivfflat_index = lloydAlgorithm(subset, kclusters);
+    // print all centroids for debugging
+    // for (int dx = 0; dx < kclusters; dx++)
+    // {
+    //     printf("centroid[%d] = { ", dx);
+    //     for (int x = 0; x < dataset->dimension; x++)
+    //     {
+    //         printf("%f, ", ivfflat_index->centroids[dx][x]);
+    //     }
+    //     printf("}\n");
+    // }
 
     // Now assign ALL points from the full dataset to the corresponding centroids
     assign_points_to_clusters(ivfflat_index, dataset, 0, dataset->size);
+    
+    // Free the subset: first free the copied data array, then the struct
+    free(subset->data);
     free(subset);
 
     return ivfflat_index;

@@ -123,6 +123,9 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
             fprintf(output_file, "Nearest neighbor-%d: %d\n", i + 1, approx_neighbors[i]);
             fprintf(output_file, "distanceApproximate: %f\n", approx_dists[i]);
             fprintf(output_file, "distanceTrue: %f\n", true_dists[i]);
+            if (i < true_count) {
+                fprintf(output_file, "True neighbor-%d: %d\n", i + 1, true_neighbors[i]);
+            }
         }
 
         if (params->range_search && range_count > 0)
