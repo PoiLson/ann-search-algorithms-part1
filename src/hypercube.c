@@ -52,28 +52,35 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
         hyper->hash_params[i].t = uniform_distribution(&tmp, &(hyper->w));
     }
 
-   // Initialize hashmaps for f functions
-    hyper->map = (Hashmap**)malloc(hyper->kproj * sizeof(Hashmap*));
-    if (!hyper->map)
+    // Set the single binary hash function for hypercube
+    // (computes all k bits to form the bucket index)
+    hyper->binary_hash_function = hash_func_impl_hyper;
+
+    // Compute average thresholds for each projection to preserve locality
+    hyper->thresholds = (float *)malloc(hyper->kproj * sizeof(float));
+    if (!hyper->thresholds)
     {
         hyper_destroy(hyper);
         exit(EXIT_FAILURE);
     }
 
-    // Create a hashmap for each f function
-    for (int i = 0; i < hyper->kproj; i++)
+    for (int proj = 0; proj < hyper->kproj; proj++)
     {
-        hyper->map[i] = hashmap_init(2048);
-        if (!hyper->map[i])
+        // Compute average h_i value for all points for this projection
+        double sum = 0.0;
+
+        for (int i = 0; i < dataset->size; i++)
         {
-            hyper_destroy(hyper);
-            exit(EXIT_FAILURE);
+            float func = dot_product(hyper->hash_params[proj].v, dataset->data[i], hyper->d, dataset->data_type);
+            float val = (func + hyper->hash_params[proj].t) / hyper->w;
+            float h_i = floorf(val);
+            sum += h_i;
         }
+
+        // Compute average
+        hyper->thresholds[proj] = (float)(sum / dataset->size);
     }
 
-    // Set the single binary hash function for hypercube
-    // (computes all k bits to form the bucket index)
-    hyper->binary_hash_function = hash_func_impl_hyper;
 
     // Create hash table with algorithm context and index 0
     hyper->hash_table = hash_table_create(1 << hyper->kproj, sizeof(int), NULL, NULL, hash_function_hyper, hyper, 0, &(dataset->dimension));
@@ -234,15 +241,9 @@ void hyper_destroy(struct Hypercube* hyper)
     }
 
     // Free per-projection hashmaps (if any)
-    if (hyper->map)
-    {
-        for (int i = 0; i < hyper->kproj; ++i)
-        {
-            if (hyper->map[i])
-                hashmap_free(hyper->map[i]);
-        }
-        free(hyper->map);
-    }
+    // Free thresholds array
+    if (hyper->thresholds)
+        free(hyper->thresholds);
 
     // Finally free the structure itself
     free(hyper);

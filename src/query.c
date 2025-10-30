@@ -1,4 +1,5 @@
 #include "../include/main.h"
+#include "../include/bruteforce_cache.h"
 
 // Modular query function, works with any index lookup function
 void perform_query(const struct SearchParams* params, const struct Dataset* dataset, const struct Dataset* query_set, index_lookup lookup_func, void* index_data)
@@ -22,6 +23,27 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         fprintf(stderr, "dataset dimension (%d) != query dimension (%d). Using min dimension for distance.\n", dataset->dimension, query_set->dimension);
         exit(EXIT_FAILURE);
     }
+
+    // Try to load brute-force cache or compute if not found
+    char *cache_path = bruteforce_cache_get_path(params->dataset_path, params->query_path, params->N);
+    BruteForceCache *bf_cache = bruteforce_cache_load(cache_path, query_set->size, params->N);
+    
+    if (!bf_cache) {
+        printf("Cache not found, computing brute-force ground truth...\n");
+        bf_cache = bruteforce_compute(dataset, query_set, params->N);
+        
+        if (bf_cache) {
+            // Create cache directory if it doesn't exist
+            system("mkdir -p Data/.cache");
+            bruteforce_cache_save(bf_cache, cache_path);
+        } else {
+            fprintf(stderr, "Failed to compute brute-force results\n");
+            free(cache_path);
+            fclose(output_file);
+            return;
+        }
+    }
+    free(cache_path);
     // Main query loop
     // Iterate over each query in the query set
     for (int q_idx = 0; q_idx < query_set->size; q_idx++)
@@ -48,43 +70,13 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         double approx_time = (double)(end_approx - start_approx) / CLOCKS_PER_SEC;
         total_approx_time += approx_time;
 
-          // True kNN (brute force)
-        int* true_neighbors = (int*)malloc(params->N * sizeof(int));
-        double* true_dists = (double*)malloc(params->N * sizeof(double));
-        int true_count = 0;
+        // True kNN (from cache)
+        int* true_neighbors = bf_cache->neighbors[q_idx];
+        double* true_dists = bf_cache->distances[q_idx];
+        int true_count = bf_cache->N;
 
-        for(int i = 0; i < params->N; i++)
-        {
-            true_neighbors[i] = -1;
-            true_dists[i] = INFINITY;
-        }
-
-        clock_t start_true = clock();
-        for (int i = 0; i < dataset->size; i++)
-        {
-            void* p = dataset->data[i];
-
-            double dist = euclidean_distance(q, p, dataset->dimension, dataset->data_type, dataset->data_type);
-
-            if (true_count < params->N || dist < true_dists[true_count - 1])
-            {
-                if (true_count < params->N)
-                    true_count++;
-
-                int j = 0;
-                for (j = true_count - 1; j > 0 && dist < true_dists[j - 1]; j--)
-                {
-                    true_neighbors[j] = true_neighbors[j - 1];
-                    true_dists[j] = true_dists[j - 1];
-                }
-
-                true_neighbors[j] = i;
-                true_dists[j] = dist;
-            }
-        }
-        clock_t end_true = clock();
-        
-        double true_time = (double)(end_true - start_true) / CLOCKS_PER_SEC;
+        // Use cached brute-force query time
+        double true_time = bf_cache->query_times[q_idx];
         total_true_time += true_time;
 
 
@@ -146,8 +138,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         free(approx_neighbors);
         free(approx_dists);
         free(range_neighbors);
-        free(true_neighbors);
-        free(true_dists);
+        // Note: true_neighbors and true_dists are owned by bf_cache, don't free them
     }
 
     // Final aggregated metrics over all queries
@@ -166,6 +157,9 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         fprintf(output_file, "Average tTrue: %f\n", avg_t_true);
         fprintf(output_file, "QPS_overall: %f\n", qps_overall);
     }
+
+    // Free brute-force cache
+    bruteforce_cache_free(bf_cache);
 
     fclose(output_file);
 }

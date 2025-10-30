@@ -3,8 +3,6 @@
 
 // Forward declaration
 struct Hypercube;
-// Forward declare Hashmap type (defined in include/hashmap.h)
-typedef struct Hashmap Hashmap;
 
 //define function pointer
 typedef uint64_t (*bin_hash)(const void* p, const struct Hypercube* hyper, uint64_t *ID);
@@ -29,27 +27,18 @@ typedef struct Hypercube
     DataType data_type; // type of data (int or float)
     metric_func distance; // distance function
     Hypercube_hash_function *hash_params; // array of hash parameters
-    Hashmap** map; // per-projection hashmap mapping bucket index -> bit
     bin_hash binary_hash_function; // single hash function that computes all k bits
+    float *thresholds; // average threshold for each projection (for locality-preserving f)
     
     HashTable hash_table; // hash table
 } Hypercube;
 
 //-----------------------Helper functions for hashing-----------------------------
 
-static inline bool f(Hashmap** map, int h_ip)
+// Deterministic threshold-based mapping to preserve locality
+static inline bool f(int h_ip, float threshold)
 {
-    bool* value = hashmap_getValue(*map, h_ip);
-    if (value != NULL)
-    {
-        return *value;
-    }
-    else
-    {
-        bool bit = rand() % 2;
-        hashmap_insert(*map, h_ip, bit);
-        return bit;
-    }
+    return (h_ip >= (int)threshold) ? 1 : 0;
 }
 
 // Compute the k-bit binary ID for a point in the hypercube
@@ -66,8 +55,8 @@ static inline uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hype
         float val = (func + hyper->hash_params[i].t) / hyper->w;
         int h_i = (int)floorf(val);
 
-        // Apply 2-universal hash to map h_i -> {0,1}
-        bool bit = f(&(hyper->map[i]), h_i);
+        // Apply threshold-based mapping to preserve locality: h_i >= threshold -> 1, else -> 0
+        bool bit = f(h_i, hyper->thresholds[i]);
 
         // Shift left and add the new bit
         id = (id << 1) | (uint64_t)bit;
