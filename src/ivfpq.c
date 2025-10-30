@@ -50,23 +50,74 @@ static float** run_lloyd_on_subspace(float **subspace_data, int n_points, int d_
         centroids[i] = (float *)calloc(d_sub, sizeof(float));
     }
     
-    // Initialize centroids with simple random sampling (much faster than KMeans++)
-    // For PQ training, random init works well enough with multiple Lloyd iterations
+    // Initialize centroids with KMeans++ for better initialization
     int *assignments = (int *)malloc(n_points * sizeof(int));
-    
-    // Choose s random unique points as initial centroids
     bool *selected = (bool *)calloc(n_points, sizeof(bool));
-    int num_selected = 0;
     
-    while (num_selected < s && num_selected < n_points) {
-        int idx = rand() % n_points;
-        if (!selected[idx]) {
-            memcpy(centroids[num_selected], subspace_data[idx], d_sub * sizeof(float));
-            selected[idx] = true;
-            num_selected++;
+    // Step 1: Choose first centroid uniformly at random
+    int first_idx = rand() % n_points;
+    memcpy(centroids[0], subspace_data[first_idx], d_sub * sizeof(float));
+    selected[first_idx] = true;
+    
+    // Step 2: Choose remaining centroids using D² weighting
+    double *min_dist_sq = (double *)malloc(n_points * sizeof(double));
+    
+    for (int t = 1; t < s && t < n_points; t++) {
+        // Compute D²(x) = min distance squared to nearest existing centroid (parallel)
+        double sum_dist_sq = 0.0;
+        
+        #pragma omp parallel for reduction(+:sum_dist_sq) schedule(static)
+        for (int i = 0; i < n_points; i++) {
+            if (selected[i]) {
+                min_dist_sq[i] = 0.0;
+                continue;
+            }
+            
+            // Find distance to nearest centroid so far
+            double best_dist_sq = DBL_MAX;
+            for (int c = 0; c < t; c++) {
+                double dist_sq = 0.0;
+                for (int j = 0; j < d_sub; j++) {
+                    double diff = subspace_data[i][j] - centroids[c][j];
+                    dist_sq += diff * diff;
+                }
+                if (dist_sq < best_dist_sq) {
+                    best_dist_sq = dist_sq;
+                }
+            }
+            min_dist_sq[i] = best_dist_sq;
+            sum_dist_sq += best_dist_sq;
         }
+        
+        // Choose next centroid with probability proportional to D²(x)
+        double random_val = ((double)rand() / RAND_MAX) * sum_dist_sq;
+        double cumulative = 0.0;
+        int chosen_idx = -1;
+        
+        for (int i = 0; i < n_points; i++) {
+            if (selected[i]) continue;
+            cumulative += min_dist_sq[i];
+            if (cumulative >= random_val) {
+                chosen_idx = i;
+                break;
+            }
+        }
+        
+        // Fallback in case of numerical issues
+        if (chosen_idx < 0) {
+            for (int i = 0; i < n_points; i++) {
+                if (!selected[i]) {
+                    chosen_idx = i;
+                    break;
+                }
+            }
+        }
+        
+        memcpy(centroids[t], subspace_data[chosen_idx], d_sub * sizeof(float));
+        selected[chosen_idx] = true;
     }
     
+    free(min_dist_sq);
     free(selected);
     
     // Lloyd's iterations with convergence checking (like IVFFlat)
