@@ -35,6 +35,7 @@ typedef struct {
     DataType data_type;       // underlying dataset type
     IVFPQList *lists;         // one list per cluster
     PQConfig pq;              // product quantization configuration
+    Dataset *dataset;         // pointer to original dataset for exact distance computation
 } IVFPQIndex;
 
 // Initialize IVFPQ index

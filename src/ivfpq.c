@@ -50,63 +50,28 @@ static float** run_lloyd_on_subspace(float **subspace_data, int n_points, int d_
         centroids[i] = (float *)calloc(d_sub, sizeof(float));
     }
     
-    // Initialize centroids using KMeans++
+    // Initialize centroids with simple random sampling (much faster than KMeans++)
+    // For PQ training, random init works well enough with multiple Lloyd iterations
     int *assignments = (int *)malloc(n_points * sizeof(int));
-    bool *is_centroid = (bool *)calloc(n_points, sizeof(bool));
-    double *min_distances = (double *)malloc(n_points * sizeof(double));
     
-    // Step 1: Choose first centroid randomly
-    int first_idx = rand() % n_points;
-    memcpy(centroids[0], subspace_data[first_idx], d_sub * sizeof(float));
-    is_centroid[first_idx] = true;
+    // Choose s random unique points as initial centroids
+    bool *selected = (bool *)calloc(n_points, sizeof(bool));
+    int num_selected = 0;
     
-    // Step 2: Choose remaining centroids using KMeans++ (weighted by distance^2)
-    for (int c = 1; c < s && c < n_points; c++) {
-        // Compute D(x)^2 for each point (distance to nearest existing centroid)
-        double total_distance = 0.0;
-        for (int i = 0; i < n_points; i++) {
-            if (is_centroid[i]) {
-                min_distances[i] = 0.0;
-                continue;
-            }
-            
-            double min_dist = DBL_MAX;
-            for (int cc = 0; cc < c; cc++) {
-                double dist = 0.0;
-                for (int j = 0; j < d_sub; j++) {
-                    double diff = subspace_data[i][j] - centroids[cc][j];
-                    dist += diff * diff;
-                }
-                if (dist < min_dist) {
-                    min_dist = dist;
-                }
-            }
-            min_distances[i] = min_dist;
-            total_distance += min_dist;
+    while (num_selected < s && num_selected < n_points) {
+        int idx = rand() % n_points;
+        if (!selected[idx]) {
+            memcpy(centroids[num_selected], subspace_data[idx], d_sub * sizeof(float));
+            selected[idx] = true;
+            num_selected++;
         }
-        
-        // Choose next centroid with probability proportional to D(x)^2
-        double random_val = ((double)rand() / RAND_MAX) * total_distance;
-        double cumulative = 0.0;
-        int chosen_idx = 0;
-        
-        for (int i = 0; i < n_points; i++) {
-            if (is_centroid[i]) continue;
-            cumulative += min_distances[i];
-            if (cumulative >= random_val) {
-                chosen_idx = i;
-                break;
-            }
-        }
-        
-        memcpy(centroids[c], subspace_data[chosen_idx], d_sub * sizeof(float));
-        is_centroid[chosen_idx] = true;
     }
     
-    free(is_centroid);
-    free(min_distances);
+    free(selected);
     
-    // Lloyd's iterations
+    // Lloyd's iterations with convergence checking (like IVFFlat)
+    double epsilon = 1e-4;
+    bool changed_any = false;
     for (int iter = 0; iter < max_iters; iter++) {
         // Assign points to nearest centroid
         for (int i = 0; i < n_points; i++) {
@@ -126,30 +91,61 @@ static float** run_lloyd_on_subspace(float **subspace_data, int n_points, int d_
             assignments[i] = best_c;
         }
         
-        // Recompute centroids
+        // Recompute centroids and check for convergence
         int *counts = (int *)calloc(s, sizeof(int));
+        float **new_centroids = (float **)malloc(s * sizeof(float *));
         for (int c = 0; c < s; c++) {
-            memset(centroids[c], 0, d_sub * sizeof(float));
+            new_centroids[c] = (float *)calloc(d_sub, sizeof(float));
         }
         
+        // Sum points assigned to each centroid
         for (int i = 0; i < n_points; i++) {
             int c = assignments[i];
             counts[c]++;
             for (int j = 0; j < d_sub; j++) {
-                centroids[c][j] += subspace_data[i][j];
+                new_centroids[c][j] += subspace_data[i][j];
             }
         }
         
+        // Average and check for convergence (like IVFFlat recompute_centroids)
+        changed_any = false;
         for (int c = 0; c < s; c++) {
             if (counts[c] > 0) {
                 for (int j = 0; j < d_sub; j++) {
-                    centroids[c][j] /= counts[c];
+                    new_centroids[c][j] /= counts[c];
                 }
             }
+            
+            // Check centroid shift (Euclidean distance)
+            double shift = 0.0;
+            for (int j = 0; j < d_sub; j++) {
+                double diff = new_centroids[c][j] - centroids[c][j];
+                shift += diff * diff;
+            }
+            shift = sqrt(shift);
+            
+            if (shift > epsilon) {
+                changed_any = true;
+            }
+            
+            // Replace old centroid with new
+            free(centroids[c]);
+            centroids[c] = new_centroids[c];
         }
+        
+        free(new_centroids);
         free(counts);
+        
+        // Early stopping if converged (like IVFFlat)
+        if (!changed_any) {
+            printf("Lloyd's converged in %d iterations\n", iter + 1);
+            break;
+        }
     }
-    
+    if (changed_any) {
+        printf("----Lloyd's converged in %d iterations\n", max_iters);
+    }
+
     free(assignments);
     return centroids;
 }
@@ -193,6 +189,7 @@ IVFPQIndex* ivfpq_init(Dataset *dataset, int k_clusters, int M, int nbits) {
     index->k = k_clusters;
     index->d = dataset->dimension;
     index->data_type = dataset->data_type;
+    index->dataset = dataset;
     
     // Step 1 & 2: Run Lloyd's to get coarse centroids (reuse IVFFlat logic)
     printf("Step 1-2: Computing coarse centroids with Lloyd's algorithm...\n");
@@ -230,55 +227,70 @@ IVFPQIndex* ivfpq_init(Dataset *dataset, int k_clusters, int M, int nbits) {
         index->lists[i].entries = NULL;
     }
     
-    // Step 3-7: For each cluster, compute residuals and train PQ
-    printf("Step 3-7: Computing residuals and training product quantizers...\n");
+    // Step 3-5: Collect residuals from ALL clusters and train global PQ codebooks
+    printf("Step 3-5: Computing residuals from all clusters and training PQ codebooks...\n");
     
-    for (int c = 0; c < k_clusters; c++) {
+    // First, count total residuals and decide on sampling
+    int total_available = dataset->size;
+    
+    // Sample at most 10000 residuals for faster training
+    int max_train_samples = (total_available < 10000) ? total_available : 10000;
+    int sample_rate = (total_available > max_train_samples) ? (total_available / max_train_samples) : 1;
+    
+    printf("Collecting %d/%d residual vectors for PQ training (sample rate: 1/%d)...\n", 
+           max_train_samples, total_available, sample_rate);
+    
+    float **all_residuals = (float **)malloc(max_train_samples * sizeof(float *));
+    int residual_idx = 0;
+    
+    for (int c = 0; c < k_clusters && residual_idx < max_train_samples; c++) {
         InvertedList *ivf_list = &ivf_temp->lists[c];
-        int n_points = ivf_list->count;
-        
-        if (n_points < 10) continue;  // Skip small clusters
-        
-        // Allocate residuals for this cluster
-        float **residuals = (float **)malloc(n_points * sizeof(float *));
-        for (int i = 0; i < n_points; i++) {
-            residuals[i] = (float *)malloc(dataset->dimension * sizeof(float));
-            compute_residual(ivf_list->points[i], index->centroids[c], 
-                           dataset->data_type, dataset->dimension, residuals[i]);
-        }
-        
-        // Step 4-5: Split residuals into M parts and train subspace quantizers
-        for (int m = 0; m < M; m++) {
-            // Extract subspace m from all residuals
-            float **subspace_data = (float **)malloc(n_points * sizeof(float *));
-            for (int i = 0; i < n_points; i++) {
-                subspace_data[i] = (float *)malloc(index->pq.d_sub * sizeof(float));
-                for (int j = 0; j < index->pq.d_sub; j++) {
-                    subspace_data[i][j] = residuals[i][m * index->pq.d_sub + j];
-                }
-            }
+        for (int i = 0; i < ivf_list->count && residual_idx < max_train_samples; i++) {
+            // Sample points based on sample_rate
+            if (i % sample_rate != 0) continue;
             
-            // Train Lloyd's on this subspace (only for first cluster, reuse for others)
-            if (c == 0 || index->pq.subspace_centroids[m] == NULL) {
-                if (index->pq.subspace_centroids[m] == NULL) {
-                    index->pq.subspace_centroids[m] = run_lloyd_on_subspace(
-                        subspace_data, n_points, index->pq.d_sub, index->pq.s, 20);
-                }
-            }
-            
-            // Free subspace data
-            for (int i = 0; i < n_points; i++) {
-                free(subspace_data[i]);
-            }
-            free(subspace_data);
+            all_residuals[residual_idx] = (float *)malloc(dataset->dimension * sizeof(float));
+            compute_residual(ivf_list->points[i], index->centroids[c],
+                           dataset->data_type, dataset->dimension, all_residuals[residual_idx]);
+            residual_idx++;
         }
-        
-        // Free residuals
-        for (int i = 0; i < n_points; i++) {
-            free(residuals[i]);
-        }
-        free(residuals);
     }
+    
+    int actual_samples = residual_idx;
+    printf("Collected %d residual samples.\n", actual_samples);
+    
+    // Train each subspace quantizer on the sampled residuals
+    printf("Training %d subspace quantizers...\n", M);
+    for (int m = 0; m < M; m++) {
+        printf("  Training subspace %d/%d...\n", m+1, M);
+        fflush(stdout);
+        
+        // Extract subspace m from all residuals
+        float **subspace_data = (float **)malloc(actual_samples * sizeof(float *));
+        for (int i = 0; i < actual_samples; i++) {
+            subspace_data[i] = (float *)malloc(index->pq.d_sub * sizeof(float));
+            for (int j = 0; j < index->pq.d_sub; j++) {
+                subspace_data[i][j] = all_residuals[i][m * index->pq.d_sub + j];
+            }
+        }
+        
+        // Train Lloyd's on this subspace (use fewer iterations for speed)
+        index->pq.subspace_centroids[m] = run_lloyd_on_subspace(
+            subspace_data, actual_samples, index->pq.d_sub, index->pq.s, 100);
+        
+        // Free subspace data
+        for (int i = 0; i < actual_samples; i++) {
+            free(subspace_data[i]);
+        }
+        free(subspace_data);
+    }
+    
+    // Free all residuals
+    for (int i = 0; i < actual_samples; i++) {
+        free(all_residuals[i]);
+    }
+    free(all_residuals);
+    printf("PQ codebooks trained successfully!\n");
     
     // Step 6-8: Encode all points and build inverted lists
     printf("Step 6-8: Encoding points with PQ and building inverted lists...\n");
@@ -332,8 +344,8 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
     if (nprobe > k) nprobe = k;
     
     // Step 1: Find nearest coarse centroids
-    double *centroid_dists = (double *)malloc(nprobe * sizeof(double));
-    int *centroid_ids = (int *)malloc(nprobe * sizeof(int));
+    double *centroid_dists = (double *)malloc(k * sizeof(double));
+    int *centroid_ids = (int *)malloc(k * sizeof(int));
     int selected = 0;
     
     // Convert query to float
@@ -404,14 +416,14 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
         
         // Compute approximate distance for each point using PQ codes
         for (int i = 0; i < list->count; i++) {
-            float approx_dist = 0.0f;
+            double approx_dist = 0.0;
             uint8_t *pq_code = list->entries[i].pq_code;
             
             for (int m = 0; m < index->pq.M; m++) {
                 approx_dist += lookup_table[m][pq_code[m]];
             }
             
-            approx_dist = sqrtf(approx_dist);  // Take square root for Euclidean distance
+            // approx_dist = sqrtf(approx_dist);  // Take square root for Euclidean distance
             heap_insert(topN, list->entries[i].point_id, (double)approx_dist);
         }
         
@@ -425,9 +437,42 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
     
     // Step 4: Extract results
     *approx_count = topN->size;
-    heap_extract_sorted(topN, approx_neighbors, approx_dists);
+    int *approx_neighbors_adc = (int *)malloc((*approx_count) * sizeof(int));
+    double *approx_dists_adc = (double *)malloc((*approx_count) * sizeof(double));
+    heap_extract_sorted(topN, approx_neighbors_adc, approx_dists_adc);
     heap_destroy(topN);
+
+    for (int i = 0; i < *approx_count; i++) {
+        approx_neighbors[i] = approx_neighbors_adc[i];
+        // Compute exact Euclidean distance to the selected neighbor
+        void *point = index->dataset->data[approx_neighbors_adc[i]];
+        approx_dists[i] = euclidean_distance(q_void, point, d, 
+                                            index->data_type, index->data_type);
+    }
+
     
+    //sort aprox_dists and approx_neighbors based on approx_dists
+    for (int i = 0; i < *approx_count - 1; i++)
+    {
+        for (int j = 0; j < *approx_count - i - 1; j++)
+        {
+            if (approx_dists[j] > approx_dists[j + 1])
+            {
+                // Swap distances
+                double temp_dist = approx_dists[j];
+                approx_dists[j] = approx_dists[j + 1];
+                approx_dists[j + 1] = temp_dist;
+
+                // Swap corresponding neighbors
+                int temp_neighbor = approx_neighbors[j];
+                approx_neighbors[j] = approx_neighbors[j + 1];
+                approx_neighbors[j + 1] = temp_neighbor;
+            }
+        }
+    }
+    
+    free(approx_neighbors_adc);
+    free(approx_dists_adc);
     free(centroid_dists);
     free(centroid_ids);
     free(q_float);
