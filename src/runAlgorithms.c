@@ -77,7 +77,7 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
     }
 
     // Compute silhouette (prints results internally)
-    // computeSilhouette(ivf_index, dataset);
+    // puteSilhouette(ivf_index, dataset);
 
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)
@@ -105,37 +105,42 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
 
 void run_ivfpq(SearchParams* params, Dataset* dataset)
 {
-    // Placeholder for IVFPQ algorithm implementation
     printf("Running IVFPQ with dataset: %s\n", params->dataset_path);
-
-    // Build the index
-    ivfpq_init();
-    // if (!ivf_index)
-    // {
-    //     fprintf(stderr, "Failed to build IVFFlat index.\n");
-    //     return;
-    // }
-
-    // Dataset* query_set = NULL;
-    // if (params->dataset_type == DATA_MNIST)
-    //     query_set = read_data_mnist(params->query_path);
-    // else if (params->dataset_type == DATA_SIFT)
-    //     query_set = read_data_sift(params->query_path);
-    // else
-    //     query_set = read_data_experiment(params->query_path);
-
-    // if (query_set)
-    // {
-    //     perform_query(params, dataset, query_set, ivfpq_index_lookup, ivf_index);
-
-    //     for (int i = 0; i < query_set->size; i++)
-    //         free(query_set->data[i]);
-
-    //     free(query_set->data);
-    //     free(query_set);
-    // }
-
-    // ivfpq_destroy(ivf_index);
-
+    
+    // Use default PQ parameters: M=8 subspaces, nbits=8 (256 centroids per subspace)
+    int M = params->M > 0 ? params->M : 8;
+    int nbits = 8;  // Standard choice for IVFPQ
+    
+    printf("Building IVFPQ index with k=%d clusters, M=%d subspaces, nbits=%d...\n", 
+           params->kclusters, M, nbits);
+    
+    IVFPQIndex* ivfpq_index = ivfpq_init(dataset, params->kclusters, M, nbits);
+    if (!ivfpq_index)
+    {
+        fprintf(stderr, "Failed to build IVFPQ index.\n");
+        return;
+    }
+    
+    Dataset* query_set = NULL;
+    if (params->dataset_type == DATA_MNIST)
+        query_set = read_data_mnist(params->query_path);
+    else if (params->dataset_type == DATA_SIFT)
+        query_set = read_data_sift(params->query_path);
+    else
+        query_set = read_data_experiment(params->query_path);
+    
+    if (query_set)
+    {
+        perform_query(params, dataset, query_set, ivfpq_index_lookup, ivfpq_index);
+        
+        for (int i = 0; i < query_set->size; i++)
+            free(query_set->data[i]);
+        
+        free(query_set->data);
+        free(query_set);
+    }
+    
+    ivfpq_destroy(ivfpq_index);
+    
     return;
 }
