@@ -5,21 +5,8 @@
 # Compiler
 CC = gcc
 
-# Compiler flags with warnings !!
-# CFLAGS = -Wall -Wextra -std=c11 -g -Iinclude
-
-# Compiler flags without warnings
-CFLAGS = -std=c11 -g -Iinclude  -fopenmp #-O3
+CFLAGS = -std=c11 -g -Iinclude -fopenmp
 LDFLAGS = -lm
-# PRFLAGS = -fopenmp
-
-# Default number of OpenMP threads (can be overridden with `make THREADS=8`)
-THREADS ?= 8
-export OMP_NUM_THREADS=$(THREADS)
-
-# Optional LSH optimization flags:
-# Enable exact ID matching for faster queries (13% speedup, no recall loss with W=2000)
-# CFLAGS += -DLSH_EXACT_ID_MATCH
 
 # Executable name
 TARGET = search
@@ -43,74 +30,24 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 # User Input Parameters
 
 # CHOOSE WHAT ALGORITHM YOU WANT TO USE
-# AND THEN CHANGE THE SECTIONS:
-# -> Common Parameters
-# -> The Corresponding Parameters section of the algorithm you chose
+# POSSIBLE CHOICES (algorithm -> pseudoname to use below):
+# Locality Sensitive Hashing 			-> lsh
+# Binary Hypercube 						-> hypercube
+# InVerted File index 					-> ivfflat
+# IVF with Product Quantization			-> ivfpq
 
 # =====================================================================
 
-ALGO = ivfpq
-
-# DEBUGGING PURPOSES
-#---------------------
-INPUT_FILE  = Data/EXPERIMENTS/random_2d_points.txt
-QUERY_FILE  = Data/EXPERIMENTS/query.dat
-# TYPE = sift
-# K = 4
-# L = 10 
-# W = 30
-
-# Common parameters
-# -------------------
-
-# INPUT_FILE  = Data/MNIST/train-images.idx3-ubyte
-# QUERY_FILE  = Data/MNIST/t10k-images-100-sample.idx3-ubyte
-
-# INPUT_FILE  = Data/SIFT/sift_base.fvecs
-# QUERY_FILE  = Data/SIFT/sift_query_100.fvecs
-
+ALGO = hypercube
 OUTPUT_FILE = output.txt
-N           = 5
-R           = 5
-
-TYPE        = none
-RANGE       = false
-
-# LSH defaults
-# -------------------
-# For 2D data: Use K=3-4, L=15-20, W=5-6 for high recall
-# For MNIST (784D, pixel values 0-255): Tuned high-recall baseline comes from large W due to E2LSH projections on raw ints
-# K = 4
-# L = 20
-# W = 2400
-
-# Hypercube defaults
-# -------------------
-KPROJ       = 7
-HYPERCUBE_W = 2000
-M           = 200
-PROBES      = 35
-
-# IVFFLAT defaults
-# -------------------
-KCLUSTERS = 9
-NPROBE    = 5
-SEED      = 10
-
-# IVFPQ defaults
-# -------------------
-KCLUSTERS = 9
-NPROBE    = 5
-M         = 10
-NBITS     = 8
-SEED      = 10
-
 
 # ==============================================================
-# Algorithm-specific parameters (auto-selected by ALGO)
+# Algorithm-specific parameters
 # ==============================================================
 
 # MNIST-optimized parameters
+# ==============================================================
+
 ifeq ($(ALGO), lsh)
     ALGO_PARAMS_MNIST = -k 4 -L 15 -w 100 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -lsh -range false
 endif
@@ -127,11 +64,9 @@ ifeq ($(ALGO), ivfpq)
 	ALGO_PARAMS_MNIST = -kclusters 10 -nprobe 45 -M 56 -o $(OUTPUT_FILE) -N 10 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
 endif
 
-
-
-
-
 # SIFT-optimized parameters
+# ==============================================================
+
 ifeq ($(ALGO), lsh)
     ALGO_PARAMS_SIFT = -k 4 -L 10 -w 50 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -lsh -range false
 endif
@@ -147,51 +82,6 @@ endif
 ifeq ($(ALGO), ivfpq)
     ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -M 128 -o $(OUTPUT_FILE) -N 10 -R 50000 -type sift -nbits 8 -range false -ivfpq -seed 10
 endif
-
-
-
-
-
-
-
-
-
-
-
-# Generic parameters (for backward compatibility with 'make all')
-ifeq ($(ALGO), lsh)
-    ALGO_FLAG = -lsh
-    ALGO_PARAMS = -k $(K) -L $(L) -w $(W) -o $(OUTPUT_FILE) -N $(N) -R $(R) -type $(TYPE) $(ALGO_FLAG) -range $(RANGE)
-endif
-
-ifeq ($(ALGO), hypercube)
-	ALGO_FLAG = -hypercube
-	ALGO_PARAMS = -kproj $(KPROJ) -w $(HYPERCUBE_W) -M $(M) -probes $(PROBES) -o $(OUTPUT_FILE) -N $(N) -R $(R) -type $(TYPE) -range $(RANGE) $(ALGO_FLAG)
-endif
-
-ifeq ($(ALGO), ivfflat)
-    ALGO_FLAG = -ivfflat
-    ALGO_PARAMS = -kclusters $(KCLUSTERS) -nprobe $(NPROBE) -o $(OUTPUT_FILE) -N $(N) -R $(R) -type $(TYPE) -range $(RANGE) $(ALGO_FLAG) -seed $(SEED)
-endif
-
-ifeq ($(ALGO), ivfpq)
-    ALGO_FLAG = -ivfpq
-    ALGO_PARAMS = -kclusters $(KCLUSTERS) -nprobe $(NPROBE) -M $(M) -o $(OUTPUT_FILE) -N $(N) -R $(R) -type $(TYPE) -nbits $(NBITS) -range $(RANGE) $(ALGO_FLAG) -seed $(SEED)
-endif
-
-
-# ==============================================================
-# Default rule: build and run
-# ==============================================================
-
-all: $(OBJDIR) $(TARGET)
-	@echo "Running algorithm: $(ALGO)"
-	./$(TARGET) \
-		-d $(INPUT_FILE) \
-		-q $(QUERY_FILE) \
-		$(ALGO_PARAMS)
-	@$(MAKE) clean
-
 
 # ==============================================================
 # Build executable from object files
@@ -234,7 +124,7 @@ mnist: $(OBJDIR) $(TARGET)
 	./$(TARGET) \
 		-d Data/MNIST/train-images.idx3-ubyte \
 		-q Data/MNIST/t10k-images-100-sample.idx3-ubyte \
-		$(ALGO_PARAMS_MNIST)
+		$(ALGO_PARAMS_MNIST) -seed 42
 	@$(MAKE) clean
 
 sift: $(OBJDIR) $(TARGET)
@@ -244,8 +134,8 @@ sift: $(OBJDIR) $(TARGET)
 	OMP_MAX_ACTIVE_LEVELS=2 \
 	./$(TARGET) \
 		-d Data/SIFT/sift_base.fvecs \
-		-q Data/SIFT/sift_query_100.fvecs \
-		$(ALGO_PARAMS_SIFT)
+		-q Data/SIFT/sift_query.fvecs \
+		$(ALGO_PARAMS_SIFT) -seed 42
 	@$(MAKE) clean
 
 # ==============================================================
