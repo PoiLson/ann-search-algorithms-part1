@@ -34,7 +34,10 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         
         if (bf_cache) {
             // Create cache directory if it doesn't exist
-            system("mkdir -p Data/.cache");
+            int ret = system("mkdir -p Data/.cache");
+            if (ret != 0) {
+                fprintf(stderr, "Warning: failed to create cache directory (exit code %d)\n", ret);
+            }
             bruteforce_cache_save(bf_cache, cache_path);
         } else {
             fprintf(stderr, "Failed to compute brute-force results\n");

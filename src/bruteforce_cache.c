@@ -170,8 +170,12 @@ BruteForceCache* bruteforce_cache_load(const char *cache_path, int expected_quer
         return NULL;
     }
     
-    fread(&n_queries, sizeof(int), 1, fp);
-    fread(&N, sizeof(int), 1, fp);
+    if (fread(&n_queries, sizeof(int), 1, fp) != 1 ||
+        fread(&N, sizeof(int), 1, fp) != 1) {
+        fprintf(stderr, "Error reading cache header from %s\n", cache_path);
+        fclose(fp);
+        return NULL;
+    }
 
     // Validate parameters match
     if (n_queries != expected_queries || N != expected_N) {
@@ -211,9 +215,14 @@ BruteForceCache* bruteforce_cache_load(const char *cache_path, int expected_quer
             return NULL;
         }
         
-        fread(cache->neighbors[q], sizeof(int), N, fp);
-        fread(cache->distances[q], sizeof(double), N, fp);
-        fread(&cache->query_times[q], sizeof(double), 1, fp);
+        if (fread(cache->neighbors[q], sizeof(int), N, fp) != (size_t)N ||
+            fread(cache->distances[q], sizeof(double), N, fp) != (size_t)N ||
+            fread(&cache->query_times[q], sizeof(double), 1, fp) != 1) {
+            fprintf(stderr, "Error reading cache data for query %d\n", q);
+            bruteforce_cache_free(cache);
+            fclose(fp);
+            return NULL;
+        }
     }
 
     fclose(fp);
