@@ -30,12 +30,20 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
             else if (strcmp(argv[i], "sift") == 0)
                 params->dataset_type = DATA_SIFT;
             else
-                params->dataset_type  = DATA_EXP;
+                params->dataset_type  = DATA_NONE;
         }
         else if (strcmp(argv[i], "-range") == 0 && i + 1 < argc)
             params->range_search = (strcmp(argv[++i], "true") == 0);
         else if (strcmp(argv[i], "-N") == 0 && i + 1 < argc)
+        {
             params->N = atoi(argv[++i]);
+            if(params->N < 0)
+            {
+                fprintf(stderr, "Error: Neighbors cannot be a negative number.\n");
+                print_usage();
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (strcmp(argv[i], "-R") == 0 && i + 1 < argc)
             params->R = atof(argv[++i]);
 
@@ -87,12 +95,20 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
     }
 
     // Minimal checks
-    if (params->algorithm == ALG_NONE || params->dataset_type == DATA_NONE)
+    if (params->algorithm == ALG_NONE)
     {
-        fprintf(stderr, "Error: Missing algorithm or dataset type.\n");
+        fprintf(stderr, "Error: Missing algorithm.\n");
         print_usage();
-        return -1;
+        exit(EXIT_FAILURE);
     }
+
+    else if(params->dataset_type == DATA_NONE)
+    {
+        fprintf(stderr, "Error: Missing dataset type.\n");
+        print_usage();
+        exit(EXIT_FAILURE);
+    }
+
     return 0;
 }
 

@@ -193,13 +193,6 @@ const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, uint64_t inde
     return b->items;
 }
 
-// Deprecated legacy function
-Node hash_table_get_bucket(HashTable hash_table, int index)
-{
-    (void)hash_table; (void)index;
-    return NULL;
-}
-
 void print_hashtable(HashTable hash_table, int table_size, int dimension)
 {
     if (hash_table == NULL)

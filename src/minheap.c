@@ -1,5 +1,4 @@
-#include "../include/minheap.h"
-#include <string.h>
+#include "../include/main.h"
 
 // Helper functions
 static inline void heap_swap(Neighbor *a, Neighbor *b) {

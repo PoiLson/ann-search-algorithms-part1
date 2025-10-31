@@ -368,10 +368,10 @@ IVFPQIndex* ivfpq_init(Dataset *dataset, int k_clusters, int M, int nbits) {
                            dataset->data_type, dataset->dimension, residual);
             
             // Split into M parts and encode
-            uint8_t *pq_code = (uint8_t *)malloc(M * sizeof(uint8_t));
+            uint16_t *pq_code = (uint16_t *)malloc(M * sizeof(uint16_t));
             for (int m = 0; m < M; m++) {
                 float *subvec = &residual[m * index->pq.d_sub];
-                pq_code[m] = (uint8_t)find_nearest_subspace_centroid(
+                pq_code[m] = (uint16_t)find_nearest_subspace_centroid(
                     subvec, index->pq.subspace_centroids[m], index->pq.s, index->pq.d_sub);
             }
             
@@ -392,8 +392,8 @@ IVFPQIndex* ivfpq_init(Dataset *dataset, int k_clusters, int M, int nbits) {
 
 // Asymmetric distance computation for IVFPQ lookup
 void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
-                        int *approx_neighbors, double *approx_dists, int *approx_count,
-                        int **range_neighbors, int *range_count, void *index_data) {
+                        int *approx_neighbors, double *approx_dists, int *approx_count, void *index_data)
+{
     IVFPQIndex *index = (IVFPQIndex *)index_data;
     int d = index->d;
     int k = index->k;
@@ -442,40 +442,27 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
             q_residual[i] = q_float[i] - index->centroids[cid][i];
         }
         
-        // Precompute distances from query subvectors to all subspace centroids
-        float **lookup_table = (float **)malloc(index->pq.M * sizeof(float *));
-        for (int m = 0; m < index->pq.M; m++) {
-            lookup_table[m] = (float *)malloc(index->pq.s * sizeof(float));
-            float *q_sub = &q_residual[m * index->pq.d_sub];
-            
-            for (int c = 0; c < index->pq.s; c++) {
-                float dist = 0.0f;
-                for (int j = 0; j < index->pq.d_sub; j++) {
-                    float diff = q_sub[j] - index->pq.subspace_centroids[m][c][j];
-                    dist += diff * diff;
-                }
-                lookup_table[m][c] = dist;
-            }
-        }
-        
         // Compute approximate distance for each point using PQ codes
         for (int i = 0; i < list->count; i++) {
             double approx_dist = 0.0;
-            uint8_t *pq_code = list->entries[i].pq_code;
+            uint16_t *pq_code = list->entries[i].pq_code;
             
             for (int m = 0; m < index->pq.M; m++) {
-                approx_dist += lookup_table[m][pq_code[m]];
+                float *q_sub = &q_residual[m * index->pq.d_sub];
+                float dist = 0.0;
+                for(int j = 0; j < index->pq.d_sub; j++)
+                {
+                    float diff = q_sub[j] - index->pq.subspace_centroids[m][pq_code[m]][j];
+                    dist += diff * diff;
+
+                }
+                approx_dist += dist;
             }
             
             // approx_dist = sqrtf(approx_dist);  // Take square root for Euclidean distance
             heap_insert(topN, list->entries[i].point_id, (double)approx_dist);
         }
         
-        // Free lookup table
-        for (int m = 0; m < index->pq.M; m++) {
-            free(lookup_table[m]);
-        }
-        free(lookup_table);
         free(q_residual);
     }
     
@@ -517,6 +504,109 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
     
     free(approx_neighbors_adc);
     free(approx_dists_adc);
+    free(centroid_dists);
+    free(centroid_ids);
+    free(q_float);
+}
+
+
+
+// Asymmetric distance computation for IVFPQ lookup
+void range_search_ivfpq(const void *q_void, const struct SearchParams *params, int **range_neighbors, int *range_count, void *index_data)
+{
+    IVFPQIndex *index = (IVFPQIndex *)index_data;
+    int d = index->d;
+    int k = index->k;
+    int nprobe = params->nprobe;
+    int R = params->R;
+    
+    if (nprobe > k) nprobe = k;
+    
+    // Step 1: Find nearest coarse centroids using a heap to keep top-nprobe
+    double *centroid_dists = (double *)malloc(nprobe * sizeof(double));
+    int *centroid_ids = (int *)malloc(nprobe * sizeof(int));
+    
+    // Convert query to float
+    float *q_float = (float *)malloc(d * sizeof(float));
+    if (index->data_type == DATA_TYPE_FLOAT) {
+        memcpy(q_float, q_void, d * sizeof(float));
+    } else {
+        const uint8_t *q_u8 = (const uint8_t *)q_void;
+        for (int i = 0; i < d; i++) {
+            q_float[i] = (float)q_u8[i];
+        }
+    }
+    
+    // Build a heap of size nprobe with the smallest centroid distances
+    MinHeap *centroid_heap = heap_create(nprobe);
+    for (int i = 0; i < k; i++) {
+        double dist = euclidean_distance(q_void, index->centroids[i], d,
+                                         index->data_type, DATA_TYPE_FLOAT);
+        heap_insert(centroid_heap, i, dist);
+    }
+    // Extract in ascending order of distance (nearest first)
+    heap_extract_sorted(centroid_heap, centroid_ids, centroid_dists);
+    heap_destroy(centroid_heap);
+    
+    // Range search optimization: allocate in chunks to avoid repeated realloc
+    int range_capacity = 0;
+    const int RANGE_ALLOC_CHUNK = 128; // Grow by 128 entries at a time
+
+    // Step 3: For each selected cluster, compute asymmetric distances
+    for (int p = 0; p < nprobe; p++) {
+        int cid = centroid_ids[p];
+        IVFPQList *list = &index->lists[cid];
+        
+        // Compute query residual: q - c(cid)
+        float *q_residual = (float *)malloc(d * sizeof(float));
+        for (int i = 0; i < d; i++) {
+            q_residual[i] = q_float[i] - index->centroids[cid][i];
+        }
+        
+        // Compute approximate distance for each point using PQ codes
+        for (int i = 0; i < list->count; i++) {
+            double approx_dist = 0.0;
+            uint16_t *pq_code = list->entries[i].pq_code;
+            
+            for (int m = 0; m < index->pq.M; m++) {
+                float *q_sub = &q_residual[m * index->pq.d_sub];
+                float dist = 0.0;
+                for(int j = 0; j < index->pq.d_sub; j++)
+                {
+                    float diff = q_sub[j] - index->pq.subspace_centroids[m][pq_code[m]][j];
+                    dist += diff * diff;
+
+                }
+                approx_dist += dist;
+            }
+            
+
+            if (approx_dist <= params->R)
+            {
+                // Allocate in chunks to avoid repeated realloc overhead
+                if (*range_count >= range_capacity)
+                {
+                    range_capacity += RANGE_ALLOC_CHUNK;
+                    int* new_range = (int*)realloc(*range_neighbors, range_capacity * sizeof(int));
+                    if (!new_range)
+                    {
+                        fprintf(stderr, "Memory reallocation failed for range_neighbors\n");
+                        free(*range_neighbors);
+                        *range_neighbors = NULL;
+                        *range_count = 0;
+
+                        return;
+                    }
+                    *range_neighbors = new_range;
+                }
+                (*range_neighbors)[(*range_count)++] = list->entries[i].point_id;
+            }
+
+        }
+        
+        free(q_residual);
+    }
+    
     free(centroid_dists);
     free(centroid_ids);
     free(q_float);

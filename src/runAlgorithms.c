@@ -15,12 +15,10 @@ void run_lsh(SearchParams* params, Dataset* dataset)
         query_set = read_data_mnist(params->query_path);
     else if (params->dataset_type == DATA_SIFT)
         query_set = read_data_sift(params->query_path);
-    else
-        query_set = read_data_experiment(params->query_path);
 
     if (query_set)
     {
-        perform_query(params, dataset, query_set, lsh_index_lookup, lsh);
+        perform_query(params, dataset, query_set, lsh_index_lookup, range_search_lsh, lsh);
 
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);
@@ -48,11 +46,10 @@ void run_hypercube(SearchParams* params, Dataset* dataset)
         query_set = read_data_mnist(params->query_path);
     else if (params->dataset_type == DATA_SIFT)
         query_set = read_data_sift(params->query_path);
-    else
-        query_set = read_data_experiment(params->query_path);
+        
     if (query_set)
     {
-        perform_query(params, dataset, query_set, hyper_index_lookup, hyper);
+        perform_query(params, dataset, query_set, hyper_index_lookup, range_search_hyper, hyper);
 
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);
@@ -84,12 +81,10 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
         query_set = read_data_mnist(params->query_path);
     else if (params->dataset_type == DATA_SIFT)
         query_set = read_data_sift(params->query_path);
-    else
-        query_set = read_data_experiment(params->query_path);
 
     if (query_set)
     {
-        perform_query(params, dataset, query_set, ivfflat_index_lookup, ivf_index);
+        perform_query(params, dataset, query_set, ivfflat_index_lookup, range_search_ivfflat, ivf_index);
 
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);
@@ -126,12 +121,10 @@ void run_ivfpq(SearchParams* params, Dataset* dataset)
         query_set = read_data_mnist(params->query_path);
     else if (params->dataset_type == DATA_SIFT)
         query_set = read_data_sift(params->query_path);
-    else
-        query_set = read_data_experiment(params->query_path);
     
     if (query_set)
     {
-        perform_query(params, dataset, query_set, ivfpq_index_lookup, ivfpq_index);
+        perform_query(params, dataset, query_set, ivfpq_index_lookup, range_search_ivfpq, ivfpq_index);
         
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);

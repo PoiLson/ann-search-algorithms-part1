@@ -4,33 +4,32 @@
 // Forward declaration
 struct Hypercube;
 
-//define function pointer
-typedef uint64_t (*bin_hash)(const void* p, const struct Hypercube* hyper, uint64_t *ID);
+// Define function pointer
+typedef uint64_t (*bin_hash)(const void* p, const struct Hypercube* hyper, uint64_t* ID);
 
 //structure for hypercube hash function parameters
-//namely the v normal vector and t offset
 typedef struct Hypercube_hash_function
 {
-    float *v; // projection vector
-    float t; // random offset
+    float* v;   // The projection vector
+    float t;    // Random offset
 } Hypercube_hash_function;
 
 // Hypercube structure for holding all relevant parameters and data
 typedef struct Hypercube
 {
-    int d; // dimension of the input points
-    int kproj; // number of projections
-    int M; // max number of points to check
-    float w; // window size
-    int probes; // number of probes
-    int dataset_size; // size of dataset for visited array allocation
-    DataType data_type; // type of data (int or float)
-    metric_func distance; // distance function
-    Hypercube_hash_function *hash_params; // array of hash parameters
-    bin_hash binary_hash_function; // single hash function that computes all k bits
-    float *thresholds; // average threshold for each projection (for locality-preserving f)
+    int d;                                  // Dimension of the input points
+    int kproj;                              // Number of projections
+    int M;                                  // Max number of points to check
+    float w;                                // Window size
+    int probes;                             // Number of probes
+    int dataset_size;                       // Size of dataset
+    DataType data_type;                     // Type of data (DATA_TYPE_UINT8 or DATA_TYPE_FLOAT)
+    metric_func distance;                   // Distance metric function
+    Hypercube_hash_function* hash_params;   // Array of hash parameters
+    bin_hash binary_hash_function;          // Single hash function that computes all k bits
+    float* thresholds;                      // Average threshold for each projection (for locality-preserving f)
     
-    HashTable hash_table; // hash table
+    HashTable hash_table;                   // Hash table
 } Hypercube;
 
 //-----------------------Helper functions for hashing-----------------------------
@@ -42,10 +41,9 @@ static inline bool f(int h_ip, float threshold)
 }
 
 // Compute the k-bit binary ID for a point in the hypercube
-static inline uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t *ID)
+static inline uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hyper, uint64_t* ID)
 {
-    uint64_t id = 0ULL;   // use unsigned 64-bit to avoid overflow
-
+    uint64_t id = 0ULL;
     for (int i = 0; i < hyper->kproj; i++)
     {
         float func;
@@ -63,37 +61,37 @@ static inline uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hype
     }
 
     if (ID) *ID = id;
-    return id;  // Return full uint64_t (safe for kproj up to 64 bits)
+    return id;  // Return full uint64_t
 }
 
 
-//modifies the hash function to be used in the hash table
+// Modifies the hash function to be used in the hash table
 static inline int hash_function_hyper(HashTable ht, void* data, uint64_t* ID)
 {
-    //get the hypercube structure the particular hash function belongs to
     Hypercube* hyper_ctx = (Hypercube*)hash_table_get_algorithm_context(ht);
-
     if (!hyper_ctx) 
     { 
         if (ID) *ID = 0ULL; 
         return 0; 
     }
 
-    // Use the single hash function that computes all k bits
     return hyper_ctx->binary_hash_function(data, hyper_ctx, ID);
 }
 
 //--------------------------Hypercube main functions-----------------------------
 
-// initializes the hypercube structure, allocates memory, sets parameters, and stores ddata points
+// Initializes the hypercube structure, allocates memory, sets parameters, and stores data points
 Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* dataset);
 
-// performs approximate nearest neighbor search using the hypercube index
+// Performs approximate nearest neighbor search using the hypercube index
 void hyper_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors,
-                        double* approx_dists, int* approx_count, int** range_neighbors, 
+                        double* approx_dists, int* approx_count, void* index_data);
+
+// Performs range search using the hypercube index
+void range_search_hyper(const void* q, const struct SearchParams* params, int** range_neighbors,
                         int* range_count, void* index_data);
 
-// frees all allocated memory associated with the hypercube structure
+// Frees all allocated memory associated with the hypercube structure
 void hyper_destroy(struct Hypercube* hyper);
 
 #endif

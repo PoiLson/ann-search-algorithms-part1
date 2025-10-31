@@ -156,9 +156,9 @@ bool recompute_centroids(IVFFlatIndex *index, int d, double epsilon)
 }
 
 // Generic Fisher–Yates shuffle
-int findSubsetSize(int subsetSize)
+int findSubsetSize(int datasetSize)
 {
-    int size = sqrt(subsetSize);
+    int size = sqrt(datasetSize);
     return size;
 }
 
@@ -493,18 +493,18 @@ IVFFlatIndex *ivfflat_init(Dataset *dataset, int kclusters)
     return ivfflat_index;
 }
 
-void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params, int *approx_neighbors, double *approx_dists, int *approx_count, int **range_neighbors, int *range_count, void *index_data)
+void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params, int *approx_neighbors, double *approx_dists, int *approx_count, void *index_data)
 {
     IVFFlatIndex *index = (IVFFlatIndex *)index_data;
     int d = index->d;
     int k = index->k;
     int nprobe = params->nprobe;
     int N = params->N; // number of neighbors to return
-    int R = params->R; // range distance for range search
 
     // --- Step 1: Compute distances from query to all centroids ---
     if (nprobe > k)
         nprobe = k; // cap nprobe to k
+        
     double *centroid_dists = malloc(nprobe * sizeof(double));
     int *centroid_ids = malloc(nprobe * sizeof(int));
     int selected = 0;
@@ -571,13 +571,6 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
 
             // Insert into min-heap (O(log N) instead of O(N) insertion sort)
             heap_insert(topN, list->point_ids[i], dist);
-
-            // --- Optional: Range search support ---
-            // if (params->range_search && dist <= R)
-            // {
-            //     *range_neighbors = realloc(*range_neighbors, (*range_count + 1) * sizeof(int));
-            //     (*range_neighbors)[(*range_count)++] = list->point_ids[i];
-            // }
         }
     }
 
@@ -590,6 +583,117 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
     free(centroid_dists);
     free(centroid_ids);
 }
+
+
+
+void range_search_ivfflat(const void *q_void, const struct SearchParams *params, int **range_neighbors, int *range_count, void *index_data)
+{
+    IVFFlatIndex *index = (IVFFlatIndex *)index_data;
+    int d = index->d;
+    int k = index->k;
+    int nprobe = params->nprobe;
+    int R = params->R; // range distance for range search
+
+    // --- Step 1: Compute distances from query to all centroids ---
+    if (nprobe > k)
+        nprobe = k; // cap nprobe to k
+
+    double *centroid_dists = malloc(nprobe * sizeof(double));
+    int *centroid_ids = malloc(nprobe * sizeof(int));
+    int selected = 0;
+
+  
+    const float *qf = NULL;
+    const uint8_t *qi = NULL;
+    if (index->data_type == DATA_TYPE_FLOAT)
+        qf = (const float *)q_void;
+    else
+        qi = (const uint8_t *)q_void;
+
+    for (int i = 0; i < k; i++)
+    {
+        double cent;
+        if (qf)
+            cent = euclidean_distance(qf, index->centroids[i], d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
+        else
+            cent = euclidean_distance(qi, index->centroids[i], d, DATA_TYPE_UINT8, DATA_TYPE_FLOAT);
+
+        int j = 0;
+        if (selected < nprobe)
+        {
+            j = selected;
+            selected++;
+        }
+        else
+        {
+            if (cent >= centroid_dists[nprobe - 1])
+                continue;
+            j = nprobe - 1;
+        }
+
+        for (; j > 0 && cent < centroid_dists[j - 1]; j--)
+        {
+            centroid_dists[j] = centroid_dists[j - 1];
+            centroid_ids[j] = centroid_ids[j - 1];
+        }
+        centroid_dists[j] = cent;
+        centroid_ids[j] = i;
+    }
+
+    // Range search optimization: allocate in chunks to avoid repeated realloc
+    int range_capacity = 0;
+    const int RANGE_ALLOC_CHUNK = 128; // Grow by 128 entries at a time
+
+    // --- Step 3: Search within selected (nprobe) clusters ---
+    int total_candidates = 0;
+    for (int p = 0; p < nprobe && p < k; p++)
+    {
+        int cid = centroid_ids[p];
+        InvertedList *list = &index->lists[cid];
+
+        for (int i = 0; i < list->count; i++)
+        {
+            void *vec = list->points[i];
+            double dist;
+
+            if (index->data_type == DATA_TYPE_FLOAT)
+                dist = euclidean_distance(qf, vec, d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
+            else
+                dist = euclidean_distance(qi, vec, d, DATA_TYPE_UINT8, DATA_TYPE_UINT8);
+
+            total_candidates++;
+
+            if (dist <= params->R)
+            {
+                // Allocate in chunks to avoid repeated realloc overhead
+                if (*range_count >= range_capacity)
+                {
+                    range_capacity += RANGE_ALLOC_CHUNK;
+                    int* new_range = (int*)realloc(*range_neighbors, range_capacity * sizeof(int));
+                    if (!new_range)
+                    {
+                        fprintf(stderr, "Memory reallocation failed for range_neighbors\n");
+                        free(*range_neighbors);
+                        *range_neighbors = NULL;
+                        *range_count = 0;
+
+                        return;
+                    }
+                    *range_neighbors = new_range;
+                }
+                (*range_neighbors)[(*range_count)++] = list->point_ids[i];
+            }
+
+
+
+        }
+    }
+
+    // --- Cleanup ---
+    free(centroid_dists);
+    free(centroid_ids);
+}
+
 
 void ivfflat_destroy(IVFFlatIndex *index)
 {

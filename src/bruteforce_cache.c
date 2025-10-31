@@ -1,12 +1,9 @@
 #define _XOPEN_SOURCE 500  // For strdup
 #include "../include/main.h"
-#include "../include/bruteforce_cache.h"
-#include <string.h>
-#include <libgen.h>
-#include <omp.h>
 
 // Compute brute-force nearest neighbors for all queries
-BruteForceCache* bruteforce_compute(const Dataset *dataset, const Dataset *query_set, int N) {
+BruteForceCache* bruteforce_compute(const Dataset* dataset, const Dataset* query_set, int N)
+{
     if (!dataset || !query_set || N <= 0) {
         fprintf(stderr, "Invalid parameters for brute-force computation\n");
         return NULL;

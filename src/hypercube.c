@@ -106,10 +106,8 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     return hyper;
 }
 
-// End of patch
 
-void hyper_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count,
-                        int** range_neighbors, int* range_count, void* index_data)
+void hyper_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count, void* index_data)
 {
     // Retrieve hypercube structure from context
     struct Hypercube* hyper = (struct Hypercube*)index_data;
@@ -130,10 +128,6 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
         heap_destroy(topN);
         return;
     }
-
-    // Range search optimization: allocate in chunks to avoid repeated realloc
-    int range_capacity = 0;
-    const int RANGE_ALLOC_CHUNK = 128; // Grow by 128 entries at a time
 
     // Compute the bucket index for the query point
     uint64_t q_id;
@@ -181,9 +175,76 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
 
             // Insert into min-heap (O(log N) instead of O(N) insertion sort)
             heap_insert(topN, data_idx, dist);
+        }
+        if (reached_m)
+            break; // exit probing further buckets
+    }
+
+    // Extract results from heap in sorted order
+    *approx_count = topN->size;
+    heap_extract_sorted(topN, approx_neighbors, approx_dists);
+    heap_destroy(topN);
+
+    // Clean up allocations
+    free(visited);
+    free(neighbors);
+}
+
+
+void range_search_hyper(const void* q, const struct SearchParams* params, int** range_neighbors, int* range_count, void* index_data)
+{
+    // Retrieve hypercube structure from context
+    struct Hypercube* hyper = (struct Hypercube*)index_data;
+
+    // Allocate visited array for O(1) duplicate detection (instead of O(N) linear scan)
+    // This dramatically speeds up queries when examining many candidates
+    bool* visited = (bool*)calloc(hyper->dataset_size, sizeof(bool));
+    if (!visited)
+    {
+        fprintf(stderr, "Failed to allocate visited array\n");
+        return;
+    }
+
+    // Range search optimization: allocate in chunks to avoid repeated realloc
+    int range_capacity = 0;
+    const int RANGE_ALLOC_CHUNK = 128; // Grow by 128 entries at a time
+
+    // Compute the bucket index for the query point
+    uint64_t q_id;
+    uint64_t bucket_idx = hyper->binary_hash_function(q, hyper, &q_id);
+
+    // Access the bucket corresponding to the computed index
+    int bucket_count = 0;
+    const HTEntry* bucket = hash_table_get_bucket_entries(hyper->hash_table, bucket_idx, &bucket_count);
+
+    uint64_t* neighbors = (uint64_t*)malloc(hyper->probes * sizeof(uint64_t));
+    int neighbor_count = hyper->probes;
+
+    get_hamming_neighbors(bucket_idx, hyper->probes, hyper->kproj, neighbors);
+    for (int n = 0; n < neighbor_count; n++)
+    {
+        uint64_t neighbor_idx = neighbors[n];
+        int neighbor_count_entries = 0;
+        const HTEntry* neighbor_bucket = hash_table_get_bucket_entries(hyper->hash_table, neighbor_idx, &neighbor_count_entries);
+
+        // Process the neighbor bucket entries array
+        for (int bi = 0; bi < neighbor_count_entries; ++bi)
+        {
+            int data_idx = *(int*)neighbor_bucket[bi].key;
+            void* p = neighbor_bucket[bi].data;
+
+            // O(1) duplicate check using visited array instead of O(N) linear scan
+            if (visited[data_idx])
+                continue;
+
+            visited[data_idx] = true;
+
+            // Use int-based distance computation for MNIST integer data
+            double dist = hyper->distance(q, p, hyper->d, hyper->data_type, hyper->data_type);
 
             // Range search (visited array already handles deduplication)
-            if (params->range_search && dist <= params->R)
+
+            if (dist <= params->R)
             {
                 // Allocate in chunks to avoid repeated realloc overhead
                 if (*range_count >= range_capacity)
@@ -206,19 +267,13 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             }
 
         }
-        if (reached_m)
-            break; // exit probing further buckets
     }
-
-    // Extract results from heap in sorted order
-    *approx_count = topN->size;
-    heap_extract_sorted(topN, approx_neighbors, approx_dists);
-    heap_destroy(topN);
 
     // Clean up allocations
     free(visited);
     free(neighbors);
 }
+
 
 
 void hyper_destroy(struct Hypercube* hyper)

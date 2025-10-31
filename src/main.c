@@ -45,19 +45,6 @@ int main2()
 int main(int argc, char **argv)
 {
     SearchParams params;
-    // Seed RNG: allow override via HYPER_SEED env var for experiments
-    // const char *seed_env = getenv("HYPER_SEED");
-    // if (seed_env && seed_env[0] != '\0') {
-    //     unsigned int seed = (unsigned int)atoi(seed_env);
-    //     srand(seed);
-    // } else {
-    //     // default fixed seed for reproducibility
-    //     srand(42);
-    // }
-
-    unsigned int seed = 1;
-    // srand(seed);
-
     if (parse_arguments(argc, argv, &params) != 0)
         exit(EXIT_FAILURE);
 
@@ -68,8 +55,6 @@ int main(int argc, char **argv)
         dataset = read_data_mnist(params.dataset_path);
     else if(params.dataset_type == DATA_SIFT)
         dataset = read_data_sift(params.dataset_path);
-    else if(params.dataset_type == DATA_EXP)
-        dataset = read_data_experiment(params.dataset_path);
         
     if (dataset == NULL)
     {
@@ -81,16 +66,19 @@ int main(int argc, char **argv)
         printf("MNIST Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
     else if(params.dataset_type == DATA_SIFT)
         printf("SIFT Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
-    else if(params.dataset_type == DATA_EXP)
-        printf("EXPERIMENT Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
 
     // print some points
     // printPartialDataset(2, dataset);
+
+    unsigned int seed = 42;
     if (params.seed)
     {
         seed = params.seed;
+        srand(seed);
     }
-    srand(seed);
+    else
+        srand(time(NULL));
+
     switch (params.algorithm)
     {
         case ALG_LSH:

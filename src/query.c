@@ -2,7 +2,7 @@
 #include "../include/bruteforce_cache.h"
 
 // Modular query function, works with any index lookup function
-void perform_query(const struct SearchParams* params, const struct Dataset* dataset, const struct Dataset* query_set, index_lookup lookup_func, void* index_data)
+void perform_query(const struct SearchParams* params, const struct Dataset* dataset, const struct Dataset* query_set, index_lookup lookup_func, range_search range_fun, void* index_data)
 {
     // Open output file
     FILE* output_file = fopen(params->output_path, "w");
@@ -67,8 +67,12 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
 
         clock_t start_approx = clock();
         // Algorithm-specific index lookup
-        lookup_func(q, params, approx_neighbors, approx_dists, &approx_count, &range_neighbors, &range_count, index_data);
+        lookup_func(q, params, approx_neighbors, approx_dists, &approx_count, index_data);
         clock_t end_approx = clock();
+
+        // Algorithm-specific range search function
+        if(params->range_search)
+            range_fun(q, params, &range_neighbors, &range_count, index_data);
 
         double approx_time = (double)(end_approx - start_approx) / CLOCKS_PER_SEC;
         total_approx_time += approx_time;
@@ -144,7 +148,6 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         free(approx_neighbors);
         free(approx_dists);
         free(range_neighbors);
-        // Note: true_neighbors and true_dists are owned by bf_cache, don't free them
     }
 
     // Final aggregated metrics over all queries

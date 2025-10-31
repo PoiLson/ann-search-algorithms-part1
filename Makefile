@@ -123,7 +123,7 @@ mnist: $(OBJDIR) $(TARGET)
 	OMP_MAX_ACTIVE_LEVELS=2 \
 	./$(TARGET) \
 		-d Data/MNIST/train-images.idx3-ubyte \
-		-q Data/MNIST/t10k-images-100-sample.idx3-ubyte \
+		-q Data/MNIST/t10k-images.idx3-ubyte \
 		$(ALGO_PARAMS_MNIST) -seed 42
 	@$(MAKE) clean
 

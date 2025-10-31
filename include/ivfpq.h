@@ -1,52 +1,55 @@
 #ifndef IVFPQ_H
 #define IVFPQ_H
 
-#include "datasets.h"
-#include "ivfflat.h"
-
 // Product Quantization parameters for each subspace
-typedef struct {
-    int M;              // number of subspaces (parts)
-    int nbits;          // bits per subspace (typically 8, so 256 centroids per subspace)
-    int s;              // number of centroids per subspace (s = 2^nbits)
-    int d_sub;          // dimensionality of each subspace (d/M)
-    float ***subspace_centroids;  // [M][s][d_sub] - centroids for each subspace
+typedef struct
+{
+    int M;                          // Number of subspaces (parts)
+    int nbits;                      // Bits per subspace
+    int s;                          // Number of centroids per subspace (s = 2^nbits)
+    int d_sub;                      // Dimensionality of each subspace (d/M)
+    float*** subspace_centroids;    // [M][s][d_sub] - centroids for each subspace
 } PQConfig;
 
 // Inverted list entry for IVFPQ (stores compressed PQ codes instead of full vectors)
-typedef struct {
-    int point_id;       // original dataset index
-    uint8_t *pq_code;   // compressed representation: M codes, each indexing a subspace centroid
+typedef struct
+{
+    int point_id;        // Original dataset index
+    uint16_t* pq_code;   // Compressed representation: M codes, each indexing a subspace centroid
 } IVFPQEntry;
 
-// Inverted list for IVFPQ
-typedef struct {
-    int cluster_id;
-    int count;
-    int capacity;
-    IVFPQEntry *entries;  // array of compressed entries
+// Inverted list which maps clusters to their points
+typedef struct 
+{
+    int cluster_id;        // Centroid's ID
+    int count;             // How many points we have currently
+    int capacity;          // How many points can be stored
+    IVFPQEntry* entries;   // Array of compressed entries
 } IVFPQList;
 
 // IVFPQ Index structure
-typedef struct {
-    int k;                    // number of coarse clusters
-    int d;                    // original dimensionality
-    float **centroids;        // coarse centroids (same as IVFFlat)
-    DataType data_type;       // underlying dataset type
-    IVFPQList *lists;         // one list per cluster
-    PQConfig pq;              // product quantization configuration
-    Dataset *dataset;         // pointer to original dataset for exact distance computation
+typedef struct
+{
+    int k;                    // Number of clusters
+    int d;                    // Original dimensionality
+    float** centroids;        // Array of centroids
+    DataType data_type;       // Underlying dataset type
+    IVFPQList* lists;         // One list per cluster
+    PQConfig pq;              // Product quantization configuration
+    Dataset* dataset;         // Pointer to original dataset for exact distance computation
 } IVFPQIndex;
 
 // Initialize IVFPQ index
-IVFPQIndex* ivfpq_init(Dataset *dataset, int k_clusters, int M, int nbits);
+IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits);
 
-// Lookup using IVFPQ (asymmetric distance computation)
-void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params, 
-                        int *approx_neighbors, double *approx_dists, int *approx_count,
-                        int **range_neighbors, int *range_count, void *index_data);
+// Performs lookup using IVFPQ
+void ivfpq_index_lookup(const void* q_void, const struct SearchParams* params, 
+                        int* approx_neighbors, double* approx_dists, int* approx_count, void* index_data);
 
-// Destroy IVFPQ index
-void ivfpq_destroy(IVFPQIndex *index);
+// Performs range search using IVFPQ
+void range_search_ivfpq(const void *q_void, const struct SearchParams *params, int **range_neighbors, int *range_count, void *index_data);
+
+// Destroy IVFPQIndex structure
+void ivfpq_destroy(IVFPQIndex* index);
 
 #endif
