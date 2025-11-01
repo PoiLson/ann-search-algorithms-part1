@@ -30,7 +30,7 @@ void assign_points_to_clusters(IVFFlatIndex *index, Dataset *dataset, int start,
         // Find nearest centroid
         for (int t = 0; t < k; t++)
         {
-            double dist = euclidean_distance(vec, index->centroids[t], d, data_type, DATA_TYPE_FLOAT);
+            double dist = norm(vec, index->centroids[t], d, data_type, DATA_TYPE_FLOAT);
             if (dist < best_dist)
             {
                 best_dist = dist;
@@ -139,7 +139,7 @@ bool recompute_centroids(IVFFlatIndex *index, int d, double epsilon)
         for (int j = 0; j < d; j++) new_centroid[j] /= (list->count > 0 ? list->count : 1);
 
         // Check centroid shift
-        double shift = euclidean_distance(index->centroids[t], new_centroid, d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
+        double shift = norm(index->centroids[t], new_centroid, d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
         if (shift > epsilon)
         {
             #pragma omp atomic write
@@ -363,7 +363,7 @@ centroidInfo *runKmeans(Dataset *subset, int kclusters)
             double best_dist = DBL_MAX;
             for (int l = 0; l < t; l++)
             {
-                double dist = euclidean_distance(vec, centroids[l], d, subset->data_type, DATA_TYPE_FLOAT);
+                double dist = norm(vec, centroids[l], d, subset->data_type, DATA_TYPE_FLOAT);
                 if (dist < best_dist)
                     best_dist = dist;
             }
@@ -520,9 +520,9 @@ void ivfflat_index_lookup(const void *q_void, const struct SearchParams *params,
     {
         double cent;
         if (qf)
-            cent = euclidean_distance(qf, index->centroids[i], d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
+            cent = norm(qf, index->centroids[i], d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
         else
-            cent = euclidean_distance(qi, index->centroids[i], d, DATA_TYPE_UINT8, DATA_TYPE_FLOAT);
+            cent = norm(qi, index->centroids[i], d, DATA_TYPE_UINT8, DATA_TYPE_FLOAT);
 
         int j = 0;
         if (selected < nprobe)
@@ -613,9 +613,9 @@ void range_search_ivfflat(const void *q_void, const struct SearchParams *params,
     {
         double cent;
         if (qf)
-            cent = euclidean_distance(qf, index->centroids[i], d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
+            cent = norm(qf, index->centroids[i], d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
         else
-            cent = euclidean_distance(qi, index->centroids[i], d, DATA_TYPE_UINT8, DATA_TYPE_FLOAT);
+            cent = norm(qi, index->centroids[i], d, DATA_TYPE_UINT8, DATA_TYPE_FLOAT);
 
         int j = 0;
         if (selected < nprobe)

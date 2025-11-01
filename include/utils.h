@@ -52,6 +52,32 @@ static inline double euclidean_distance(const void* a, const void* b, const int 
     return sqrt(sum);
 }
 
+// Computes the norm between two vectors a and b of given data types
+static inline double norm(const void* a, const void* b, const int dimension, DataType data_typea , DataType data_typeb)
+{
+    const float* fa = (const float*)a;
+    const float* fb = (const float*)b;
+    const uint8_t* ua = (const uint8_t*)a;
+    const uint8_t* ub = (const uint8_t*)b;
+
+    double sum = 0.0;
+    double diff = 0.0;
+    for(int i = 0; i < dimension; i++)
+    {
+        if (data_typea == DATA_TYPE_FLOAT && data_typeb == DATA_TYPE_FLOAT)
+            diff = fa[i] - fb[i];
+        else if (data_typea == DATA_TYPE_FLOAT && data_typeb == DATA_TYPE_UINT8)
+            diff = fa[i] - (double)ub[i];
+        else if (data_typea == DATA_TYPE_UINT8 && data_typeb == DATA_TYPE_FLOAT)
+            diff = (double)ua[i] - fb[i];
+        else
+            diff = (double)ua[i] - (double)ub[i];
+        sum += diff * diff;
+    }
+
+    return sum;
+}
+
 // Computes the Hamming distance between two binary vectors a and b of dimension d
 int hamming_distance(const int* a, const int* b, int d);
 

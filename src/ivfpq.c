@@ -420,7 +420,7 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
     // Build a heap of size nprobe with the smallest centroid distances
     MinHeap *centroid_heap = heap_create(nprobe);
     for (int i = 0; i < k; i++) {
-        double dist = euclidean_distance(q_void, index->centroids[i], d,
+        double dist = norm(q_void, index->centroids[i], d,
                                          index->data_type, DATA_TYPE_FLOAT);
         heap_insert(centroid_heap, i, dist);
     }
@@ -459,7 +459,6 @@ void ivfpq_index_lookup(const void *q_void, const struct SearchParams *params,
                 approx_dist += dist;
             }
             
-            // approx_dist = sqrtf(approx_dist);  // Take square root for Euclidean distance
             heap_insert(topN, list->entries[i].point_id, (double)approx_dist);
         }
         
