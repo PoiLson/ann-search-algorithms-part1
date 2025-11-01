@@ -36,8 +36,6 @@ float gaussian_distribution(void)
 
 void generate_random_vector(float* v, int d)
 {
-    // Optimized bulk generation using Box-Muller (generates pairs)
-    // This reduces the number of rand() calls and sqrt/log computations by half
     int i = 0;
     
     // Generate pairs of Gaussian random numbers using Box-Muller
@@ -60,12 +58,15 @@ void generate_random_vector(float* v, int d)
     {
         v[i] = gaussian_distribution();
     }
+
     return;
 }
 
 void normalize_vector(float* v, int d)
 {
-    if (!v || d <= 0) return;
+    if (!v || d <= 0)
+        return;
+
     float sumsq = 0.0f;
 
     for (int i = 0; i < d; i++)
@@ -74,6 +75,7 @@ void normalize_vector(float* v, int d)
     float inv = 1.0f / sqrtf(sumsq);
     for (int i = 0; i < d; i++)
         v[i] *= inv;
+
     return;
 }
 
@@ -86,10 +88,10 @@ int hamming_distance(const int* a, const int* b, int d)
         if(a[i] != b[i])
             count++;
     }
+    
     return count;
 }
 
-// returns the first 'probes' neighbors from point 'a' sorted by hamming distance
 void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* neighbors)
 {
     uint64_t mask = 0;
@@ -98,7 +100,7 @@ void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* nei
     int totalNeighbors = 0;
     if(totalNeighbors < probes)
     {
-        // add itself to the list of neighbors
+        // Add itself to the list of neighbors
         neighbors[totalNeighbors] = bucket;
         totalNeighbors++;
     }
@@ -112,7 +114,7 @@ void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* nei
         {
             uint64_t temp = (element >> (kproj - 1)) & 1;
 
-            //insert the neighbor
+            // Insert the neighbor
             if(totalNeighbors < probes)
             {
                 neighbors[totalNeighbors] = (bucket ^ element) & mask;
@@ -124,10 +126,15 @@ void get_hamming_neighbors(uint64_t bucket, int probes, int kproj, uint64_t* nei
             // Gosper's hack to get next combination with same number of bits
             uint64_t c = element & -element;
             uint64_t r = element + c;
-            if (r == 0) exit(EXIT_FAILURE); // overflow
+            if (r == 0)
+                exit(EXIT_FAILURE);
+
             element = (((r ^ element) >> 2) / c) | r;
-            // stop if element overflowed beyond 64 bits
-            if (element == 0) exit(EXIT_FAILURE);
+            // Stop if element overflowed beyond 64 bits
+            if (element == 0)
+                exit(EXIT_FAILURE);
         }
     }
+
+    return;
 }

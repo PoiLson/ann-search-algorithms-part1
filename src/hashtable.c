@@ -1,6 +1,5 @@
 #include "../include/main.h"
 
-// sieve of eratosthenes O(n log (log n))
 int nearest_prime(int n)
 {
     if(n < 2)
@@ -24,28 +23,33 @@ int nearest_prime(int n)
         }
     }
 
-    // return the nearest prime number
+    // Return the nearest prime number
     for (int i = n; i >= 2; i--)
     {
         if (prime[i] == 1)
         {
             free(prime);
+
             return i;
         }
     }
 
     free(prime);
+
     return 2;
 }
 
 HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare_fun compare, Hash_fun hash_function, void* algorithmContext, int table_index, const void* metricContext)
 {
-    // initialize the hash table structure
+    // Initialize the hash table structure
     HashTable hash_table = (HashTable)malloc(sizeof(struct hash_table));
     if (hash_table == NULL)
     {
-        return NULL;
+        fprintf(stderr, "Failed to allocate hashtable\n");
+
+        exit(EXIT_FAILURE);
     }
+
     hash_table->size = 0;
     hash_table->capacity = capacity;
     hash_table->key_size = key_size;
@@ -56,73 +60,94 @@ HashTable hash_table_create(int capacity, int key_size, funtion destroy, Compare
     hash_table->table_index = table_index;
     hash_table->metricContext = metricContext;
 
-    // initialize buckets array
+    // Initialize buckets array
     hash_table->buckets = (HTBucket*)calloc(hash_table->capacity, sizeof(HTBucket));
+    if (hash_table->buckets == NULL)
+    {
+        fprintf(stderr, "Failed to allocate hashtable buckets\n");
+
+        exit(EXIT_FAILURE);
+    }
+
     return hash_table;
 }
 
-int hash_table_insert(HashTable hash_table, void *key, void *data)
+int hash_table_insert(HashTable hash_table, void* key, void* data)
 {
-    //get the ID value
+    // Get the ID value
     uint64_t ID = 0ULL;
 
-    // get the hash value
+    // Get the hash value
     int hash_value = hash_table->hash_function(hash_table, data, &ID);
 
-    // Note: ID is optional metadata in the entry; hash_value determines bucket.
-
-    // ensure capacity in the target bucket
+    // Ensure capacity in the target bucket
     HTBucket* b = &hash_table->buckets[hash_value];
     if (b->capacity == 0)
     {
         b->capacity = 4;
         b->items = (HTEntry*)malloc(b->capacity * sizeof(HTEntry));
-        if (!b->items) return -1;
+        if (!b->items)
+        {
+            fprintf(stderr, "Failed to allocate buket items\n");
+
+            exit(EXIT_FAILURE);
+        }
     }
     else if (b->count >= b->capacity)
     {
         int new_cap = b->capacity * 2;
         HTEntry* new_items = (HTEntry*)realloc(b->items, new_cap * sizeof(HTEntry));
-        if (!new_items) return -1;
+        if (!new_items)
+        {
+            fprintf(stderr, "Failed to allocate space for new items\n");
+
+            exit(EXIT_FAILURE);
+        }
+
         b->items = new_items;
         b->capacity = new_cap;
     }
 
-    // append entry at end
+    // Append entry at end
     HTEntry* e = &b->items[b->count++];
     e->data = data;
     e->key = (void*)malloc(hash_table->key_size);
-    if (!e->key) return -1;
+    if (!e->key)
+    {
+        fprintf(stderr, "Failed to allocate space for key\n");
+
+        exit(EXIT_FAILURE);
+    }
+
     memcpy(e->key, key, hash_table->key_size);
     e->ID = ID;
     hash_table->size++;
+
     return 0;
 }
 
-void* hash_table_search(HashTable hash_table, void *key)
+void* hash_table_search(HashTable hash_table, void* key)
 {
     uint64_t ID = 0ULL;
-    // get the hash value
+
+    // Get the hash value
     int hash_value = hash_table->hash_function(hash_table, key, &ID);
 
     HTBucket* b = &hash_table->buckets[hash_value];
     if (!b || b->count == 0) return NULL;
+
     for (int i = 0; i < b->count; ++i)
     {
         if (hash_table->compare && hash_table->compare(b->items[i].key, key, hash_table->metricContext) == 0)
             return b->items[i].data;
     }
+
     return NULL;
 }
 
-/*
-    Note: field 'context' is owned by the algorithm, not by the hash table.
-    The hash table will not free it in hash_table_destroy().
-    'context' will be freed from the algorithm's respoective destroy function
-*/
 void hash_table_destroy(HashTable hash_table)
 {
-    // destroy the table and the elements in it
+    // Destroy the table and the elements in it
     for (int i = 0; i < hash_table->capacity; i++)
     {
         HTBucket* b = &hash_table->buckets[i];
@@ -132,8 +157,10 @@ void hash_table_destroy(HashTable hash_table)
             {
                 if (hash_table->destroy)
                     hash_table->destroy(b->items[j].data);
+
                 free(b->items[j].key);
             }
+
             free(b->items);
             b->items = NULL;
             b->count = b->capacity = 0;
@@ -142,6 +169,8 @@ void hash_table_destroy(HashTable hash_table)
 
     free(hash_table->buckets);
     free(hash_table);
+
+    return;
 }
 
 int hash_table_size(HashTable hash_table)
@@ -152,27 +181,33 @@ int hash_table_size(HashTable hash_table)
 int hash_table_remove(HashTable hash_table, void *key)
 {
     uint64_t ID = 0ULL;
-    // get the hash value
+
+    // Get the hash value
     int hash_value = hash_table->hash_function(hash_table, key, &ID);
 
     HTBucket* b = &hash_table->buckets[hash_value];
     if (!b || b->count == 0) return -1;
+
     for (int i = 0; i < b->count; ++i)
     {
         if (hash_table->compare && hash_table->compare(b->items[i].key, key, hash_table->metricContext) == 0)
         {
-            // remove by shifting last into i (order not preserved) or memmove
+            // Remove by shifting last into i (order not preserved) or memmove
             free(b->items[i].key);
             if (hash_table->destroy)
                 hash_table->destroy(b->items[i].data);
-            // shift tail left
+
+            // Shift tail left
             if (i < b->count - 1)
                 memmove(&b->items[i], &b->items[i+1], (b->count - i - 1) * sizeof(HTEntry));
+
             b->count--;
             hash_table->size--;
+
             return 0;
         }
     }
+
     return -1;
 }
 
@@ -185,11 +220,16 @@ const HTEntry* hash_table_get_bucket_entries(HashTable hash_table, uint64_t inde
 {
     if (index >= (uint64_t)hash_table->capacity)
     {
-        if (out_count) *out_count = 0;
-        return NULL;
+        if (out_count)
+            *out_count = 0;
+        
+            return NULL;
     }
+
     HTBucket* b = &hash_table->buckets[index];
-    if (out_count) *out_count = b->count;
+    if (out_count)
+        *out_count = b->count;
+
     return b->items;
 }
 
@@ -198,6 +238,7 @@ void print_hashtable(HashTable hash_table, int table_size, int dimension)
     if (hash_table == NULL)
     {
         printf("Hash table is not initialized.\n");
+
         return;
     }
 
@@ -243,6 +284,8 @@ void print_hashtable(HashTable hash_table, int table_size, int dimension)
     }
 
     printf("----------------------------------------------------------------\n");
+
+    return;
 }
 
 void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimension)
@@ -262,4 +305,5 @@ void print_hashtables(int L, int table_size, HashTable* hash_tables, int dimensi
         printf("----------------------------------------------------------------\n");
     }
 
+    return;
 }

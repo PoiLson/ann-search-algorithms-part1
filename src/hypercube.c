@@ -1,14 +1,9 @@
 #include "../include/main.h"
-#include "../include/minheap.h"
-
-#include <math.h>   // for floorf
-#include <limits.h>
-
 
 Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* dataset)
 {
     // Allocate memory for Hypercube structure
-    // and set parameters
+    // And set parameters
     Hypercube* hyper = (Hypercube*)malloc(sizeof(Hypercube));
     if (!hyper)
     {
@@ -25,26 +20,37 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     
     // Store data type and select distance function
     hyper->data_type = dataset->data_type;
-    hyper->distance = euclidean_distance;  // uint8-based distance
+    hyper->distance = euclidean_distance; 
 
     // Initialize hash parameters
     hyper->hash_params = (Hypercube_hash_function*)malloc(hyper->kproj * sizeof(Hypercube_hash_function));
     if (!hyper->hash_params)
     {
+        fprintf(stderr, "Failed to allocate hash aprameters for hypercube\n");
         hyper_destroy(hyper);
-        return NULL;
+
+        exit(EXIT_FAILURE);
     }
 
     // Generate random vectors and offsets for each hash function
     for (int i = 0; i < hyper->kproj; i++)
     {
         hyper->hash_params[i].v = (float*)malloc(hyper->d * sizeof(float));
+        if (!hyper->hash_params)
+        {
+            fprintf(stderr, "Failed to allocate hash parameters vector for hypercube\n");
+
+            exit(EXIT_FAILURE);
+        }
+
         generate_random_vector(hyper->hash_params[i].v, hyper->d);
         normalize_vector(hyper->hash_params[i].v, hyper->d);
 
         if(!hyper->hash_params[i].v)
         {
+            fprintf(stderr, "Failed to allocate vector for hypercube\n");
             hyper_destroy(hyper);
+
             exit(EXIT_FAILURE);
         }
 
@@ -57,10 +63,12 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     hyper->binary_hash_function = hash_func_impl_hyper;
 
     // Compute average thresholds for each projection to preserve locality
-    hyper->thresholds = (float *)malloc(hyper->kproj * sizeof(float));
+    hyper->thresholds = (float*)malloc(hyper->kproj * sizeof(float));
     if (!hyper->thresholds)
     {
+        fprintf(stderr, "Failed to allocate threshold for hypercube\n");
         hyper_destroy(hyper);
+        
         exit(EXIT_FAILURE);
     }
 
@@ -86,7 +94,9 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
     hyper->hash_table = hash_table_create(1 << hyper->kproj, sizeof(int), NULL, NULL, hash_function_hyper, hyper, 0, &(dataset->dimension));
     if (!hyper->hash_table)
     {
+        fprintf(stderr, "Failed to allocate hashtable for hypercube\n");
         hyper_destroy(hyper);
+
         exit(EXIT_FAILURE);
     }
 
@@ -96,6 +106,7 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
         if (!dataset->data || !dataset->data[i])
         {
             printf("Warning: dataset[%d] is NULL\n", i);
+
             continue;
         }
 
@@ -105,7 +116,6 @@ Hypercube* hyper_init(const struct SearchParams* params, const struct Dataset* d
 
     return hyper;
 }
-
 
 void hyper_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count, void* index_data)
 {
@@ -117,16 +127,18 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     if (!topN)
     {
         fprintf(stderr, "Failed to allocate min-heap.\n");
-        return;
+        exit(EXIT_FAILURE);
     }
 
     // Allocate visited array for O(1) duplicate detection (instead of O(N) linear scan)
     // This dramatically speeds up queries when examining many candidates
     bool* visited = (bool*)calloc(hyper->dataset_size, sizeof(bool));
-    if (!visited) {
+    if (!visited)
+    {
         fprintf(stderr, "Failed to allocate visited array\n");
         heap_destroy(topN);
-        return;
+
+        exit(EXIT_FAILURE);
     }
 
     // Compute the bucket index for the query point
@@ -141,8 +153,8 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     int neighbor_count = hyper->probes;
 
     // Get neighboring bucket indices based on Hamming distance
-    // only the required number of probes
-    int checked = 0; // number of distinct points examined
+    // Only the required number of probes
+    int checked = 0; // Number of distinct points examined
     int reached_m = 0;
     get_hamming_neighbors(bucket_idx, hyper->probes, hyper->kproj, neighbors);
     for (int n = 0; n < neighbor_count; n++)
@@ -160,6 +172,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             // O(1) duplicate check using visited array instead of O(N) linear scan
             if (visited[data_idx])
                 continue;
+
             visited[data_idx] = true;
 
             // Count examined points and enforce M threshold
@@ -167,7 +180,7 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             if (checked >= hyper->M)
             {
                 reached_m = 1;
-                break; // exit current bucket
+                break;
             }
 
             // Use int-based distance computation for MNIST integer data
@@ -176,8 +189,9 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
             // Insert into min-heap (O(log N) instead of O(N) insertion sort)
             heap_insert(topN, data_idx, dist);
         }
+
         if (reached_m)
-            break; // exit probing further buckets
+            break;
     }
 
     // Extract results from heap in sorted order
@@ -188,8 +202,9 @@ void hyper_index_lookup(const void* q, const struct SearchParams* params, int* a
     // Clean up allocations
     free(visited);
     free(neighbors);
-}
 
+    return;
+}
 
 void range_search_hyper(const void* q, const struct SearchParams* params, int** range_neighbors, int* range_count, void* index_data)
 {
@@ -202,7 +217,8 @@ void range_search_hyper(const void* q, const struct SearchParams* params, int** 
     if (!visited)
     {
         fprintf(stderr, "Failed to allocate visited array\n");
-        return;
+        
+        exit(EXIT_FAILURE);
     }
 
     // Range search optimization: allocate in chunks to avoid repeated realloc
@@ -243,7 +259,6 @@ void range_search_hyper(const void* q, const struct SearchParams* params, int** 
             double dist = hyper->distance(q, p, hyper->d, hyper->data_type, hyper->data_type);
 
             // Range search (visited array already handles deduplication)
-
             if (dist <= params->R)
             {
                 // Allocate in chunks to avoid repeated realloc overhead
@@ -257,10 +272,12 @@ void range_search_hyper(const void* q, const struct SearchParams* params, int** 
                         free(*range_neighbors);
                         *range_neighbors = NULL;
                         *range_count = 0;
-                        // free(visited);
                         free(neighbors);
-                        return;
+                        free(visited);
+                    
+                        exit(EXIT_FAILURE);
                     }
+
                     *range_neighbors = new_range;
                 }
                 (*range_neighbors)[(*range_count)++] = data_idx;
@@ -269,16 +286,24 @@ void range_search_hyper(const void* q, const struct SearchParams* params, int** 
         }
     }
 
+    // Cleanup if no range neighbors found
+    if (*range_count == 0 && *range_neighbors)
+    {
+        free(*range_neighbors);
+        *range_neighbors = NULL;
+    }
+
     // Clean up allocations
     free(visited);
     free(neighbors);
+
+    return;
 }
-
-
 
 void hyper_destroy(struct Hypercube* hyper)
 {
-    if (!hyper) return;
+    if (!hyper)
+        return;
 
     // Free hash table first
     if (hyper->hash_table)
@@ -292,6 +317,7 @@ void hyper_destroy(struct Hypercube* hyper)
             if (hyper->hash_params[i].v)
                 free(hyper->hash_params[i].v);
         }
+
         free(hyper->hash_params);
     }
 
@@ -302,4 +328,6 @@ void hyper_destroy(struct Hypercube* hyper)
 
     // Finally free the structure itself
     free(hyper);
+
+    return;
 }

@@ -1,21 +1,23 @@
 #include "../include/main.h"
 
-static void init_linear_combinations(LSH *lsh)
+// Helper function to initialize the linear combinations needed (r_i)
+static void init_linear_combinations(LSH* lsh)
 {
     lsh->linear_combinations = malloc(lsh->L * sizeof(int32_t *));
     if (!lsh->linear_combinations)
     {
         fprintf(stderr, "Memory allocation failed for linear combinations.\n");
+
         exit(EXIT_FAILURE);
     }
 
     for (int i = 0; i < lsh->L; i++)
     {
         lsh->linear_combinations[i] = malloc(lsh->k * sizeof(int32_t));
-
         if (!lsh->linear_combinations[i])
         {
             fprintf(stderr, "Memory allocation failed for linear combinations row.\n");
+
             exit(EXIT_FAILURE);
         }
 
@@ -26,12 +28,21 @@ static void init_linear_combinations(LSH *lsh)
             lsh->linear_combinations[i][j] = (int32_t)lc;
         }
     }
+
+    return;
 }
 
-LSH *lsh_init(const struct SearchParams *params, const struct Dataset *dataset)
+LSH* lsh_init(const struct SearchParams* params, const struct Dataset* dataset)
 {
     // Allocate memory for LSH structure and set parameters
-    LSH *lsh = (LSH *)malloc(sizeof(LSH));
+    LSH* lsh = (LSH*)malloc(sizeof(LSH));
+    if (!lsh)
+    {
+        fprintf(stderr, "Memory allocation failed for lsh.\n");
+
+        exit(EXIT_FAILURE);
+    }
+
     lsh->d = dataset->dimension;
     lsh->L = params->L;
     lsh->k = params->k;
@@ -47,31 +58,38 @@ LSH *lsh_init(const struct SearchParams *params, const struct Dataset *dataset)
     lsh->distance = euclidean_distance; // uint8-based distance
 
     // Allocate memory for per-table hash parameters (L x k)
-    lsh->hash_params = (LSH_hash_function **)malloc(lsh->L * sizeof(LSH_hash_function *));
+    lsh->hash_params = (LSH_hash_function**)malloc(lsh->L * sizeof(LSH_hash_function*));
     if (!lsh->hash_params)
     {
+        fprintf(stderr, "Failed to allocate space for the hash parameters of LSH!\n");
         lsh_destroy(lsh);
+
         exit(EXIT_FAILURE);
     }
 
     // For each table, generate K independent hash functions (v, t)
     for (int tbl = 0; tbl < lsh->L; tbl++)
     {
-        lsh->hash_params[tbl] = (LSH_hash_function *)malloc(lsh->k * sizeof(LSH_hash_function));
+        lsh->hash_params[tbl] = (LSH_hash_function*)malloc(lsh->k * sizeof(LSH_hash_function));
         if (!lsh->hash_params[tbl])
         {
+            fprintf(stderr, "Failed to allocate space for hash parameters indices!\n");
             lsh_destroy(lsh);
+
             exit(EXIT_FAILURE);
         }
 
         for (int i = 0; i < lsh->k; i++)
         {
-            lsh->hash_params[tbl][i].v = (float *)malloc(lsh->d * sizeof(float));
+            lsh->hash_params[tbl][i].v = (float*)malloc(lsh->d * sizeof(float));
             if (!lsh->hash_params[tbl][i].v)
             {
+                fprintf(stderr, "Failed to allocate space for hash parameters indices!\n");
                 lsh_destroy(lsh);
+
                 exit(EXIT_FAILURE);
             }
+
             generate_random_vector(lsh->hash_params[tbl][i].v, lsh->d);
             normalize_vector(lsh->hash_params[tbl][i].v, lsh->d);
 
@@ -84,21 +102,21 @@ LSH *lsh_init(const struct SearchParams *params, const struct Dataset *dataset)
 
     init_linear_combinations(lsh);
 
-    // create a hash table for each hash table in LSH
-    lsh->hash_tables = (HashTable *)malloc(lsh->L * sizeof(HashTable));
+    // Create a hash table for each hash table in LSH
+    lsh->hash_tables = (HashTable*)malloc(lsh->L * sizeof(HashTable));
 
     for (int i = 0; i < lsh->L; i++)
     {
         lsh->hash_tables[i] = hash_table_create(lsh->table_size, sizeof(int), NULL, NULL, hash_function_lsh, lsh, i, &(dataset->dimension));
-
         if (!lsh->hash_tables[i])
         {
+            fprintf(stderr, "Failed to allocate space for LSH's hashtable!\n");
             lsh_destroy(lsh);
             exit(EXIT_FAILURE);
         }
     }
 
-    // insert all points in all hash tables
+    // Insert all points in all hash tables
     for (int i = 0; i < dataset->size; i++)
     {
         // Verify point is valid before insertion
@@ -107,35 +125,42 @@ LSH *lsh_init(const struct SearchParams *params, const struct Dataset *dataset)
             printf("Warning: dataset[%d] is NULL\n", i);
             continue;
         }
+
         for (int j = 0; j < lsh->L; j++)
-        {
-            // printf("INSERTING INSIDE THE HASHTABLE LSH, i = %d\n", i);
             hash_table_insert(lsh->hash_tables[j], &i, dataset->data[i]);
-        }
     }
+
     return lsh;
 }
 
-void lsh_index_lookup(const void *q, const struct SearchParams *params, int *approx_neighbors, double *approx_dists, int *approx_count, void *index_data)
+void lsh_index_lookup(const void* q, const struct SearchParams* params, int* approx_neighbors, double* approx_dists, int* approx_count, void* index_data)
 {
     // Cast index_data to LSH structure
-    struct LSH *lsh = (struct LSH *)index_data;
+    struct LSH* lsh = (struct LSH*)index_data;
+    if(index_data == NULL)
+    {
+        fprintf(stderr, "LSH struct is not allocated!\n");
+
+        exit(EXIT_FAILURE);
+    }
 
     // Use a visited array for O(1) duplicate detection across all tables
-    bool *visited = (bool *)calloc(lsh->dataset_size, sizeof(bool));
+    bool* visited = (bool*)calloc(lsh->dataset_size, sizeof(bool));
     if (!visited)
     {
         fprintf(stderr, "Failed to allocate visited array.\n");
-        return;
+        
+        exit(EXIT_FAILURE);
     }
 
     // Create min-heap for top-N neighbors
-    MinHeap *topN = heap_create(params->N);
+    MinHeap* topN = heap_create(params->N);
     if (!topN)
     {
         fprintf(stderr, "Failed to allocate min-heap.\n");
         free(visited);
-        return;
+        
+        exit(EXIT_FAILURE);
     }
 
     int flagged = 0;
@@ -143,15 +168,14 @@ void lsh_index_lookup(const void *q, const struct SearchParams *params, int *app
     for (int tbl_idx = 0; tbl_idx < lsh->L; tbl_idx++)
     {
         uint64_t q_id = 0ULL;
-        // printf("INSIDE OF LSH INDEX LOOKUP\n");
         int bucket_idx = hash_func_impl_lsh(q, lsh, tbl_idx, &q_id);
 
         int bucket_count = 0;
-        const HTEntry *bucket = hash_table_get_bucket_entries(lsh->hash_tables[tbl_idx], bucket_idx, &bucket_count);
+        const HTEntry* bucket = hash_table_get_bucket_entries(lsh->hash_tables[tbl_idx], bucket_idx, &bucket_count);
         for (int bi = 0; bi < bucket_count; ++bi)
         {
-            int data_idx = *(int *)bucket[bi].key;
-            void *p = bucket[bi].data;
+            int data_idx = *(int*)bucket[bi].key;
+            void* p = bucket[bi].data;
 
             if (bucket[bi].ID != q_id)
                 continue;
@@ -177,24 +201,29 @@ void lsh_index_lookup(const void *q, const struct SearchParams *params, int *app
     *approx_count = topN->size;
     heap_extract_sorted(topN, approx_neighbors, approx_dists);
     heap_destroy(topN);
-
     free(visited);
+
+    return;
 }
 
-
-
-
-void range_search_lsh(const void *q, const struct SearchParams *params, int **range_neighbors, int *range_count, void *index_data)
+void range_search_lsh(const void* q, const struct SearchParams* params, int** range_neighbors, int* range_count, void* index_data)
 {
     // Cast index_data to LSH structure
-    struct LSH *lsh = (struct LSH *)index_data;
+    struct LSH* lsh = (struct LSH*)index_data;
+    if(index_data == NULL)
+    {
+        fprintf(stderr, "LSH struct is not allocated!\n");
+
+        exit(EXIT_FAILURE);
+    }
 
     // Use a visited array for O(1) duplicate detection across all tables
-    bool *visited = (bool *)calloc(lsh->dataset_size, sizeof(bool));
+    bool* visited = (bool*)calloc(lsh->dataset_size, sizeof(bool));
     if (!visited)
     {
         fprintf(stderr, "Failed to allocate visited array.\n");
-        return;
+        
+        exit(EXIT_FAILURE);
     }
 
     // Range neighbors dynamic capacity (grow in chunks instead of per-item realloc)
@@ -205,15 +234,14 @@ void range_search_lsh(const void *q, const struct SearchParams *params, int **ra
     for (int tbl_idx = 0; tbl_idx < lsh->L; tbl_idx++)
     {
         uint64_t q_id = 0ULL;
-        // printf("INSIDE OF LSH INDEX LOOKUP\n");
         int bucket_idx = hash_func_impl_lsh(q, lsh, tbl_idx, &q_id);
 
         int bucket_count = 0;
-        const HTEntry *bucket = hash_table_get_bucket_entries(lsh->hash_tables[tbl_idx], bucket_idx, &bucket_count);
+        const HTEntry* bucket = hash_table_get_bucket_entries(lsh->hash_tables[tbl_idx], bucket_idx, &bucket_count);
         for (int bi = 0; bi < bucket_count; ++bi)
         {
-            int data_idx = *(int *)bucket[bi].key;
-            void *p = bucket[bi].data;
+            int data_idx = *(int*)bucket[bi].key;
+            void* p = bucket[bi].data;
 
             if (bucket[bi].ID != q_id)
                 continue;
@@ -242,7 +270,9 @@ void range_search_lsh(const void *q, const struct SearchParams *params, int **ra
                         free(*range_neighbors);
                         *range_neighbors = NULL;
                         *range_count = 0;
-                        break;
+                        free(visited);
+                        
+                        exit(EXIT_FAILURE);
                     }
                     *range_neighbors = new_buf;
                     range_capacity = new_capacity;
@@ -254,7 +284,7 @@ void range_search_lsh(const void *q, const struct SearchParams *params, int **ra
         }
     }
 
-    // cleanup if no range neighbors found
+    // Cleanup if no range neighbors found
     if (*range_count == 0 && *range_neighbors)
     {
         free(*range_neighbors);
@@ -262,10 +292,11 @@ void range_search_lsh(const void *q, const struct SearchParams *params, int **ra
     }
 
     free(visited);
+
+    return;
 }
 
-
-void lsh_destroy(struct LSH *lsh)
+void lsh_destroy(struct LSH* lsh)
 {
     if (!lsh)
         return;
@@ -326,4 +357,6 @@ void lsh_destroy(struct LSH *lsh)
     }
 
     free(lsh);
+
+    return;
 }

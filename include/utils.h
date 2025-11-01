@@ -24,6 +24,7 @@ static inline float dot_product(const float* a, const void* b, int d, DataType d
         else
             sum += a[i] * (float)((const uint8_t*)b)[i];
     }
+
     return sum;
 }
 
@@ -49,6 +50,7 @@ static inline double euclidean_distance(const void* a, const void* b, const int 
             diff = (double)ua[i] - (double)ub[i];
         sum += diff * diff;
     }
+    
     return sqrt(sum);
 }
 

@@ -1,6 +1,6 @@
 #include "../include/main.h"
 
-int parse_arguments(int argc, char **argv, SearchParams *params)
+int parse_arguments(int argc, char** argv, SearchParams* params)
 {
     // Default values
     memset(params, 0, sizeof(SearchParams));
@@ -228,4 +228,6 @@ void print_usage(AlgorithmType type)
         printf("- ivfflat\n");
         printf("- ivfpq\n");
     }
+
+    return;
 }

@@ -6,7 +6,8 @@ void run_lsh(SearchParams* params, Dataset* dataset)
     if (!lsh)
     {
         fprintf(stderr, "Failed to build LSH index.\n");
-        return;
+
+        exit(EXIT_FAILURE);
     }
     
     Dataset* query_set = NULL;
@@ -22,11 +23,13 @@ void run_lsh(SearchParams* params, Dataset* dataset)
 
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);
+
         free(query_set->data);
         free(query_set);
     }
 
     lsh_destroy(lsh);
+
     return;
 }
 
@@ -36,7 +39,8 @@ void run_hypercube(SearchParams* params, Dataset* dataset)
     if (!hyper)
     {
         fprintf(stderr, "Failed to build Hypercube index.\n");
-        return;
+
+        exit(EXIT_FAILURE);
     }
 
     Dataset* query_set = NULL;
@@ -52,11 +56,13 @@ void run_hypercube(SearchParams* params, Dataset* dataset)
 
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);
+
         free(query_set->data);
         free(query_set);
     }
 
     hyper_destroy(hyper);
+
     return;
 }
 
@@ -67,11 +73,13 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
     if (!ivf_index)
     {
         fprintf(stderr, "Failed to build IVFFlat index.\n");
-        return;
+
+        exit(EXIT_FAILURE);
     }
 
     // Compute silhouette (prints results internally)
     // computeSilhouette(ivf_index, dataset);
+
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)
         query_set = read_data_mnist(params->query_path);
@@ -82,13 +90,16 @@ void run_ivfflat(SearchParams* params, Dataset* dataset)
     {
         // Perform queries using IVFFlat
         perform_query(params, dataset, query_set, ivfflat_index_lookup, range_search_ivfflat, ivf_index);
+
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);
+
         free(query_set->data);
         free(query_set);
     }
 
     ivfflat_destroy(ivf_index);
+
     return;
 }
 
@@ -100,14 +111,17 @@ void run_ivfpq(SearchParams* params, Dataset* dataset)
     int M = params->M > 0 ? params->M : 8;
     int nbits = 8;  // Standard choice for IVFPQ
     
-    printf("Building IVFPQ index with k=%d clusters, M=%d subspaces, nbits=%d...\n", 
-           params->kclusters, M, nbits);
+    printf("Building IVFPQ index with k=%d clusters, M=%d subspaces, nbits=%d...\n", params->kclusters, M, nbits);
     IVFPQIndex* ivfpq_index = ivfpq_init(dataset, params->kclusters, M, nbits);
     if (!ivfpq_index)
     {
         fprintf(stderr, "Failed to build IVFPQ index.\n");
-        return;
+
+        exit(EXIT_FAILURE);
     }
+    
+    // Compute silhouette (prints results internally)
+    // computeSilhouette(ivf_index, dataset);
     
     Dataset* query_set = NULL;
     if (params->dataset_type == DATA_MNIST)
@@ -122,10 +136,12 @@ void run_ivfpq(SearchParams* params, Dataset* dataset)
         
         for (int i = 0; i < query_set->size; i++)
             free(query_set->data[i]);
+
         free(query_set->data);
         free(query_set);
     }
     
     ivfpq_destroy(ivfpq_index);
+
     return;
 }

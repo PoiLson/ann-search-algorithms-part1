@@ -1,47 +1,5 @@
 #include "../include/main.h"
 
-
-int main2()
-{
-    printf("hello to debugging!\n");
-    srand(time(NULL));
-    Dataset* dataset = (Dataset*)malloc(sizeof(Dataset));
-    if (!dataset)
-    {
-        fprintf(stderr, "Memory allocation failed for subset dataset struct in Kmeans++\n");
-        exit(EXIT_FAILURE);
-    }
-
-    dataset->size = 10;
-    dataset->dimension = 2;
-    dataset->data_type = DATA_TYPE_FLOAT;
-    
-    float** arrayExp = (float**)malloc(sizeof(float*) * 10);
-    for(int idx = 0; idx < 10; idx++)
-    {
-        arrayExp[idx] = (float*)malloc(sizeof(float) * 2);
-
-        arrayExp[idx][0] = rand() %10;
-        arrayExp[idx][1] = rand() %10;
-    }
-    dataset->data = (void**)arrayExp;
-
-    for(int idx = 0; idx < 10; idx++)
-    {
-        printf("(%f, %f)\n",  arrayExp[idx][0], arrayExp[idx][1]);
-    }
-    
-    printPartialDataset(10, dataset);
-
-    ivfflat_init(dataset, 2);
-
-
-
-    return 0;
-}
-
-
-
 int main(int argc, char **argv)
 {
     SearchParams params;
@@ -66,9 +24,6 @@ int main(int argc, char **argv)
         printf("MNIST Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
     else if(params.dataset_type == DATA_SIFT)
         printf("SIFT Dataset loaded: %d points of dimension %d\n", dataset->size, dataset->dimension);
-
-    // print some points
-    // printPartialDataset(2, dataset);
 
     unsigned int seed = 42;
     if (params.seed)

@@ -59,6 +59,7 @@ static inline void clear_lists(IVFFlatIndex* index)
 {
     for (int t = 0; t < index->k; t++)
         index->lists[t].count = 0;
+        
     return;
 }
 

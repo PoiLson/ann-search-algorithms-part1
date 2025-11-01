@@ -1,9 +1,17 @@
 #include "../include/main.h"
 
+void computeSilhouette(IVFFlatIndex* index, Dataset* dataset)
+{
+    if (!index || !dataset || index->k == 0)
+    {
+        printf("Cannot print the silhouette for the given data, they are uninitialized!\n");
 
-// Fast silhouette computation with parallelization and optional sampling
-void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
-    if (!index || !dataset || index->k == 0) {
+        return;
+    }
+    else if(index->k == 0)
+    {
+        printf("Cannot compute the silhouette because there are none centroids!\n");
+
         return;
     }
 
@@ -13,24 +21,27 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
     DataType data_type = dataset->data_type;
     if (k <= 0 || n <= 0)
     {
-        perror("kclusters or the dataset size is 0\n");
-        exit(EXIT_FAILURE);
+        printf("kclusters or the dataset size is 0\n");
+        
+        return;
     }
 
     /* ---------- 1. Build cluster_of[point] = cluster index ---------- */
-    double *per_cluster = (double *)malloc(index->k * sizeof(double));
+    double* per_cluster = (double*)malloc(index->k * sizeof(double));
     if (!per_cluster)
     {
         printf("Error in allocating per_cluster!\n");
+
         exit(EXIT_FAILURE);
     }
 
     // Finds from all the points of the dataset the cluster they have
-    int *cluster_of = (int *)calloc((size_t)n, sizeof(int));
+    int* cluster_of = (int*)calloc((size_t)n, sizeof(int));
     if (!cluster_of)
     {
         printf("Error in allocating cluster_of!\n");
         free(per_cluster);
+
         exit(EXIT_FAILURE);
     }
 
@@ -44,31 +55,31 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
     }
     
     /* ---------- 2. Allocate silhouette array (one per point) ---------- */
-    double *s = (double *)calloc((size_t)n, sizeof(double));
+    double* s = (double*)calloc((size_t)n, sizeof(double));
     if (!s)
     {
         printf("Error allocating space for silhouette arrays\n");
         free(cluster_of);
         free(per_cluster);
+
         exit(EXIT_FAILURE);
     }
     
     printf("reached the nested parallization\n");
 
     // ===== INTRA-CLUSTER: Compute a(i) using symmetric pairwise distances =====
-    // Single-level parallelization over clusters
     #pragma omp parallel for schedule(dynamic)
     for (int c = 0; c < k; c++)
     {
         double sum = 0.0;
-        const InvertedList *list = &index->lists[c];
+        const InvertedList* list = &index->lists[c];
         int cluster_size = list->count;
         fflush(stdout);
 
         for (int j = 0; j < list->count; ++j)
         {
             int pid = list->point_ids[j];
-            void *point = dataset->data[pid];
+            void* point = dataset->data[pid];
 
             // a(i): avg dist in same cluster (skip self)
             double a = 0.0;
@@ -76,6 +87,7 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
             {
                 if (k == j)
                     continue;
+
                 a += euclidean_distance(point, list->points[k], dataset->dimension, dataset->data_type, dataset->data_type);
             }
             a /= (list->count - 1);
@@ -105,13 +117,14 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
             if(nearest_centroid == -1)
             {
                 printf("Cannot find any nearest centroid\n");
-                exit(EXIT_FAILURE);
+                
+                return;
             }
 
             
             double b = best_distance;
 
-            // now we calculate the s(i)
+            // Now we calculate the s(i)
             double si = (a == 0.0 && b == 0.0) ? -2 : (b - a) / fmax(a, b);
             s[pid] = si;
             sum += si;
@@ -119,8 +132,10 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
 
         per_cluster[c] = sum / list->count;
     }
-
+    
+    free(per_cluster);
     free(cluster_of);
     free(s);
+
     return;
 }

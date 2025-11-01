@@ -1,7 +1,5 @@
 #include "../include/main.h"
-#include "../include/bruteforce_cache.h"
 
-// Modular query function, works with any index lookup function
 void perform_query(const struct SearchParams* params, const struct Dataset* dataset, const struct Dataset* query_set, index_lookup lookup_func, range_search range_fun, void* index_data)
 {
     // Open output file
@@ -9,7 +7,8 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
     if (!output_file)
     {
         fprintf(stderr, "Error opening output file: %s\n", params->output_path);
-        return;
+        
+        exit(EXIT_FAILURE);
     }
 
     // Metrics accumulators
@@ -25,36 +24,64 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
     }
 
     // Try to load brute-force cache or compute if not found
-    char *cache_path = bruteforce_cache_get_path(params->dataset_path, params->query_path, params->N);
-    BruteForceCache *bf_cache = bruteforce_cache_load(cache_path, query_set->size, params->N);
+    char* cache_path = bruteforce_cache_get_path(params->dataset_path, params->query_path, params->N);
+    BruteForceCache* bf_cache = bruteforce_cache_load(cache_path, query_set->size, params->N);
     
-    if (!bf_cache) {
+    if (!bf_cache)
+    {
         printf("Cache not found, computing brute-force ground truth...\n");
         bf_cache = bruteforce_compute(dataset, query_set, params->N);
         
-        if (bf_cache) {
+        if (bf_cache)
+        {
             // Create cache directory if it doesn't exist
             int ret = system("mkdir -p Data/.cache");
-            if (ret != 0) {
+            if (ret != 0)
+            {
                 fprintf(stderr, "Warning: failed to create cache directory (exit code %d)\n", ret);
             }
+
             bruteforce_cache_save(bf_cache, cache_path);
-        } else {
+        }
+        else
+        {
             fprintf(stderr, "Failed to compute brute-force results\n");
             free(cache_path);
             fclose(output_file);
+
             return;
         }
     }
+    
     free(cache_path);
 
     // ------------------------- Main query loop ------------------------------------
     // Iterate over each query in the query set
+
+    // Print format to print in the output the name of the algorithm we are using
+    fprintf(output_file, "%s\n", params->algorithm == ALG_LSH ? "LSH" :
+            params->algorithm == ALG_HYPERCUBE ? "Hypercube" :
+            params->algorithm == ALG_IVFFLAT ? "IVFFlat" : "IVFPQ");
+
     for (int q_idx = 0; q_idx < query_set->size; q_idx++)
     {
         void* q = query_set->data[q_idx];
         int* approx_neighbors = (int*)malloc(params->N * sizeof(int));
+        if (!approx_neighbors)
+        {
+            fprintf(stderr, "Failed to allocate space for approx_neighbors!\n");
+
+            exit(EXIT_FAILURE);
+        }
+
         double* approx_dists = (double*)malloc(params->N * sizeof(double));
+        if (!approx_dists)
+        {
+            fprintf(stderr, "Failed to allocate space for approx_dists!\n");
+
+            exit(EXIT_FAILURE);
+        }
+
         int approx_count = 0;
         int* range_neighbors = NULL;
         int range_count = 0;
@@ -110,7 +137,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
                 if (t_idx == approx_neighbors[j])
                 {
                     recall_count++;
-                    break; /* don't double-count this true neighbor */
+                    break;
                 }
             }
         }
@@ -120,28 +147,23 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         total_recall += recall;
 
         // Output
-        fprintf(output_file, "%s\n", params->algorithm == ALG_LSH ? "LSH" :
-                params->algorithm == ALG_HYPERCUBE ? "Hypercube" :
-                params->algorithm == ALG_IVFFLAT ? "IVFFlat" : "IVFPQ");
-        fprintf(output_file, "Query: %d\n", q_idx);
+        fprintf(output_file, "\nQuery: %d\n", q_idx);
 
         for (int i = 0; i < params->N && i < approx_count; i++)
         {
             fprintf(output_file, "Nearest neighbor-%d: %d\n", i + 1, approx_neighbors[i]);
             fprintf(output_file, "distanceApproximate: %f\n", approx_dists[i]);
             fprintf(output_file, "distanceTrue: %f\n", true_dists[i]);
-            if (i < true_count) {
+            if (i < true_count)
                 fprintf(output_file, "True neighbor-%d: %d\n", i + 1, true_neighbors[i]);
-            }
         }
 
         if (params->range_search && range_count > 0)
         {
-            fprintf(output_file, "R-near neighbors:\n");
+            fprintf(output_file, "\nR-near neighbors:\n");
             for (int i = 0; i < range_count; i++)
-            {
                 fprintf(output_file, "%d\n", range_neighbors[i]);
-            }
+
         }
 
         free(approx_neighbors);
@@ -158,15 +180,16 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         double avg_t_true = total_true_time / (double)query_count;
         double qps_overall = (total_approx_time > 0.0) ? ((double)query_count / total_approx_time) : 0.0;
 
-        fprintf(output_file, "===== OVERALL METRICS =====\n");
-        fprintf(output_file, "Average AF (mean over queries): %f\n", avg_af);
-        fprintf(output_file, "Average Recall@N: %f\n", avg_recall);
-        fprintf(output_file, "Average tApproximate: %f\n", avg_t_approx);
-        fprintf(output_file, "Average tTrue: %f\n", avg_t_true);
-        fprintf(output_file, "QPS_overall: %f\n", qps_overall);
+        fprintf(output_file, "\n\nAverage AF: %f\n", avg_af);
+        fprintf(output_file, "Recall@N: %f\n", avg_recall);
+        fprintf(output_file, "QPS: %f\n", qps_overall);
+        fprintf(output_file, "tApproximateAverage: %f\n", avg_t_approx);
+        fprintf(output_file, "tTrueAverage: %f\n", avg_t_true);
     }
 
     // Free brute-force cache
     bruteforce_cache_free(bf_cache);
     fclose(output_file);
+
+    return;
 }

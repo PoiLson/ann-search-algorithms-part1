@@ -61,6 +61,7 @@ static inline uint64_t hash_func_impl_hyper(const void* p, const Hypercube* hype
     }
 
     if (ID) *ID = id;
+    
     return id;  // Return full uint64_t
 }
 

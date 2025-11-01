@@ -81,6 +81,7 @@ static inline int hash_func_impl_lsh(const void* p, const LSH* lsh, int table_in
 
     // Final hash table index
     int bucket_idx = (int)(id_val % (uint64_t)lsh->table_size);
+    
     return bucket_idx;
 }
 
@@ -95,6 +96,7 @@ static inline int hash_function_lsh(HashTable ht, void* data, uint64_t* ID)
         return 0;
     }
     int t_idx = hash_table_get_index(ht);
+
     return hash_func_impl_lsh(data, lsh_ctx, t_idx, ID);
 }
 
