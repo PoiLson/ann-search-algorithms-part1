@@ -63,9 +63,7 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
         double sum = 0.0;
         const InvertedList *list = &index->lists[c];
         int cluster_size = list->count;
-        // printf("Thread %d starting cluster %d\n", omp_get_thread_num(), c);
         fflush(stdout);
-        
 
         for (int j = 0; j < list->count; ++j)
         {
@@ -78,10 +76,7 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
             {
                 if (k == j)
                     continue;
-
-                // now i am runnning it iwht time make mnist so it is ints we will see
                 a += euclidean_distance(point, list->points[k], dataset->dimension, dataset->data_type, dataset->data_type);
-                // printf("a for cluster %d is %f\n", c, a);
             }
             a /= (list->count - 1);
 
@@ -92,14 +87,12 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
             #pragma omp parallel for reduction(min:best_distance)
             for (int c2 = 0; c2 < k; ++c2)
             {
-                // printf("Thread %d starting cluster %d\n", omp_get_thread_num(), c);
                 if (c2 == c || index->lists[c2].count == 0)
                     continue;
 
                 double distance = 0.0;
                 for (int kk = 0; kk < index->lists[c2].count; ++kk)
                     distance += euclidean_distance(point, index->lists[c2].points[kk], dataset->dimension, dataset->data_type, dataset->data_type);
-
                 distance /= index->lists[c2].count;
 
                 if (distance < best_distance)
@@ -125,15 +118,9 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset) {
         }
 
         per_cluster[c] = sum / list->count;
-        printf("Thread %d end of cluster %d, per cluster: %f\n", omp_get_thread_num(), c, per_cluster[c]);
-
-    
     }
-
-    printf("end of parallilzation\n");
 
     free(cluster_of);
     free(s);
-
     return;
 }

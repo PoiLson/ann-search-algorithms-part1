@@ -94,7 +94,7 @@ void assign_points_to_clusters(IVFFlatIndex *index, Dataset *dataset, int start,
         index->lists[t].count = write_pos[t];
         index->lists[t].cluster_id = t;
     }
-
+    //free temporary buffers
     free(assign);
     free(counts);
     free(write_pos);
@@ -414,6 +414,10 @@ centroidInfo *runKmeans(Dataset *subset, int kclusters)
     info->centroids = centroids;
     info->is_centroid = is_centroid;
 
+    // Free temporary working buffers allocated in this function
+    free(probabilities);
+    free(best_distances_square);
+
     return info;
 }
 
@@ -472,21 +476,16 @@ IVFFlatIndex *ivfflat_init(Dataset *dataset, int kclusters)
     // printPartialDataset(subset->size, subset);
 
     IVFFlatIndex *ivfflat_index = lloydAlgorithm(subset, kclusters);
-    // print all centroids for debugging
-    // for (int dx = 0; dx < kclusters; dx++)
-    // {
-    //     printf("centroid[%d] = { ", dx);
-    //     for (int x = 0; x < dataset->dimension; x++)
-    //     {
-    //         printf("%f, ", ivfflat_index->centroids[dx][x]);
-    //     }
-    //     printf("}\n");
-    // }
+
 
     // Now assign ALL points from the full dataset to the corresponding centroids
     assign_points_to_clusters(ivfflat_index, dataset, 0, dataset->size);
     
-    // Free the subset: first free the copied data array, then the struct
+    // Free the subset: first free ALL copied data vectors (dataset->size, not subset->size), then the struct
+    for (int i = 0; i < dataset->size; i++)
+    {
+        free(subset->data[i]);
+    }
     free(subset->data);
     free(subset);
 

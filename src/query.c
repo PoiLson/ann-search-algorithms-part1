@@ -47,12 +47,12 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         }
     }
     free(cache_path);
-    // Main query loop
+
+    // ------------------------- Main query loop ------------------------------------
     // Iterate over each query in the query set
     for (int q_idx = 0; q_idx < query_set->size; q_idx++)
     {
         void* q = query_set->data[q_idx];
-
         int* approx_neighbors = (int*)malloc(params->N * sizeof(int));
         double* approx_dists = (double*)malloc(params->N * sizeof(double));
         int approx_count = 0;
@@ -138,7 +138,6 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
         if (params->range_search && range_count > 0)
         {
             fprintf(output_file, "R-near neighbors:\n");
-
             for (int i = 0; i < range_count; i++)
             {
                 fprintf(output_file, "%d\n", range_neighbors[i]);
@@ -169,6 +168,5 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
 
     // Free brute-force cache
     bruteforce_cache_free(bf_cache);
-
     fclose(output_file);
 }

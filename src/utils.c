@@ -1,6 +1,5 @@
 #include "../include/main.h"
 
-// Generates a random number uniformly distributed between a and b 
 float uniform_distribution(void* a, void* b)
 {
     float a_p = *(float*) a;
@@ -11,6 +10,7 @@ float uniform_distribution(void* a, void* b)
 
 float gaussian_distribution(void)
 {
+    // Box-Muller transform
     static int haveSpare = 0;
     static float spare;
     if (haveSpare)
@@ -60,17 +60,21 @@ void generate_random_vector(float* v, int d)
     {
         v[i] = gaussian_distribution();
     }
+    return;
 }
 
 void normalize_vector(float* v, int d)
 {
     if (!v || d <= 0) return;
     float sumsq = 0.0f;
+
     for (int i = 0; i < d; i++)
         sumsq += v[i] * v[i];
+
     float inv = 1.0f / sqrtf(sumsq);
     for (int i = 0; i < d; i++)
         v[i] *= inv;
+    return;
 }
 
 int hamming_distance(const int* a, const int* b, int d)
