@@ -55,6 +55,6 @@ typedef struct SearchParams
 int parse_arguments(int argc, char** argv, SearchParams* params);
 
 // Function to print usage instructions
-void print_usage(void);
+void print_usage(AlgorithmType type);
 
 #endif

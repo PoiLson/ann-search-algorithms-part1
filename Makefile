@@ -72,7 +72,7 @@ ifeq ($(ALGO), lsh)
 endif
 
 ifeq ($(ALGO), hypercube)
-    ALGO_PARAMS_SIFT = -kproj 17 -w 5 -M 50000 -probes 5000 -o $(OUTPUT_FILE) -N 5 -R 50000 -type sift -range false -hypercube
+    ALGO_PARAMS_SIFT = -kproj 17 -w 5 -M 9000 -probes 5000 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -range false -hypercube
 endif
 
 ifeq ($(ALGO), ivfflat)
@@ -123,7 +123,7 @@ mnist: $(OBJDIR) $(TARGET)
 	OMP_MAX_ACTIVE_LEVELS=2 \
 	./$(TARGET) \
 		-d Data/MNIST/train-images.idx3-ubyte \
-		-q Data/MNIST/t10k-images.idx3-ubyte \
+		-q Data/MNIST/t10k-images-100-sample.idx3-ubyte \
 		$(ALGO_PARAMS_MNIST) -seed 42
 	@$(MAKE) clean
 
@@ -134,7 +134,7 @@ sift: $(OBJDIR) $(TARGET)
 	OMP_MAX_ACTIVE_LEVELS=2 \
 	./$(TARGET) \
 		-d Data/SIFT/sift_base.fvecs \
-		-q Data/SIFT/sift_query.fvecs \
+		-q Data/SIFT/sift_query_100.fvecs \
 		$(ALGO_PARAMS_SIFT) -seed 42
 	@$(MAKE) clean
 
