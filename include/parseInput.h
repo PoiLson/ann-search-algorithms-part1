@@ -39,7 +39,7 @@ typedef struct SearchParams
 
     // Hypercube params
     int kproj;                      // Number of projection
-    int M;                          // Number of elements to be examined
+    int M;                          // Number of elements to be examined or Number of subvectors for IVFPQ
     int probes;                     // Number of vertices to be examined
 
     // IVFFlat / IVFPQ params
@@ -49,7 +49,6 @@ typedef struct SearchParams
 
     // IVFPQ extra params
     int nbits;                      // Size of centroids (s = 2^nbits)
-    int M_pq;                       // Number of subvectors for PQ
 } SearchParams;
 
 // Function to parse command-line arguments and populate SearchParams structure

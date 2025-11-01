@@ -30,7 +30,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 # User Input Parameters
 
 # CHOOSE WHAT ALGORITHM YOU WANT TO USE
-# POSSIBLE CHOICES (algorithm -> pseudoname to use below):
+# AVAILABLE OPTIONS (algorithm -> pseudoname to use below):
 # Locality Sensitive Hashing 			-> lsh
 # Binary Hypercube 						-> hypercube
 # InVerted File index 					-> ivfflat

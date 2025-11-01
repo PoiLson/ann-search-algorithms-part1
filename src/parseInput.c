@@ -29,8 +29,6 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
                 params->dataset_type = DATA_MNIST;
             else if (strcmp(argv[i], "sift") == 0)
                 params->dataset_type = DATA_SIFT;
-            else
-                params->dataset_type  = DATA_NONE;
         }
         else if (strcmp(argv[i], "-range") == 0 && i + 1 < argc)
             params->range_search = (strcmp(argv[++i], "true") == 0);
@@ -39,13 +37,21 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
             params->N = atoi(argv[++i]);
             if(params->N < 0)
             {
-                fprintf(stderr, "Error: Neighbors cannot be a negative number.\n");
-                print_usage();
+                fprintf(stderr, "Error: Neighbors (N) cannot be a negative number.\n");
+                print_usage(params->algorithm);
                 exit(EXIT_FAILURE);
             }
         }
         else if (strcmp(argv[i], "-R") == 0 && i + 1 < argc)
+        {
             params->R = atof(argv[++i]);
+            if(params->R < 0)
+            {
+                fprintf(stderr, "Error: Range search (R) cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
 
         // Algorithm-specific
         else if (strcmp(argv[i], "-lsh") == 0)
@@ -59,33 +65,123 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
 
         // LSH
         else if (strcmp(argv[i], "-k") == 0 && i + 1 < argc)
+        {
             params->k = atoi(argv[++i]);
+            if(params->k < 0)
+            {
+                fprintf(stderr, "Error: k for LSH cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc)
+        {
             params->L = atoi(argv[++i]);
+            if(params->L < 0)
+            {
+                fprintf(stderr, "Error: L for LSH cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (strcmp(argv[i], "-w") == 0 && i + 1 < argc)
+        {
             params->w = atof(argv[++i]);
+            if(params->w < 0)
+            {
+                fprintf(stderr, "Error: w for LSH cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
 
         // Hypercube
         else if (strcmp(argv[i], "-kproj") == 0 && i + 1 < argc)
+        {
             params->kproj = atoi(argv[++i]);
+            if(params->kproj < 0)
+            {
+                fprintf(stderr, "Error: kproj for Hypercube cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+            else if(params->kproj >= 30)
+            {
+                fprintf(stderr, "Error: kproj for Hypercube cannot greater than or equal to 30.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (strcmp(argv[i], "-M") == 0 && i + 1 < argc)
+        {
             params->M = atoi(argv[++i]);
+            if(params->M < 0)
+            {
+                fprintf(stderr, "Error: M for Hypercube or IVFPQ cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (strcmp(argv[i], "-probes") == 0 && i + 1 < argc)
+        {
             params->probes = atoi(argv[++i]);
+            if(params->probes < 0)
+            {
+                fprintf(stderr, "Error: probes for Hypercube cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
 
         // IVF / IVFPQ
         else if (strcmp(argv[i], "-kclusters") == 0 && i + 1 < argc)
+        {
             params->kclusters = atoi(argv[++i]);
+            if(params->kclusters < 0)
+            {
+                fprintf(stderr, "Error: kclusters for IVFFLAT or IVFPQ cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (strcmp(argv[i], "-nprobe") == 0 && i + 1 < argc)
+        {
             params->nprobe = atoi(argv[++i]);
+            if(params->nprobe < 0)
+            {
+                fprintf(stderr, "Error: nprobe for IVFFLAT or IVFPQ cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (strcmp(argv[i], "-seed") == 0 && i + 1 < argc)
+        {
             params->seed = atoi(argv[++i]);
+            if(params->seed < 0)
+            {
+                fprintf(stderr, "Error: seed for IVFFLAT or IVFPQ cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
 
         // IVFPQ only
         else if (strcmp(argv[i], "-nbits") == 0 && i + 1 < argc)
+        {
             params->nbits = atoi(argv[++i]);
-        else if (strcmp(argv[i], "-Mpq") == 0 && i + 1 < argc)
-            params->M_pq = atoi(argv[++i]);
+            if(params->nbits < 0)
+            {
+                fprintf(stderr, "Error: nbits for IVFPQ cannot be a negative number.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+            else if(params->nbits > 16)
+            {
+                fprintf(stderr, "Error: nbits for IVFPQ cannot be greater than 16.\n");
+                print_usage(params->algorithm);
+                exit(EXIT_FAILURE);
+            }
+        }
 
         else
         {
@@ -98,27 +194,38 @@ int parse_arguments(int argc, char **argv, SearchParams *params)
     if (params->algorithm == ALG_NONE)
     {
         fprintf(stderr, "Error: Missing algorithm.\n");
-        print_usage();
+        print_usage(params->algorithm);
         exit(EXIT_FAILURE);
     }
 
     else if(params->dataset_type == DATA_NONE)
     {
         fprintf(stderr, "Error: Missing dataset type.\n");
-        print_usage();
+        print_usage(params->algorithm);
         exit(EXIT_FAILURE);
     }
 
     return 0;
 }
 
-// TODO
-// will print the specific format of the chosen algorithm in the future
-void print_usage(void)
+void print_usage(AlgorithmType type)
 {
-    printf("Usage examples:\n");
-    printf("  ./search -d data.dat -q query.dat -lsh -k 4 -L 5 -w 4.0 -N 1 -R 2000 -type mnist -range false\n");
-    printf("  ./search -d data.dat -q query.dat -hypercube -kproj 14 -w 4.0 -M 10 -probes 2 -type sift\n");
-    printf("  ./search -d data.dat -q query.dat -ivfflat -kclusters 50 -nprobe 5 -type mnist\n");
-    printf("  ./search -d data.dat -q query.dat -ivfpq -kclusters 50 -nprobe 5 -M 16 -nbits 8 -type sift\n");
+    printf("Usage example:\n");
+
+    if(type == ALG_LSH)
+        printf("  /search -d <input file> -q <query file> -k <int> -L <int> -w <double> -o <output file> -N <number of nearest> -R <radius> -type <flag> -lsh -range <true|false>\n");
+    else if(type == ALG_HYPERCUBE)
+        printf("  ./search -d <input file> -q <query file> -kproj <int> -w <double> -M <int> -probes <int> -o <output file> -N <number of nearest> -R <radius> -type <flag> -range <true|false> -hypercube\n");
+    else if(type == ALG_IVFFLAT)
+        printf("  ./search -d <input file> -q <query file> -kclusters <int> -nprobe <int> -o <output file> -N <number of nearest> -R <radius> -type <flag> -range <true|false> -ivfflat -seed <int>\n");
+    else if(type == ALG_IVFPQ)
+        printf("  ./search -d <input file> -q <query file> -kclusters <int> -nprobe <int> -M <int> -o <output file> -N <number of nearest> -R <radius> -type <flag> -nbits <int> -range <true|false> -ivfpq -seed <int>\n");
+    else if(type == ALG_NONE)
+    {
+        printf(" You have to indicate a specific algorithm in the Makefile in order to run it.\n The available options are the following:\n");
+        printf("- lsh\n");
+        printf("- hypercube\n");
+        printf("- ivfflat\n");
+        printf("- ivfpq\n");
+    }
 }
