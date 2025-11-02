@@ -49,7 +49,7 @@ OUTPUT_FILE = output.txt
 # ==============================================================
 
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_MNIST = -k 4 -L 15 -w 100 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -lsh -range false
+    ALGO_PARAMS_MNIST = -k 4 -L 10 -w 120 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)
@@ -57,30 +57,30 @@ ifeq ($(ALGO), hypercube)
 endif
 
 ifeq ($(ALGO), ivfflat)
-	ALGO_PARAMS_MNIST = -kclusters 20 -nprobe 4 -o $(OUTPUT_FILE) -N 5 -R 2000 -type mnist -range false -ivfflat -seed 10
+	ALGO_PARAMS_MNIST = -kclusters 60 -nprobe 5 -o $(OUTPUT_FILE) -N 5 -R 2000 -type mnist -range false -ivfflat -seed 10
 endif
 
 ifeq ($(ALGO), ivfpq)
-	ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 45 -M 98 -o $(OUTPUT_FILE) -N 10 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
+	ALGO_PARAMS_MNIST = -kclusters 60 -nprobe 40 -M 98 -o $(OUTPUT_FILE) -N 10 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
 endif
 
 # SIFT-optimized parameters
 # ==============================================================
 
 ifeq ($(ALGO), lsh)
-    ALGO_PARAMS_SIFT = -k 4 -L 10 -w 50 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -lsh -range false
+    ALGO_PARAMS_SIFT = -k 6 -L 15 -w 60 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -lsh -range false
 endif
 
 ifeq ($(ALGO), hypercube)
-    ALGO_PARAMS_SIFT = -kproj 17 -w 5 -M 9000 -probes 5000 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -range false -hypercube
+    ALGO_PARAMS_SIFT = -kproj 18 -w 50 -M 100000 -probes 1500 -o $(OUTPUT_FILE) -N 1 -R 50000 -type sift -range false -hypercube
 endif
 
 ifeq ($(ALGO), ivfflat)
-    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -o $(OUTPUT_FILE) -N 10 -R 2 -type sift -range false -ivfflat -seed 1
+    ALGO_PARAMS_SIFT = -kclusters 40 -nprobe 3 -o $(OUTPUT_FILE) -N 10 -R 2 -type sift -range false -ivfflat -seed 1
 endif
 
 ifeq ($(ALGO), ivfpq)
-    ALGO_PARAMS_SIFT = -kclusters 50 -nprobe 5 -M 128 -o $(OUTPUT_FILE) -N 10 -R 50000 -type sift -nbits 8 -range false -ivfpq -seed 10
+    ALGO_PARAMS_SIFT = -kclusters 60 -nprobe 5 -M 128 -o $(OUTPUT_FILE) -N 10 -R 50000 -type sift -nbits 8 -range false -ivfpq -seed 10
 endif
 
 # ==============================================================
