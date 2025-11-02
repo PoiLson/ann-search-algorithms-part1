@@ -30,7 +30,7 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset)
     double* per_cluster = (double*)malloc(index->k * sizeof(double));
     if (!per_cluster)
     {
-        printf("Error in allocating per_cluster!\n");
+        fprintf(stderr, "Error in allocating per_cluster!\n");
 
         exit(EXIT_FAILURE);
     }
@@ -39,7 +39,7 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset)
     int* cluster_of = (int*)calloc((size_t)n, sizeof(int));
     if (!cluster_of)
     {
-        printf("Error in allocating cluster_of!\n");
+        fprintf(stderr, "Error in allocating cluster_of!\n");
         free(per_cluster);
 
         exit(EXIT_FAILURE);
@@ -58,14 +58,14 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset)
     double* s = (double*)calloc((size_t)n, sizeof(double));
     if (!s)
     {
-        printf("Error allocating space for silhouette arrays\n");
+        fprintf(stderr, "Error allocating space for silhouette arrays\n");
         free(cluster_of);
         free(per_cluster);
 
         exit(EXIT_FAILURE);
     }
     
-    printf("reached the nested parallization\n");
+    // printf("reached the nested parallization\n");
 
     // ===== INTRA-CLUSTER: Compute a(i) using symmetric pairwise distances =====
     #pragma omp parallel for schedule(dynamic)
@@ -116,7 +116,8 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset)
 
             if(nearest_centroid == -1)
             {
-                printf("Cannot find any nearest centroid\n");
+                fprintf(stderr, "Cannot find any nearest centroid\n");
+                
                 exit(EXIT_FAILURE);
             }
 

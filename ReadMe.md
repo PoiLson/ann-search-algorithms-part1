@@ -102,7 +102,6 @@ A brief description of each file is provided below:
 - **_silhouette.c:_** Contains a function to compute the silhouette for each cluster. Its main purpose is to evaluate the number of clusters
 - **_utils.c:_** Contains all functions shared by all algorithms such as functions to compute dot product, euclidean distance, L2 norm, hamming distance etc.
 
-
 **Files included in the include/ folder:**
 
 The include/ directory contains all header files necessary for the implementation.
@@ -124,15 +123,17 @@ Below is a brief description of each:
 - **_utils.h:_** Common mathematical operations shared among all algorithms.
 
 ## Compilation Instructions
-The project can be compiled directly using the provided Makefile.  
-To build the executable manually, run:  
-```
-make
-```  
 
+The project can be compiled directly using the provided Makefile.  
+To build the executable manually, run:
+
+```code
+make
+```
 
 This will create an executable named search inside the root directory.  
 The Makefile uses the GCC compiler with the following key flags:
+
 - **_std=c11:_** enforces C11 standard compliance
 - **_fopenmp:_** enables OpenMP parallelization
 - **_Iinclude:_** includes all header files from the include/ directory
@@ -140,58 +141,70 @@ The Makefile uses the GCC compiler with the following key flags:
 
 The compiled object files are stored in the objectFiles/ directory.  
 To clean all generated files (object files and executables), run:  
-```
+
+```code
 make clean
 ```
 
 ## Usage Instructions
+
 Once compiled, the program can be executed as follows:
-```
+
+```code
 ./search -d {dataset file} -q {query file} -o {output file} -{algorithm_flag} -type {dataset_name} [additional_parameters]
 ```
+
 ### **Files**
+
 - **_Dataset file →_** Includes the data of the wanted dataset (MNIST or SIFT)
 - **_Query file →_** Includes the query data of the wanted dataset (MNIST or SIFT)
 - **_Output file →_** File to extract the output with the execution's metrics
 
-
 ### **Available Algorithm Flags**
+
 - **_lsh →_** Locality Sensitive Hashing (LSH)
 - **_hypercube →_** Binary Hypercube
 - **_ivfflat →_** Inverted File Index (IVFFlat)
 - **_ivfpq →_** Inverted File Index with Product Quantization (IVFPQ)
 
 ### **Available Datasets**
+
 - **_mnist →_** for the MNIST dataset
 - **_sift →_** for the SIFT dataset
 
 ### **Additional Parameters**
+
 Guides for the additional parameters are given inside the makefile, you can change the 
 value of the parameters in the corresponding line based on the algorithm you choose
 and the given dataset you want to use.
 
 ### **Default Execution**
+
 The Makefile already contains pre-tuned (optimized) parameter sets for each algorithm–dataset combination.
 However, these presets are meant for our best configurations and not for a “default” run.
 If the user wants to run the program with default settings, they should use one of the following commands directly:
 
 **Locality Sensitive Hashing (LSH)**
-```
+
+```code
 ./search -lsh -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
 **Binary Hypercube**
-```
+
+```code
 ./search -hypercube -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
 **Inverted File Index (IVFFlat)**
-```
+
+```code
 OMP_NUM_THREADS=8 OMP_NESTED=TRUE OMP_MAX_ACTIVE_LEVELS=2 ./search -ivfflat -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
 **Inverted File Index with Product Quantization (IVFPQ)**
-```
+
+```code
 OMP_NUM_THREADS=8 OMP_NESTED=TRUE OMP_MAX_ACTIVE_LEVELS=2 ./search -ivfpq -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
@@ -200,7 +213,8 @@ If the user wishes to run the optimized configurations (as used in our experimen
 they can do so through the Makefile preset.
 
 For the MNIST dataset:
-```
+
+```code
 make mnist ALGO=lsh
 make mnist ALGO=hypercube
 make mnist ALGO=ivfflat
@@ -208,7 +222,8 @@ make mnist ALGO=ivfpq
 ```
 
 The same applies for the SIFT dataset:
-```
+
+```code
 make sift ALGO=lsh
 make sift ALGO=hypercube
 make sift ALGO=ivfflat
@@ -216,6 +231,7 @@ make sift ALGO=ivfpq
 ```
 
 ### **Parameters Across Algorithms:**
+
 The following parameters can be modified directly in the Makefile. Each parameter is preceded by a “-” in the Makefile, and you can change its value there.
 
 - **General:_** -d `<dataset file>` , -q `<query file>`, -o `<output file>`, -N `<nearest neighbors>`, -R `<radius>`, -type `<mnist|sift>`, -range `<true|false>`, -seed `<int>`.
@@ -225,6 +241,7 @@ The following parameters can be modified directly in the Makefile. Each paramete
 - **_IVFPQ:_** -kclusters `<int>`, -nprobe `<int>`, -M `<int>`, -nbits `<int>`, -ivfpq.
 
 ## OpenMP Usage
+
 Throughout this project OpenMp was used in various places to sorten build times in the preprocessing stage without affecting time dependent results i.e. anything related to query search.
 
 ## Valgrind
@@ -236,6 +253,3 @@ We put our programm through extensive Valgrind checks and it is leak free with t
 The development of this project was managed using the Git version control system.
 
 All source files, headers, and experimental scripts were tracked through a dedicated Git repository to ensure collaborative development, change tracking, and reproducibility of results. The repository was hosted on a private GitHub project for version tracking and collaboration.
-
-
-

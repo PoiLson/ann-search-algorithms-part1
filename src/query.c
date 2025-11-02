@@ -29,7 +29,7 @@ void perform_query(const struct SearchParams* params, const struct Dataset* data
     
     if (!bf_cache)
     {
-        printf("Cache not found, computing brute-force ground truth...\n");
+        // printf("Cache not found, computing brute-force ground truth...\n");
         bf_cache = bruteforce_compute(dataset, query_set, params->N);
         
         if (bf_cache)

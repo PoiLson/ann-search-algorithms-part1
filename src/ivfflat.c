@@ -279,7 +279,7 @@ void printClusters(float** centroids, int kclusters, int d)
 centroidInfo* runKmeans(Dataset* subset, int kclusters)
 {
     int n = subset->size;
-    printf("From the subset size: %d we want to find %d centroids!\n", n, kclusters);
+    // printf("From the subset size: %d we want to find %d centroids!\n", n, kclusters);
     int d = subset->dimension;
     int t = 0; // Count of centroids
     int i = 0; // Count of non-centroids

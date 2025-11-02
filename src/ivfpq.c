@@ -267,13 +267,13 @@ static float** run_lloyd_on_subspace(float** subspace_data, int n_points, int d_
         // Early stopping if converged (like IVFFlat)
         if (!changed_any)
         {
-            printf("Lloyd's converged in %d iterations\n", iter + 1);
+            // printf("Lloyd's converged in %d iterations\n", iter + 1);
             break;
         }
     }
 
-    if (changed_any)
-        printf("----Lloyd's converged in %d iterations\n", max_iters);
+    // if (changed_any)
+    //     printf("----Lloyd's converged in %d iterations\n", max_iters);
 
     free(assignments);
 
@@ -322,7 +322,7 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
         exit(EXIT_FAILURE);    
     }
     
-    printf("Building IVFPQ index: k=%d, M=%d, nbits=%d\n", k_clusters, M, nbits);
+    // printf("Building IVFPQ index: k=%d, M=%d, nbits=%d\n", k_clusters, M, nbits);
     
     IVFPQIndex* index = (IVFPQIndex*)malloc(sizeof(IVFPQIndex));
     if(!index)
@@ -338,7 +338,7 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
     index->dataset = dataset;
     
     // Step 1 & 2: Run Lloyd's to get coarse centroids (reuse IVFFlat logic)
-    printf("Step 1-2: Computing coarse centroids with Lloyd's algorithm...\n");
+    // printf("Step 1-2: Computing coarse centroids with Lloyd's algorithm...\n");
     IVFFlatIndex* ivf_temp = ivfflat_init(dataset, k_clusters);
     if (!ivf_temp)
     {
@@ -357,7 +357,7 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
     index->pq.s = 1 << nbits;  // s = 2^nbits
     index->pq.d_sub = dataset->dimension / M;
     
-    printf("PQ config: M=%d subspaces, s=%d centroids per subspace, d_sub=%d\n", index->pq.M, index->pq.s, index->pq.d_sub);
+    // printf("PQ config: M=%d subspaces, s=%d centroids per subspace, d_sub=%d\n", index->pq.M, index->pq.s, index->pq.d_sub);
     
     // Allocate subspace centroids [M][s][d_sub]
     index->pq.subspace_centroids = (float***)malloc(M * sizeof(float**));
@@ -389,7 +389,7 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
     }
     
     // Step 3-5: Collect residuals from ALL clusters and train global PQ codebooks
-    printf("Step 3-5: Computing residuals from all clusters and training PQ codebooks...\n");
+    // printf("Step 3-5: Computing residuals from all clusters and training PQ codebooks...\n");
     
     // First, count total residuals and decide on sampling
     int total_available = dataset->size;
@@ -398,7 +398,7 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
     int max_train_samples = (total_available < 10000) ? total_available : 10000;
     int sample_rate = (total_available > max_train_samples) ? (total_available / max_train_samples) : 1;
     
-    printf("Collecting %d/%d residual vectors for PQ training (sample rate: 1/%d)...\n", max_train_samples, total_available, sample_rate);
+    // printf("Collecting %d/%d residual vectors for PQ training (sample rate: 1/%d)...\n", max_train_samples, total_available, sample_rate);
     
     float** all_residuals = (float**)malloc(max_train_samples * sizeof(float*));
     if(!all_residuals)
@@ -432,13 +432,13 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
     }
     
     int actual_samples = residual_idx;
-    printf("Collected %d residual samples.\n", actual_samples);
+    // printf("Collected %d residual samples.\n", actual_samples);
     
     // Train each subspace quantizer on the sampled residuals
-    printf("Training %d subspace quantizers...\n", M);
+    // printf("Training %d subspace quantizers...\n", M);
     for (int m = 0; m < M; m++)
     {
-        printf("  Training subspace %d/%d...\n", m+1, M);
+        // printf("  Training subspace %d/%d...\n", m+1, M);
         fflush(stdout);
         
         // Extract subspace m from all residuals
@@ -479,10 +479,10 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
         free(all_residuals[i]);
 
     free(all_residuals);
-    printf("PQ codebooks trained successfully!\n");
+    // printf("PQ codebooks trained successfully!\n");
     
     // Step 6-8: Encode all points and build inverted lists
-    printf("Step 6-8: Encoding points with PQ and building inverted lists...\n");
+    // printf("Step 6-8: Encoding points with PQ and building inverted lists...\n");
     
     for (int c = 0; c < k_clusters; c++)
     {
@@ -537,7 +537,7 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
     // Clean up temporary IVFFlat index
     ivfflat_destroy(ivf_temp);
     
-    printf("IVFPQ index built successfully\n");
+    // printf("IVFPQ index built successfully\n");
     return index;
 }
 

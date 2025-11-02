@@ -10,7 +10,7 @@ BruteForceCache* bruteforce_compute(const Dataset* dataset, const Dataset* query
         return NULL;
     }
 
-    printf("Computing brute-force nearest neighbors (N=%d) for %d queries...\n", N, query_set->size);
+    // printf("Computing brute-force nearest neighbors (N=%d) for %d queries...\n", N, query_set->size);
 
     BruteForceCache* cache = (BruteForceCache*)malloc(sizeof(BruteForceCache));
     if (!cache)
@@ -108,12 +108,12 @@ BruteForceCache* bruteforce_compute(const Dataset* dataset, const Dataset* query
         
         if ((q_idx + 1) % 10 == 0)
         {
-            printf("  Processed %d/%d queries...\r", q_idx + 1, query_set->size);
+            // printf("  Processed %d/%d queries...\r", q_idx + 1, query_set->size);
             fflush(stdout);
         }
     }
     
-    printf("\nBrute-force computation complete!                    \n");
+    // printf("\nBrute-force computation complete!                    \n");
     return cache;
 }
 
@@ -122,7 +122,7 @@ bool bruteforce_cache_save(const BruteForceCache *cache, const char *cache_path)
     if (!cache || !cache_path)
         return false;
 
-    printf("Saving brute-force cache to: %s\n", cache_path);
+    // printf("Saving brute-force cache to: %s\n", cache_path);
 
     FILE *fp = fopen(cache_path, "wb");
     if (!fp)
@@ -150,7 +150,7 @@ bool bruteforce_cache_save(const BruteForceCache *cache, const char *cache_path)
     }
 
     fclose(fp);
-    printf("Cache saved successfully!\n");
+    // printf("Cache saved successfully!\n");
     return true;
 }
 
@@ -166,7 +166,7 @@ BruteForceCache* bruteforce_cache_load(const char* cache_path, int expected_quer
         return NULL;
     }
 
-    printf("Loading brute-force cache from: %s\n", cache_path);
+    // printf("Loading brute-force cache from: %s\n", cache_path);
 
     // Read and validate header
     uint32_t magic, version;
@@ -255,7 +255,7 @@ BruteForceCache* bruteforce_cache_load(const char* cache_path, int expected_quer
     }
 
     fclose(fp);
-    printf("Cache loaded successfully!\n");
+    // printf("Cache loaded successfully!\n");
 
     return cache;
 }
