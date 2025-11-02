@@ -117,8 +117,7 @@ void computeSilhouette(IVFFlatIndex* index, Dataset* dataset)
             if(nearest_centroid == -1)
             {
                 printf("Cannot find any nearest centroid\n");
-                
-                return;
+                exit(EXIT_FAILURE);
             }
 
             
