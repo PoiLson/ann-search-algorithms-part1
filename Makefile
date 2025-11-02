@@ -5,7 +5,7 @@
 # Compiler
 CC = gcc
 
-CFLAGS = -std=c11 -g -Iinclude -fopenmp
+CFLAGS = -std=c11 -g -Iinclude -fopenmp 
 LDFLAGS = -lm
 
 # Executable name
@@ -38,7 +38,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = ivfpq
+ALGO = hypercube
 OUTPUT_FILE = output.txt
 
 # ==============================================================
@@ -53,7 +53,7 @@ ifeq ($(ALGO), lsh)
 endif
 
 ifeq ($(ALGO), hypercube)
-    ALGO_PARAMS_MNIST = -kproj 14 -w 90 -M 8500 -probes 850 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
+    ALGO_PARAMS_MNIST = -kproj 12 -w 40 -M 8500 -probes 850 -o $(OUTPUT_FILE) -N 1 -R 4 -type mnist -range false -hypercube
 endif
 
 ifeq ($(ALGO), ivfflat)
@@ -61,7 +61,7 @@ ifeq ($(ALGO), ivfflat)
 endif
 
 ifeq ($(ALGO), ivfpq)
-	ALGO_PARAMS_MNIST = -kclusters 10 -nprobe 45 -M 56 -o $(OUTPUT_FILE) -N 10 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
+	ALGO_PARAMS_MNIST = -kclusters 50 -nprobe 45 -M 98 -o $(OUTPUT_FILE) -N 10 -R 50000 -type mnist -nbits 8 -range false -ivfpq -seed 10
 endif
 
 # SIFT-optimized parameters
@@ -136,10 +136,3 @@ sift: $(OBJDIR) $(TARGET)
 		-d Data/SIFT/sift_base.fvecs \
 		-q Data/SIFT/sift_query_100.fvecs \
 		$(ALGO_PARAMS_SIFT) -seed 42
-	@$(MAKE) clean
-
-# ==============================================================
-# Phony targets
-# ==============================================================
-
-.PHONY: all clean mnist sift

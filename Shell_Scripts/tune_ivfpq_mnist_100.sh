@@ -11,7 +11,7 @@ CSV="$OUT_DIR/ivfpq_mnist_100_grid.csv"
 echo "KCLUSTERS,NPROBE,M,NBITS,AvgRecall,AvgAF,AvgTApprox,AvgTTrue,QPS" >> "$CSV"
 
 KCLUSTERS=(10 20 50 60)
-NPROBES=(5 20 40)
+NPROBES=(20 40)
 MBLOCKS=(16 28 56 98)
 NBITS_LIST=(8)
 

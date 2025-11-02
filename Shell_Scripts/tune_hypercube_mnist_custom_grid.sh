@@ -12,7 +12,7 @@ echo "KPROJ,W,M,PROBES,AvgRecall,AvgAF,AvgTApprox,AvgTTrue,QPS" >> "$CSV"
 
 KPROJ_LIST=(12 13 14)
 W_LIST=(40 60 80 90)
-M_LIST=(5000 8500)
+M_LIST=(8500 10000)
 PROBES_LIST=(500 850)
 
 for kproj in "${KPROJ_LIST[@]}"; do

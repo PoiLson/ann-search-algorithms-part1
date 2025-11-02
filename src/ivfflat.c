@@ -163,7 +163,7 @@ bool recompute_centroids(IVFFlatIndex* index, int d, double epsilon)
             new_centroid[j] /= (list->count > 0 ? list->count : 1);
 
         // Check centroid shift
-        double shift = norm(index->centroids[t], new_centroid, d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
+        double shift = euclidean_distance(index->centroids[t], new_centroid, d, DATA_TYPE_FLOAT, DATA_TYPE_FLOAT);
         if (shift > epsilon)
         {
             #pragma omp atomic write

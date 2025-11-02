@@ -225,7 +225,6 @@ static float** run_lloyd_on_subspace(float** subspace_data, int n_points, int d_
         }
         
         // Sum points assigned to each centroid
-        #pragma omp parallel for schedule(static)
         for (int i = 0; i < n_points; i++)
         {
             int c = assignments[i];
