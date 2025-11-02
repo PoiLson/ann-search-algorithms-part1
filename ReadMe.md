@@ -99,3 +99,7 @@ Throughtout this project OpenMp was used in various places to sorten build times
 - **_runAlgorithms:_** Contains functions to initialize each algorithm and start the quering proccess
 - **_silhouette:_** Contains a function to compute the silhouette for each cluster. Its main purpose is to evaluate the number of clusters
 - **_utils:_** Contains all functions shared by all algorithms such as functions to compute dot product, euclidean distance, L2 norm, hamming distance etc.
+
+## Valgrind
+
+We put our programm through extensive valgrind checks and it is leak free with the exeption of a few bytes allocated by OpenMP that show up by valgrind as still reachable and openMP handles them itself.
