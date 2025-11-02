@@ -4,12 +4,6 @@ int parse_arguments(int argc, char** argv, SearchParams* params)
 {
     // Default values
     memset(params, 0, sizeof(SearchParams));
-    params->seed = 1;
-    params->k = 4;
-    params->L = 5;
-    params->w = 4.0;
-    params->N = 1;
-    params->R = 2000.0;
     params->dataset_type = DATA_NONE;
     params->algorithm = ALG_NONE;
     params->range_search = false;
@@ -197,12 +191,51 @@ int parse_arguments(int argc, char** argv, SearchParams* params)
         print_usage(params->algorithm);
         exit(EXIT_FAILURE);
     }
-
     else if(params->dataset_type == DATA_NONE)
     {
         fprintf(stderr, "Error: Missing dataset type.\n");
         print_usage(params->algorithm);
         exit(EXIT_FAILURE);
+    }
+
+    // Now we can set the default values because
+    // We need to knwo which algorithm we are using
+    // And which dataset we have
+
+    // Shared
+    params->N = 1;
+    params->seed = 1;
+
+    if(params->dataset_type == DATA_MNIST)
+        params->R = 2000;
+    else
+        params->R = 2;
+
+    // Specific
+    if(params->algorithm == ALG_LSH)
+    {
+        params->k = 4;
+        params->L = 5;
+        params->w = 4.0;
+    }
+    else if(params->algorithm == ALG_HYPERCUBE)
+    {
+        params->kproj = 14;
+        params->w = 4.0;
+        params->M = 10;
+        params->probes = 2;
+    }
+    else if(params->algorithm == ALG_IVFFLAT)
+    {
+        params->kclusters = 50;
+        params->nprobe = 5;
+    }
+    else
+    {
+        params->kclusters = 50;
+        params->nprobe = 5;
+        params->nbits = 8;
+        params->M = 16;
     }
 
     return 0;

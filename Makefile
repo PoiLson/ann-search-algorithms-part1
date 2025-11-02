@@ -38,7 +38,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # =====================================================================
 
-ALGO = hypercube
+ALGO = lsh
 OUTPUT_FILE = output.txt
 
 # ==============================================================
@@ -123,8 +123,8 @@ mnist: $(OBJDIR) $(TARGET)
 	OMP_MAX_ACTIVE_LEVELS=2 \
 	./$(TARGET) \
 		-d Data/MNIST/train-images.idx3-ubyte \
-		-q Data/MNIST/t10k-images-100-sample.idx3-ubyte \
-		$(ALGO_PARAMS_MNIST) -seed 42
+		-q Data/MNIST/t10k-images.idx3-ubyte \
+		$(ALGO_PARAMS_MNIST)
 	@$(MAKE) clean
 
 sift: $(OBJDIR) $(TARGET)
@@ -134,5 +134,5 @@ sift: $(OBJDIR) $(TARGET)
 	OMP_MAX_ACTIVE_LEVELS=2 \
 	./$(TARGET) \
 		-d Data/SIFT/sift_base.fvecs \
-		-q Data/SIFT/sift_query_100.fvecs \
-		$(ALGO_PARAMS_SIFT) -seed 42
+		-q Data/SIFT/sift_query.fvecs \
+		$(ALGO_PARAMS_SIFT)

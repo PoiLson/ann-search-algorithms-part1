@@ -108,8 +108,8 @@ void run_ivfpq(SearchParams* params, Dataset* dataset)
     printf("Running IVFPQ with dataset: %s\n", params->dataset_path);
     
     // Use default PQ parameters: M=8 subspaces, nbits=8 (256 centroids per subspace)
-    int M = params->M > 0 ? params->M : 8;
-    int nbits = 8;  // Standard choice for IVFPQ
+    int M = params->M;
+    int nbits = params->nbits;
     
     printf("Building IVFPQ index with k=%d clusters, M=%d subspaces, nbits=%d...\n", params->kclusters, M, nbits);
     IVFPQIndex* ivfpq_index = ivfpq_init(dataset, params->kclusters, M, nbits);
