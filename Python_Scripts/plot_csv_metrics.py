@@ -78,11 +78,23 @@ def get_custom_colormap():
 
 
 def make_sorted_table_topN_png(headers: List[str], rows: List[Dict[str, str]], out_png: str, topn: int = 20):
+    # Filter out rows where AvgTApprox > (2/3) * AvgTTrue
+    filtered = []
+    for r in rows:
+        tapprox = to_float(r.get('AvgTApprox', 'nan'))
+        ttrue = to_float(r.get('AvgTTrue', 'nan'))
+        if not (math.isnan(tapprox) or math.isnan(ttrue) or ttrue <= 0.0):
+            if tapprox <= (2.0/3.0) * ttrue:
+                filtered.append(r)
+    
+    # If filter removes everything (edge case), fall back to all rows
+    effective_rows = filtered if filtered else rows
+
     # Sort by AvgRecall desc, then by AvgAF asc as tie-breaker if present
     def keyfun(r):
         return (-to_float(r.get('AvgRecall', '0'), 0.0), to_float(r.get('AvgAF', 'inf'), float('inf')))
 
-    sorted_rows = sorted(rows, key=keyfun)[:topn]
+    sorted_rows = sorted(effective_rows, key=keyfun)[:topn]
 
     # Build table data with all columns
     table_headers = headers
@@ -105,7 +117,7 @@ def make_sorted_table_topN_png(headers: List[str], rows: List[Dict[str, str]], o
     plt.close(fig)
 
 
-def make_param_scatter_per_param_all(headers: List[str], rows: List[Dict[str, str]], out_dir: str, base: str):
+def make_param_scatter_per_param_all(headers: List[str], rows: List[Dict[str, str]], out_dir: str, base: str, title_prefix: str = ""):
     # Parameter columns are those before AvgRecall
     if 'AvgRecall' not in headers:
         return
@@ -127,7 +139,8 @@ def make_param_scatter_per_param_all(headers: List[str], rows: List[Dict[str, st
         sc = ax.scatter(x, recall, c=tapprox, cmap=cmap, edgecolors='k', s=50, vmin=0, vmax=vmax)
         ax.set_xlabel(pcol)
         ax.set_ylabel('AvgRecall')
-        ax.set_title(f'Recall vs {pcol} (color=AvgTApprox)')
+        title = f'{title_prefix}: Recall vs {pcol}' if title_prefix else f'Recall vs {pcol} (color=AvgTApprox)'
+        ax.set_title(title)
         cbar = fig.colorbar(sc, ax=ax)
         cbar.set_label('AvgTApprox (s)')
         plt.tight_layout()
@@ -136,7 +149,7 @@ def make_param_scatter_per_param_all(headers: List[str], rows: List[Dict[str, st
         plt.close(fig)
 
 
-def make_recall_vs_qps_pareto(rows: List[Dict[str, str]], out_png: str):
+def make_recall_vs_qps_pareto(rows: List[Dict[str, str]], out_png: str, title_prefix: str = ""):
     """Recall vs QPS with Pareto frontier."""
     recall = np.array([to_float(r.get('AvgRecall', 'nan')) for r in rows])
     qps = np.array([to_float(r.get('QPS', 'nan')) for r in rows])
@@ -160,7 +173,8 @@ def make_recall_vs_qps_pareto(rows: List[Dict[str, str]], out_png: str):
     
     ax.set_xlabel('QPS (Queries Per Second)')
     ax.set_ylabel('AvgRecall')
-    ax.set_title('Recall vs QPS (Pareto Frontier)')
+    title = f'{title_prefix}: Recall vs QPS' if title_prefix else 'Recall vs QPS (Pareto Frontier)'
+    ax.set_title(title)
     ax.legend(loc='best')
     cbar = fig.colorbar(sc, ax=ax)
     cbar.set_label('AvgTApprox (s)')
@@ -169,7 +183,7 @@ def make_recall_vs_qps_pareto(rows: List[Dict[str, str]], out_png: str):
     plt.close(fig)
 
 
-def make_recall_vs_speedup(rows: List[Dict[str, str]], out_png: str):
+def make_recall_vs_speedup(rows: List[Dict[str, str]], out_png: str, title_prefix: str = ""):
     """Recall vs Speedup Factor (tTrue/tApprox)."""
     recall = np.array([to_float(r.get('AvgRecall', 'nan')) for r in rows])
     tapprox = np.array([to_float(r.get('AvgTApprox', 'nan')) for r in rows])
@@ -196,7 +210,8 @@ def make_recall_vs_speedup(rows: List[Dict[str, str]], out_png: str):
     
     ax.set_xlabel('Speedup Factor (tTrue / tApprox)')
     ax.set_ylabel('AvgRecall')
-    ax.set_title('Recall vs Speedup Factor (Pareto Frontier)')
+    title = f'{title_prefix}: Recall vs Speedup' if title_prefix else 'Recall vs Speedup Factor (Pareto Frontier)'
+    ax.set_title(title)
     ax.legend(loc='best')
     cbar = fig.colorbar(sc, ax=ax)
     cbar.set_label('AvgTApprox (s)')
@@ -205,7 +220,7 @@ def make_recall_vs_speedup(rows: List[Dict[str, str]], out_png: str):
     plt.close(fig)
 
 
-def make_parameter_heatmaps(headers: List[str], rows: List[Dict[str, str]], out_dir: str, base: str):
+def make_parameter_heatmaps(headers: List[str], rows: List[Dict[str, str]], out_dir: str, base: str, title_prefix: str = ""):
     """Create 2D heatmaps for key parameter pairs."""
     if 'AvgRecall' not in headers:
         return
@@ -262,7 +277,8 @@ def make_parameter_heatmaps(headers: List[str], rows: List[Dict[str, str]], out_
             
             ax.set_xlabel(p1)
             ax.set_ylabel(p2)
-            ax.set_title(f'Recall Heatmap: {p1} vs {p2}')
+            title = f'{title_prefix}: {p1} vs {p2}' if title_prefix else f'Recall Heatmap: {p1} vs {p2}'
+            ax.set_title(title)
             cbar = fig.colorbar(im, ax=ax)
             cbar.set_label('AvgRecall')
             plt.tight_layout()
@@ -272,7 +288,7 @@ def make_parameter_heatmaps(headers: List[str], rows: List[Dict[str, str]], out_
             plt.close(fig)
 
 
-def make_summary_table(headers: List[str], rows: List[Dict[str, str]], out_png: str):
+def make_summary_table(headers: List[str], rows: List[Dict[str, str]], out_png: str, title_prefix: str = ""):
     """Create summary statistics table comparing best configs."""
     if not rows or 'AvgRecall' not in headers:
         return
@@ -326,9 +342,15 @@ def make_summary_table(headers: List[str], rows: List[Dict[str, str]], out_png: 
     
     table_headers = ['Config'] + param_cols + ['Recall', 'QPS', 'tApprox', 'Speedup']
     
-    # Create figure
-    fig, ax = plt.subplots(figsize=(max(10, len(table_headers) * 1.2), 4))
+    # Create figure with title if provided
+    fig_height = 4.5 if title_prefix else 4
+    fig, ax = plt.subplots(figsize=(max(10, len(table_headers) * 1.2), fig_height))
     ax.axis('off')
+    
+    # Add title if provided
+    if title_prefix:
+        fig.suptitle(f'{title_prefix}: Summary Table', fontsize=14, fontweight='bold', y=0.98)
+    
     tbl = ax.table(cellText=table_data, colLabels=table_headers, loc='center', cellLoc='center')
     tbl.auto_set_font_size(False)
     tbl.set_fontsize(9)
@@ -348,7 +370,7 @@ def make_summary_table(headers: List[str], rows: List[Dict[str, str]], out_png: 
     plt.close(fig)
 
 
-def make_recall_vs_tapprox_all(rows: List[Dict[str, str]], out_png: str):
+def make_recall_vs_tapprox_all(rows: List[Dict[str, str]], out_png: str, title_prefix: str = ""):
     recall = np.array([to_float(r.get('AvgRecall', 'nan')) for r in rows])
     tapprox = np.array([to_float(r.get('AvgTApprox', 'nan')) for r in rows])
     ttrue = np.array([to_float(r.get('AvgTTrue', 'nan')) for r in rows])
@@ -374,13 +396,44 @@ def make_recall_vs_tapprox_all(rows: List[Dict[str, str]], out_png: str):
     
     ax.set_xlabel('AvgTApprox (s)')
     ax.set_ylabel('AvgRecall')
-    ax.set_title('Recall vs Approximate Time (Pareto Frontier)')
+    title = f'{title_prefix}: Recall vs Time' if title_prefix else 'Recall vs Approximate Time (Pareto Frontier)'
+    ax.set_title(title)
     ax.legend(loc='best')
     cbar = fig.colorbar(sc, ax=ax)
     cbar.set_label('AvgTApprox (s)')
     plt.tight_layout()
     fig.savefig(out_png, dpi=200)
     plt.close(fig)
+
+
+def infer_dataset_and_algorithm(csv_path: str) -> Tuple[str, str]:
+    """
+    Infer dataset name (MNIST/SIFT) and algorithm from CSV path.
+    Returns (dataset, algorithm) as strings.
+    """
+    path_lower = csv_path.lower()
+    
+    # Determine dataset
+    if 'mnist' in path_lower:
+        dataset = 'MNIST'
+    elif 'sift' in path_lower:
+        dataset = 'SIFT'
+    else:
+        dataset = 'Unknown'
+    
+    # Determine algorithm
+    if 'hypercube' in path_lower:
+        algorithm = 'Hypercube'
+    elif 'ivfpq' in path_lower:
+        algorithm = 'IVFPQ'
+    elif 'ivfflat' in path_lower:
+        algorithm = 'IVFFlat'
+    elif 'lsh' in path_lower:
+        algorithm = 'LSH'
+    else:
+        algorithm = 'Unknown'
+    
+    return dataset, algorithm
 
 
 def process_csv(csv_path: str):
@@ -390,9 +443,13 @@ def process_csv(csv_path: str):
         return
     out_dir = os.path.dirname(csv_path)
     base = os.path.splitext(os.path.basename(csv_path))[0]
+    
+    # Infer dataset and algorithm for titles
+    dataset, algorithm = infer_dataset_and_algorithm(csv_path)
+    title_prefix = f"{dataset} {algorithm}"
 
     print(f"\n{'='*60}")
-    print(f"Processing: {csv_path}")
+    print(f"Processing: {csv_path} ({title_prefix})")
     print(f"{'='*60}")
 
     # 1) Table sorted by recall (Top-20 only)
@@ -401,31 +458,31 @@ def process_csv(csv_path: str):
     print(f"✓ Saved: {table_png}")
 
     # 2) Separate images per parameter (ALL points), color by AvgTApprox
-    make_param_scatter_per_param_all(headers, rows, out_dir, base)
+    make_param_scatter_per_param_all(headers, rows, out_dir, base, title_prefix)
     print(f"✓ Saved: {base}_recall_vs_<param>.png for each parameter in {out_dir}")
 
     # 3) Recall vs AvgTApprox with Pareto frontier
     rt_png = os.path.join(out_dir, f"{base}_recall_vs_tapprox_pareto.png")
-    make_recall_vs_tapprox_all(rows, rt_png)
+    make_recall_vs_tapprox_all(rows, rt_png, title_prefix)
     print(f"✓ Saved: {rt_png}")
 
     # 4) Recall vs QPS with Pareto frontier
     qps_png = os.path.join(out_dir, f"{base}_recall_vs_qps_pareto.png")
-    make_recall_vs_qps_pareto(rows, qps_png)
+    make_recall_vs_qps_pareto(rows, qps_png, title_prefix)
     print(f"✓ Saved: {qps_png}")
 
     # 5) Recall vs Speedup Factor with Pareto frontier
     speedup_png = os.path.join(out_dir, f"{base}_recall_vs_speedup_pareto.png")
-    make_recall_vs_speedup(rows, speedup_png)
+    make_recall_vs_speedup(rows, speedup_png, title_prefix)
     print(f"✓ Saved: {speedup_png}")
 
     # 6) Parameter heatmaps for all pairs
-    make_parameter_heatmaps(headers, rows, out_dir, base)
+    make_parameter_heatmaps(headers, rows, out_dir, base, title_prefix)
     print(f"✓ Saved: {base}_heatmap_*.png for parameter pairs in {out_dir}")
 
     # 7) Summary statistics table
     summary_png = os.path.join(out_dir, f"{base}_summary_table.png")
-    make_summary_table(headers, rows, summary_png)
+    make_summary_table(headers, rows, summary_png, title_prefix)
     print(f"✓ Saved: {summary_png}")
     
     print(f"{'='*60}\n")
@@ -438,10 +495,14 @@ def main(argv: List[str]):
     else:
         # Default known CSVs in this repo
         targets = [
-            'runs/hypercube_sift_100_grid.csv',
+            'runs/hypercube_sift_100/hypercube_sift_100_grid.csv',
             'runs/lsh_sift_100/lsh_sift_100_grid.csv',
-            'runs/hypercube_mnist_custom_grid.csv',
-            'runs/lsh_mnist_100_grid.csv',
+            'runs/ivfflat_sift_100/ivfflat_sift_100_grid.csv',
+            'runs/ivfpq_sift_100/ivfpq_sift_100_grid.csv',
+            'runs/hypercube_mnist/hypercube_mnist_custom_grid.csv',
+            'runs/lsh_mnist_100/lsh_mnist_100_grid.csv',
+            'runs/ivfflat_mnist/ivfflat_mnist_100_grid.csv',
+            'runs/ivfpq_mnist_100/ivfpq_mnist_100_grid.csv',
         ]
     for path in targets:
         if os.path.exists(path):

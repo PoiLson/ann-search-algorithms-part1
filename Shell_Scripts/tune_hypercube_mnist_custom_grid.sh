@@ -25,12 +25,12 @@ for kproj in "${KPROJ_LIST[@]}"; do
           echo "search returned non-zero for kproj=$kproj w=$w m=$m probes=$probes" >&2
         fi
 
-        if [[ -f "$tmpf" ]]; then
-  recall=$(grep -F "Average Recall@N:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
-  af=$(grep -F "Average AF (mean over queries):" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo nan)
-  tapprox=$(grep -F "Average tApproximate:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
-  ttrue=$(grep -F "Average tTrue:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
-  qps=$(grep -F "QPS_overall:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
+    if [[ -f "$tmpf" ]]; then
+  recall=$(grep -F "Recall@N:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
+  af=$(grep -F "Average AF:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo nan)
+  tapprox=$(grep -F "tApproximateAverage:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
+  ttrue=$(grep -F "tTrueAverage:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
+  qps=$(grep -F "QPS:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.+-eE]+|inf|nan).*/\1/' || echo 0)
           recall=${recall:-0}; af=${af:-nan}; tapprox=${tapprox:-0}; ttrue=${ttrue:-0}; qps=${qps:-0}
           echo "$kproj,$w,$m,$probes,$recall,$af,$tapprox,$ttrue,$qps" >> "$CSV"
           rm -f "$tmpf"

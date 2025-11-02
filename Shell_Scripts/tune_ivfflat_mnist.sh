@@ -20,9 +20,9 @@ for k in "${KLIST[@]}"; do
     make -s $BASE_ARGS OUTPUT_FILE="$tmpf" KCLUSTERS="$k" NPROBE="$n" || echo "make returned non-zero for k=$k n=$n" >&2
 
     if [[ -f "$tmpf" ]]; then
-      recall=$(grep -F "Average Recall@N:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.]+).*/\1/' || echo 0)
-      af=$(grep -F "Average AF (mean over queries):" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.]+).*/\1/' || echo nan)
-      qps=$(grep -F "QPS_overall:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.]+).*/\1/' || echo 0)
+      recall=$(grep -F "Recall@N:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.]+).*/\1/' || echo 0)
+      af=$(grep -F "Average AF:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.]+).*/\1/' || echo nan)
+      qps=$(grep -F "QPS:" "$tmpf" | tail -1 | sed -E 's/.*: *([0-9.]+).*/\1/' || echo 0)
       recall=${recall:-0}; af=${af:-nan}; qps=${qps:-0}
       echo "${k},${n},${recall},${af},${qps}" >> "$CSV"
       rm -f "$tmpf"
