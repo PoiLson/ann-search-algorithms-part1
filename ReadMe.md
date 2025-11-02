@@ -147,8 +147,13 @@ make clean
 ## Usage Instructions
 Once compiled, the program can be executed as follows:
 ```
-./search -{algorithm_flag} -type {dataset_name} [additional_parameters]
+./search -d {dataset file} -q {query file} -o {output file} -{algorithm_flag} -type {dataset_name} [additional_parameters]
 ```
+### **Files**
+- **_Dataset file →_** Includes the data of the wanted dataset (MNIST or SIFT)
+- **_Query file →_** Includes the query data of the wanted dataset (MNIST or SIFT)
+- **_Output file →_** File to extract the output with the execution's metrics
+
 
 ### **Available Algorithm Flags**
 - **_lsh →_** Locality Sensitive Hashing (LSH)
@@ -172,22 +177,22 @@ If the user wants to run the program with default settings, they should use one 
 
 **Locality Sensitive Hashing (LSH)**
 ```
-./search -lsh -type mnist
+./search -lsh -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
 **Binary Hypercube**
 ```
-./search -hypercube -type mnist
+./search -hypercube -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
 **Inverted File Index (IVFFlat)**
 ```
-./search -ivfflat -type mnist
+OMP_NUM_THREADS=8 OMP_NESTED=TRUE OMP_MAX_ACTIVE_LEVELS=2 ./search -ivfflat -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
 **Inverted File Index with Product Quantization (IVFPQ)**
 ```
-./search -ivfpq -type mnist
+OMP_NUM_THREADS=8 OMP_NESTED=TRUE OMP_MAX_ACTIVE_LEVELS=2 ./search -ivfpq -type mnist -d {dataset file} -q {query file} -o {output file}
 ```
 
 ### **Optimized Configurations Execution**
@@ -231,5 +236,6 @@ We put our programm through extensive Valgrind checks and it is leak free with t
 The development of this project was managed using the Git version control system.
 
 All source files, headers, and experimental scripts were tracked through a dedicated Git repository to ensure collaborative development, change tracking, and reproducibility of results. The repository was hosted on a private GitHub project for version tracking and collaboration.
+
 
 
