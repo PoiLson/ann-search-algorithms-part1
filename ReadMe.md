@@ -12,9 +12,7 @@ In this project we implemented the following algorithms:
 - **Locality sensitive Hashing using hash-tables**
     The way this algorithm works is by hashing each point $x$ with dimension $d$ to $L$ hash tables using amplified functions:
 
-    ```math
-    g_j(x)= \left(\sum_{i=1}^k h_i(x) \mod M \right) \mod TableSize , \forall j \in [L]
-    ```
+    $g_j(x)= \left(\sum_{i=1}^k h_i(x) \mod M \right) \mod TableSize , \forall j \in [L]$
 
     where $h_i(x) = \lfloor (x \cdot v_i + t_i)/w \rfloor$ is the linear projection of the point,
     with $v_i$ a normalized gaussian vector of dimension $d$ so that we can use a smaller window size while keeping the data intact
