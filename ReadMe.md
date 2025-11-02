@@ -115,6 +115,7 @@ Below is a brief description of each:
 - **_ivfflat.h:_** Functions and structures for IVFFlat index creation and querying.
 - **_ivfpq.h:_** Functions and structures for IVFPQ encoding, codebook training, and search.
 - **_lsh.h:_** Core definitions and data structures for the LSH algorithm.
+- **_main.h:_** Contains the declarations for all the needed C and User-Defined libraries.
 - **_minheap.h:_** Declarations for the min-heap data structure used during nearest-neighbor search.
 - **_parseinput.h:_**  Command-line argument parsing and validation routines.
 - **_query.h:_** Query execution, timing, and metric computation utilities.
@@ -221,3 +222,4 @@ We put our programm through extensive Valgrind checks and it is leak free with t
 The development of this project was managed using the Git version control system.
 
 All source files, headers, and experimental scripts were tracked through a dedicated Git repository to ensure collaborative development, change tracking, and reproducibility of results. The repository was hosted on a private GitHub project for version tracking and collaboration.
+
