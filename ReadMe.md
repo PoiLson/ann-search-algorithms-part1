@@ -62,31 +62,31 @@ Throughtout this project OpenMp was used in various places to sorten build times
 - **_datasets:_** different functions to proccess each dataset (MNIST/SIFT)
 - **_hashtable:_** hash-table structure with fixed capicity handling collision by chaining dynamic arrays to each bucket.
 - **_hypercube:_** Contains functions specific to this algorithm:
-        - _hash_func_impl_hyper_: computes the binary hash function by projecting points and mapping each projection to a bit using precomputed thresholds
-        - _hyper_init_(build process): initializes a Hypercube struct, computes average thresholds for each projection to preserve locality, and stores data in a single hash-table with buckets corresponding to binary vectors
-        - _hyper_index_lookup_: performs A-NN for a query by probing multiple buckets in Hamming distance order up to the specified probes limit
-        - _range_search_hyper_: returns points inside a given range from the query
-        - _hyper_destroy_: frees all memory occupied by the Hypercube struct
+  - _hash_func_impl_hyper_: computes the binary hash function by projecting points and mapping each projection to a bit using precomputed thresholds
+  - _hyper_init_(build process): initializes a Hypercube struct, computes average thresholds for each projection to preserve locality, and stores data in a single hash-table with buckets corresponding to binary vectors
+  - _hyper_index_lookup_: performs A-NN for a query by probing multiple buckets in Hamming distance order up to the specified probes limit
+  - _range_search_hyper_: returns points inside a given range from the query
+  - _hyper_destroy_: frees all memory occupied by the Hypercube struct
 - **_ivfflat:_** Contains functions specific to this algorithm:
-        - _assign_points_to_clusters_: assigns dataset points to their nearest cluster centroids using parallel processing
-        - _recompute_centroids_: updates cluster centroids by averaging assigned points and checks for convergence
-        - _ivfflat_init_(build process): initializes an IVFFlatIndex struct using KMeans++ initialization and Lloyd's algorithm with parallel assignment to cluster data points
-        - _ivfflat_index_lookup_: performs A-NN for a query by searching only the nprobe nearest clusters to the query vector
-        - _range_search_ivfflat_: returns points inside a given range from the query within the searched clusters
-        - _ivfflat_destroy_: frees all memory occupied by the IVFFlatIndex struct
+  - _assign_points_to_clusters_: assigns dataset points to their nearest cluster centroids using parallel processing
+  - _recompute_centroids_: updates cluster centroids by averaging assigned points and checks for convergence
+  - _ivfflat_init_(build process): initializes an IVFFlatIndex struct using KMeans++ initialization and Lloyd's algorithm with parallel assignment to cluster data points
+  - _ivfflat_index_lookup_: performs A-NN for a query by searching only the nprobe nearest clusters to the query vector
+  - _range_search_ivfflat_: returns points inside a given range from the query within the searched clusters
+  - _ivfflat_destroy_: frees all memory occupied by the IVFFlatIndex struct
 - **_ivfpq:_** Contains functions specific to this algorithm:
-        - _run_lloyd_on_subspace_: trains product quantization codebooks for each subspace using KMeans++ initialization and Lloyd's algorithm with parallel assignment
-        - _compute_residual_: computes remainder vectors $r(x) = x - c(x)$ where $c(x)$ is the cluster centroid
-        - _ivfpq_init_(build process): initializes an IVFPQIndex struct, clusters data using IVFFlat approach, splits residuals into M subspaces, and trains $2^{nbits}$ centroids per subspace to encode points with compact codes
-        - _ivfpq_index_lookup_: performs A-NN for a query by computing asymmetric distances using lookup tables (LUT) for distance estimation between query and compressed codes in the nprobe nearest clusters
-        - _range_search_ivfpq_: returns points inside a given range from the query within the searched clusters
-        - _ivfpq_destroy_: frees all memory occupied by the IVFPQIndex struct including PQ codebooks
+  - _run_lloyd_on_subspace_: trains product quantization codebooks for each subspace using KMeans++ initialization and Lloyd's algorithm with parallel assignment
+  - _compute_residual_: computes remainder vectors $r(x) = x - c(x)$ where $c(x)$ is the cluster centroid
+  - _ivfpq_init_(build process): initializes an IVFPQIndex struct, clusters data using IVFFlat approach, splits residuals into M subspaces, and trains $2^{nbits}$ centroids per subspace to encode points with compact codes
+  - _ivfpq_index_lookup_: performs A-NN for a query by computing asymmetric distances using lookup tables (LUT) for distance estimation between query and compressed codes in the nprobe nearest clusters
+  - _range_search_ivfpq_: returns points inside a given range from the query within the searched clusters
+  - _ivfpq_destroy_: frees all memory occupied by the IVFPQIndex struct including PQ codebooks
 - **_lsh:_** Contains functions specific to this algorithm:
-        - _hash_func_impl_lsh_: computed the amplified hash function $g(x)$
-        - _lsh_init_(build proccess): initializes an lsh struct to group all necessary values, sets values to all parameters and stores the data in the hash-tables
-        - _lsh_index_lookup_: performs A-NN for a query using the lsh hash-tables
-        - _range_search_lsh_: returns points inside a given range from the query
-        - _lsh_destroy_: frees all memory occupied by the lsh struct
+  - _hash_func_impl_lsh_: computed the amplified hash function $g(x)$
+  - _lsh_init_(build proccess): initializes an lsh struct to group all necessary values, sets values to all parameters and stores the data in the hash-tables
+  - _lsh_index_lookup_: performs A-NN for a query using the lsh hash-tables
+  - _range_search_lsh_: returns points inside a given range from the query
+  - _lsh_destroy_: frees all memory occupied by the lsh struct
 - **_main:_** Main function of the programm. After all arguments are parsed and checked it saves the dataset in a struct and passes it in the corresponding algorithm. Before exiting it frees the dataset.
 - **_minheap:_** Contains all functions to implement a basic min-heap ADT.
         Helper function to keep top-N candidates
