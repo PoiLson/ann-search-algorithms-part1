@@ -210,6 +210,15 @@ make sift ALGO=ivfflat
 make sift ALGO=ivfpq
 ```
 
+### **Parameters Across Algorithms:**
+The following parameters can be modified directly in the Makefile. Each parameter is preceded by a “-” in the Makefile, and you can change its value there.
+
+- **General:_** -d `<dataset file>` , -q `<query file>`, -o `<output file>`, -N `<nearest neighbors>`, -R `<radius>`, -type `<mnist|sift>`, -range `<true|false>`, -seed `<int>`.
+- **_LSH:_** -k `<int/>`, -L `<int>`, -w `<double>`, -lsh.
+- **_Hypercube:_** -kproj `<int>`, -w `<double>`, -M `<int>`, -probes `<int>`, -hypercube.
+- **_IVFFlat:_** -kclusters `<int>`, -nprobe `<int>`, -ivfflat.
+- **_IVFPQ:_** -kclusters `<int>`, -nprobe `<int>`, -M `<int>`, -nbits `<int>`, -ivfpq.
+
 ## OpenMP Usage
 Throughout this project OpenMp was used in various places to sorten build times in the preprocessing stage without affecting time dependent results i.e. anything related to query search.
 
@@ -222,4 +231,5 @@ We put our programm through extensive Valgrind checks and it is leak free with t
 The development of this project was managed using the Git version control system.
 
 All source files, headers, and experimental scripts were tracked through a dedicated Git repository to ensure collaborative development, change tracking, and reproducibility of results. The repository was hosted on a private GitHub project for version tracking and collaboration.
+
 
