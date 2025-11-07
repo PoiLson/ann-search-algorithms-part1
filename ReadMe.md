@@ -12,16 +12,27 @@ In this project we implemented the following algorithms:
 - **Locality sensitive Hashing using hash-tables**
     The way this algorithm works is by hashing each point $x$ with dimension $d$ to $L$ hash tables using amplified functions:
 
-    $g_j(x)= \left(\sum_{i=1}^k h_i(x) \mod M \right) \mod TableSize , \forall j \in [L]$
+    $g_j(x)= \left(\sum_{i=1}^k r_{j,i}h_i(x) \mod M \right) \mod TableSize , \forall j \in [L]$
 
-    where $h_i(x) = \lfloor (x \cdot v_i + t_i)/w \rfloor$ is the linear projection of the point,
-    with $v_i$ a normalized gaussian vector of dimension $d$ so that we can use a smaller window size while keeping the data intact
-    and $t_i$ a random offset bounded between $0$ and $2^{29}$ to avoid overflows.
-
-    The parameters $L, k, w$ are chosen by the user.
-    $M = 2^{32} - 5$ prime
-    Tablesize was chosen, after careful consideration, to be $N/4$, where $N$ is the dataset size.
-
+    where,
+  
+    $$h_i(x) = \lfloor (x \cdot v_i + t_i)/w \rfloor$$
+  
+    is the linear projection of the point,
+    with:
+    
+    - **$v_i$** is a random Gaussian projection vector, drawn from $\mathcal{N}(0, 1)$ and normalized to unit length to              stabilize the projection scale.
+    - **$t_i$** is a random offset sampled uniformly from [0, w), ensuring translation invariance of the hash bins.
+    - **$r_j,i$** is a random integer coefficient chosen uniformly in [1, $R_range$), $R_range$ = $2^{29}$, used to form a linear             combination of the k hash values foreach table j.
+    - **$M$** = $2^{32} - 5$ is a large prime modulus preventing overflow and promoting uniform bucket distribution.
+       $2^{29}$ to avoid overflows.
+      
+    Each of the 𝐿 tables uses an independent set of 𝑘 projection vectors and linear coefficients.
+  
+    The table size (TableSize) was empirically set to 𝑁/4, where 𝑁 is the dataset size, to maintain a balanced load factor across         buckets.
+  
+    The parameters 𝐿,𝑘,𝑤,𝑁 (and optionally the search radius 𝑅) are user-defined and can be adjusted depending on the dataset and         desired recall–speed trade-off.
+  
 - **Locality sensitive Hashing Hypercube**
     This implementation is structurally fairly similar to the aforementioned algorithm keeping the $h_i$ functions to project the points while also utilizing a new function $f_i(h_i)$ to map their result to a single bit.
     This bit vector $[f_i(h_i(x))]$ is then converted into an integer that represents the hash value and corresponds to a single bucket in a hash-table.
@@ -253,3 +264,4 @@ We put our programm through extensive Valgrind checks and it is leak free with t
 The development of this project was managed using the Git version control system.
 
 All source files, headers, and experimental scripts were tracked through a dedicated Git repository to ensure collaborative development, change tracking, and reproducibility of results. The repository was hosted on a private GitHub project for version tracking and collaboration.
+
