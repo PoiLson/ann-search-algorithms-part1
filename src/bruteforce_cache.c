@@ -51,7 +51,11 @@ BruteForceCache* bruteforce_compute(const Dataset* dataset, const Dataset* query
     }
 
     // Compute brute-force for each query
-    #pragma omp parallel for schedule(dynamic)
+    // Parallelization only whan we want to check the algorithm
+    // For the real time we do not want it in order
+    // to compare the true time (brute force) with the approximate time (each algorithm's)
+    
+    // #pragma omp parallel for schedule(dynamic)
     for (int q_idx = 0; q_idx < query_set->size; q_idx++)
     {
         void* query = query_set->data[q_idx];
