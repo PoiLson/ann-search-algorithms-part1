@@ -8,6 +8,25 @@ int parse_arguments(int argc, char** argv, SearchParams* params)
     params->algorithm = ALG_NONE;
     params->range_search = false;
 
+    // Values to use defaults if needed
+    params->N = -1;
+    params->seed = -1;
+    params->R = -1;
+
+    params->k = -1;
+    params->L = -1;
+    params->w = -1.0;
+
+    params->kproj = -1;
+    params->w = -1.0;
+    params->M = -1;
+    params->probes = -1;
+
+    params->kclusters = -1;
+    params->nprobe = -1;
+
+    params->nbits = -1;
+
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-d") == 0 && i + 1 < argc)
@@ -199,12 +218,17 @@ int parse_arguments(int argc, char** argv, SearchParams* params)
     }
 
     // Now we can set the default values because
-    // We need to knwo which algorithm we are using
+    // We need to knος which algorithm we are using
     // And which dataset we have
 
+    // IF THE USER HAS NOT PROVIDED VALUES FOR THEM USE THE DEFAULT VALUES
+
     // Shared
-    params->N = 1;
-    params->seed = 1;
+    if(params->N < 0)
+        params->N = 1;
+
+    if(params->seed < 0)
+        params->seed = 1;
 
     if(params->dataset_type == DATA_MNIST)
         params->R = 2000;
@@ -214,28 +238,50 @@ int parse_arguments(int argc, char** argv, SearchParams* params)
     // Specific
     if(params->algorithm == ALG_LSH)
     {
-        params->k = 4;
-        params->L = 5;
-        params->w = 4.0;
+        if(params->k < 0)
+            params->k = 4;
+
+        if(params->L < 0)
+            params->L = 5;
+
+        if(params->w < 0)
+            params->w = 4.0;
     }
     else if(params->algorithm == ALG_HYPERCUBE)
     {
-        params->kproj = 14;
-        params->w = 4.0;
-        params->M = 10;
-        params->probes = 2;
+        if(params->kproj < 0)
+            params->kproj = 14;
+
+        if(params->w < 0)
+            params->w = 4.0;
+
+        if(params->M < 0)
+            params->M = 10;
+
+        if(params->probes < 0)
+            params->probes = 2;
     }
     else if(params->algorithm == ALG_IVFFLAT)
     {
-        params->kclusters = 50;
-        params->nprobe = 5;
+        if(params->kclusters < 0)
+            params->kclusters = 50;
+
+        if(params->nprobe < 0)
+            params->nprobe = 5;
     }
     else
     {
-        params->kclusters = 50;
-        params->nprobe = 5;
-        params->nbits = 8;
-        params->M = 16;
+        if(params->kclusters < 0)
+            params->kclusters = 50;
+
+        if(params->nprobe < 0)
+            params->nprobe = 5;
+
+        if(params->nbits < 0)
+            params->nbits = 8;
+
+        if(params->M < 0)
+            params->M = 16;
     }
 
     return 0;
