@@ -332,7 +332,6 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
         exit(EXIT_FAILURE);
     }
     
-    index->k = k_clusters;
     index->d = dataset->dimension;
     index->data_type = dataset->data_type;
     index->dataset = dataset;
@@ -343,9 +342,17 @@ IVFPQIndex* ivfpq_init(Dataset* dataset, int k_clusters, int M, int nbits)
     if (!ivf_temp)
     {
         free(index);
-        
         exit(EXIT_FAILURE);
     }
+    
+    if(ivf_temp->k <= 0)
+    {
+        fprintf(stderr, "Error in kclusters\n");
+        exit(1);
+    }
+
+    index->k = ivf_temp->k;
+    k_clusters = index->k;
     
     // Copy centroids from IVFFlat
     index->centroids = ivf_temp->centroids;
