@@ -58,4 +58,4 @@ Dataset source:
 - [SIFT1M dataset](http://corpus-texmex.irisa.fr/)
 - File used: `sift_base.fvecs` from **ANN_SIFT1M**
 
-The SIFT1M dataset is too large to be uploaded to GitHub. To run the code with SIFT data, please download the required files manually, then create a folder named [`Datasets/SIFT`](Datasets/SIFT) and place the downloaded files there.
+The SIFT1M dataset is too large to be uploaded to GitHub. To run the code with SIFT data, please download the required files manually, then create a folder named `SIFT` inside the [`Datasets`](Datasets) directory, similar to the existing `MNIST` folder, and place the downloaded files there.
