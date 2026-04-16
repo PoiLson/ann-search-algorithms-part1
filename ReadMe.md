@@ -52,6 +52,10 @@ In this project we implemented the following algorithms:
       - We sample each subspace to train $2^{nbist}$ new centroids and assign all r_i(x) to them. The corresponding centroid becomes the encoding of the point resulting to a vector $[centroid_i(x)], \forall i \in [M]$
       - During quering we compute the LUT values when need, since most values won't be need and precomputing them adds unnecessery overhead
 
+## Dataset Structure
+
+For more details about the dataset structure, see [datasets.md](datasets.md).
+
 ## Project Structure
 
 This project is formatted in the following way:  
@@ -64,10 +68,6 @@ This project is formatted in the following way:
   - MNIST: mnist train and query sets can be saved here
   - SIFT: sift base and query sets can be saved here
 - _Makefile_
-
-## Dataset Structure
-
-For more details about the dataset structure, see [datasets.md](datasets.md).
 
 ### **Providing a more in-depth analysis of every .c and header packet we encounter:**
 
