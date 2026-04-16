@@ -64,6 +64,10 @@ This project is formatted in the following way:
   - MNIST: mnist train and query sets can be saved here
   - SIFT: sift base and query sets can be saved here
 - _Makefile_
+- 
+## Dataset Structure
+
+For more details about the dataset structure, see [datasets.md](datasets.md).
 
 ### **Providing a more in-depth analysis of every .c and header packet we encounter:**
 
