@@ -2,8 +2,8 @@
 
 ## **Authors:**  
 
-- _Lytra Maria
-- _Mylonaki Danai
+- Lytra Maria
+- Mylonaki Danai
 
 ## Main idea
 
