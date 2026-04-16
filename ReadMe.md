@@ -2,8 +2,8 @@
 
 ## **Authors:**  
 
-- _Lytra Maria - 1115202200089_
-- _Mylonaki Danai - 1115202200114_
+- _Lytra Maria
+- _Mylonaki Danai
 
 ## Main idea
 
