@@ -20,8 +20,7 @@ Each image has dimensions **28 × 28 pixels**, and each pixel takes an integer v
 
 The vector corresponding to each image is formed by concatenating its rows, resulting in a vector of dimension **784**.
 
-Dataset source:  
-- [MNIST official page](https://yann.lecun.org/exdb/mnist/index.html)
+Dataset source:
 - [MNIST original dataset files](https://github.com/mrgloom/MNIST-dataset-in-different-formats/tree/master/data/Original%20dataset)
 
 ---
