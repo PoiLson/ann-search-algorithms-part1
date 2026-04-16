@@ -1,6 +1,6 @@
 # Approximate Nearest Neighbor Search Algorithms Implementation
 
-## **Authors:**  
+## **Authors**  
 
 - **Lytra Maria** — [GitHub](https://github.com/marialitra)
 - **Mylonaki Danai** — [GitHub](https://github.com/PoiLson)
