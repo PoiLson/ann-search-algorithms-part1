@@ -23,6 +23,8 @@ The vector corresponding to each image is formed by concatenating its rows, resu
 Dataset source:
 - [MNIST original dataset files](https://github.com/mrgloom/MNIST-dataset-in-different-formats/tree/master/data/Original%20dataset)
 
+The MNIST dataset has already been uploaded in the [`Datasets/MNIST`](Datasets/MNIST) folder, so no additional download is required.
+
 ---
 
 ### SIFT Dataset
@@ -55,3 +57,5 @@ Each vector follows the same repeated pattern of **516 bytes**:
 Dataset source:  
 - [SIFT1M dataset](http://corpus-texmex.irisa.fr/)
 - File used: `sift_base.fvecs` from **ANN_SIFT1M**
+
+The SIFT1M dataset is too large to be uploaded to GitHub. To run the code with SIFT data, please download the required files manually, then create a folder named [`Datasets/SIFT`](Datasets/SIFT) and place the downloaded files there.
