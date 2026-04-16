@@ -54,7 +54,7 @@ In this project we implemented the following algorithms:
 
 ## Dataset Structure
 
-For more details about the dataset structure, see [datasets.md](datasets.md).
+For more details about the dataset structure, see [datasets.md](datasets.md). Please note that, while the MNIST files are included in the repository, the SIFT dataset must still be downloaded manually due to its size.
 
 ## Project Structure
 
